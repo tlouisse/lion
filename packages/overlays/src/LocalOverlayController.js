@@ -1,5 +1,7 @@
-import { render, html } from '@lion/core';
-import { managePosition } from './utils/manage-position.js';
+/* eslint-disable no-underscore-dangle, class-methods-use-this, no-unused-expressions */
+
+import { render, html } from 'lit-html';
+import { managePosition, updatePosition } from './utils/manage-position.js';
 import { containFocus } from './utils/contain-focus.js';
 import { keyCodes } from './utils/key-codes.js';
 
@@ -18,7 +20,7 @@ export class LocalOverlayController {
     this.invoker = document.createElement('div');
     this.invoker.style.display = 'inline-block';
     this.content = document.createElement('div');
-    this.content.style.display = 'inline-block';
+    this.content.style.display = 'block';
     this.contentId = `overlay-content-${Math.random()
       .toString(36)
       .substr(2, 10)}`;
@@ -33,6 +35,7 @@ export class LocalOverlayController {
     this._prevData = {};
 
     if (this.hidesOnEsc) this._setupHidesOnEsc();
+    this._created = false;
   }
 
   get isShown() {
@@ -85,7 +88,6 @@ export class LocalOverlayController {
    * Toggles the overlay.
    */
   toggle() {
-    // eslint-disable-next-line no-unused-expressions
     this.isShown ? this.hide() : this.show();
   }
 
@@ -102,10 +104,19 @@ export class LocalOverlayController {
       this.contentNode.id = this.contentId;
       this.invokerNode.setAttribute('aria-expanded', true);
 
-      managePosition(this.contentNode, this.invokerNode, {
-        placement: this.placement,
-        position: this.position,
-      });
+      const positionParams = [
+        this.contentNode,
+        this.invokerNode,
+        {
+          placement: this._contentData.placement || this.placement,
+          position: this.position,
+        },
+      ];
+      if (!this._created) {
+        managePosition(...positionParams);
+      } else {
+        updatePosition(...positionParams);
+      }
 
       if (this.trapsKeyboardFocus) this._setupTrapsKeyboardFocus();
       if (this.hidesOnOutsideClick) this._setupHidesOnOutsideClick();
@@ -116,6 +127,10 @@ export class LocalOverlayController {
     }
     this._prevShown = shown;
     this._prevData = data;
+
+    if (!this._created) {
+      this._created = true;
+    }
   }
 
   /**

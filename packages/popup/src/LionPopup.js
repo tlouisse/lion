@@ -1,18 +1,22 @@
-import { UpdatingElement } from '@lion/core';
-import { overlays, LocalOverlayController } from '@lion/overlays';
+/* eslint-disable class-methods-use-this, no-underscore-dangle */
+import { UpdatingElement } from 'lit-element';
+
+import { overlays } from '../overlays/overlays';
+import { LocalOverlayController } from '../overlays/LocalOverlayController';
 
 export class LionPopup extends UpdatingElement {
   static get properties() {
     return {
       position: {
         type: String,
+        reflect: true,
       },
     };
   }
 
   connectedCallback() {
     super.connectedCallback();
-    this.contenNode = this.querySelector('[slot="content"]');
+    this.contentNode = this.querySelector('[slot="content"]');
     this.invokerNode = this.querySelector('[slot="invoker"]');
 
     this._popup = overlays.add(
@@ -20,7 +24,7 @@ export class LionPopup extends UpdatingElement {
         hidesOnEsc: true,
         hidesOnOutsideClick: true,
         placement: this.position,
-        contentNode: this.contenNode,
+        contentNode: this.contentNode,
         invokerNode: this.invokerNode,
       }),
     );
@@ -29,6 +33,14 @@ export class LionPopup extends UpdatingElement {
     this._toggle = () => this._popup.toggle();
 
     this.invokerNode.addEventListener('click', this._toggle);
+  }
+
+  update(changedProperties) {
+    super.update();
+    // To reflect in the LocalOverlayController instance, and trigger the managePosition with this latest position
+    if (changedProperties.get('position')) {
+      this._popup.sync({ data: { placement: this.position } });
+    }
   }
 
   disconnectedCallback() {

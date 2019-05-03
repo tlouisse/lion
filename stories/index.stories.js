@@ -22,3 +22,5 @@ import '../packages/localize/stories/index.stories.js';
 import '../packages/overlays/stories/index.stories.js';
 import '../packages/popup/stories/index.stories.js';
 import '../packages/tooltip/stories/index.stories.js';
+import '../packages/pointing-frame/stories/index.stories.js';
+
