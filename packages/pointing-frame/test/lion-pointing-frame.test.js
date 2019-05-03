@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-env mocha */
 import { expect, fixture, html, nextFrame, aTimeout } from '@open-wc/testing';
-import { unsafeHTML } from 'lit-html/directives/unsafe-html.js';
+import { unsafeHTML } from 'lion/core';
 import '../../popup/lion-popup.js';
 import '../lion-pointing-frame.js';
 import customPointerSvg from './custom-pointer.svg.js';

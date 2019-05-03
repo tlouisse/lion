@@ -1,8 +1,6 @@
 /* eslint-disable class-methods-use-this, no-underscore-dangle */
-import { UpdatingElement } from 'lit-element';
-
-import { overlays } from '../overlays/overlays';
-import { LocalOverlayController } from '../overlays/LocalOverlayController';
+import { UpdatingElement } from '@lion/core';
+import { overlays, LocalOverlayController } from '@lion/overlays';
 
 export class LionPopup extends UpdatingElement {
   static get properties() {

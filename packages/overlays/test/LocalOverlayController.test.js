@@ -4,13 +4,13 @@
 import { expect, fixture, html, aTimeout, defineCE, unsafeStatic } from '@open-wc/testing';
 
 import { keyUpOn } from '@polymer/iron-test-helpers/mock-interactions.js';
-import { LionLitElement } from '../../core/LionLitElement.js';
-import { keyCodes } from '../utils/key-codes.js';
-import { simulateTab } from '../utils/simulate-tab.js';
+import { LionLitElement } from '@lion/core/src/LionLitElement.js';
+import { keyCodes } from '../src/utils/key-codes.js';
+import { simulateTab } from '../src/utils/simulate-tab.js';
 
-import { LocalOverlayController } from '../LocalOverlayController.js';
+import { LocalOverlayController } from '../src/LocalOverlayController.js';
 
-import { overlays } from '../overlays';
+import { overlays } from '../src/overlays.js';
 
 describe('LocalOverlayController', () => {
   describe('templates', () => {
@@ -83,7 +83,6 @@ describe('LocalOverlayController', () => {
     it('will hide and show html nodes provided to overlay', async () => {
       const tagString = defineCE(
         class extends LionLitElement {
-          // eslint-disable-next-line class-methods-use-this
           render() {
             return html`
               <slot></slot>
@@ -485,8 +484,12 @@ describe('LocalOverlayController', () => {
       await aTimeout();
       const tag = defineCE(
         class extends HTMLElement {
-          connectedCallback() {
+          constructor() {
+            super();
             this.attachShadow({ mode: 'open' });
+          }
+
+          connectedCallback() {
             this.shadowRoot.innerHTML = '<div><button>click me</button></div>';
           }
         },

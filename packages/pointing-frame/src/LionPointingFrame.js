@@ -1,11 +1,10 @@
-import { html } from 'lit-html/lit-html.js';
-import { LionLitElement, css } from '../core/LionLitElement.js';
-import { SlotMixin } from '../core/SlotMixin.js';
-import { updatePosition } from '../overlays/utils/manage-position.js';
-import { getPlacement } from '../overlays/utils/get-position.js';
-import pointerSvg from '../../assets/icons/pointer.svg.js';
+import { html, css, SlotMixin } from '@lion/core';
+import { LionLitElement } from '../../core/src/LionLitElement.js';
+import { updatePosition } from '../../overlays/src/utils/manage-position.js';
+import { getPlacement } from '../../overlays/src/utils/get-position.js';
+import pointerSvg from '../../../assets/icons/pointer.svg.js';
 
-import '../icon/lion-icon.js';
+import '../../icon/lion-icon.js';
 
 export class LionPointingFrame extends SlotMixin(LionLitElement) {
   static get styles() {

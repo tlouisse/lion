@@ -1,5 +1,5 @@
-import { storiesOf, html } from '@open-wc/storybook';
-import { css } from 'lit-element';
+import { storiesOf, html } from '@open-wc/demoing-storybook';
+import { css } from '@lion/core';
 
 import '../../button/lion-button.js';
 import '../lion-pointing-frame.js';

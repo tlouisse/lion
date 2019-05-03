@@ -1,6 +1,4 @@
-/* eslint-disable no-underscore-dangle, class-methods-use-this, no-unused-expressions */
-
-import { render, html } from 'lit-html';
+import { render, html } from '@lion/core';
 import { managePosition, updatePosition } from './utils/manage-position.js';
 import { containFocus } from './utils/contain-focus.js';
 import { keyCodes } from './utils/key-codes.js';
@@ -20,7 +18,7 @@ export class LocalOverlayController {
     this.invoker = document.createElement('div');
     this.invoker.style.display = 'inline-block';
     this.content = document.createElement('div');
-    this.content.style.display = 'block';
+    this.content.style.display = 'inline-block';
     this.contentId = `overlay-content-${Math.random()
       .toString(36)
       .substr(2, 10)}`;
@@ -88,6 +86,7 @@ export class LocalOverlayController {
    * Toggles the overlay.
    */
   toggle() {
+    /* eslint-disable-next-line no-unused-expressions */
     this.isShown ? this.hide() : this.show();
   }
 

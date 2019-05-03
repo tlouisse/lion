@@ -1,6 +1,6 @@
-import { storiesOf, html, action } from '@open-wc/storybook';
-import { css } from 'lit-element';
-import { managePosition } from '../utils/manage-position.js';
+import { storiesOf, html, action } from '@open-wc/demoing-storybook';
+import { css } from '@lion/core';
+import { updatePosition } from '../src/utils/manage-position.js';
 
 const popupPlacementDemoStyle = css`
   .demo-container {
@@ -70,7 +70,7 @@ storiesOf('Overlay System|Local/Local Overlay Placement', module)
         return false;
       });
       action('position: ')(placement);
-      managePosition(element, target, { placement, position: 'absolute' });
+      updatePosition(element, target, { placement, position: 'absolute' });
     };
     return html`
       <style>
@@ -125,7 +125,7 @@ storiesOf('Overlay System|Local/Local Overlay Placement', module)
           placement = 'top left';
       }
       action('position: ')(placement);
-      managePosition(element, target, { placement, position: 'absolute' });
+      updatePosition(element, target, { placement, position: 'absolute' });
     };
     return html`
       <style>
