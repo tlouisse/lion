@@ -46,10 +46,6 @@ export class DayObject {
     return this.el.hasAttribute('today');
   }
 
-  get focused() {
-    return this.el.getAttribute('id') === 'focused-day-button';
-  }
-
   get central() {
     return this.el.central;
   }
@@ -134,7 +130,7 @@ export class CalendarObject {
   }
 
   focusedDayObj() {
-    return this.dayObjs().find(d => d.focused);
+    return this.dayObjs().find(d => d.el === this.el.shadowRoot.activeElement);
   }
 
   focusedDay() {

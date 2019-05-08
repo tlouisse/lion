@@ -25,7 +25,6 @@ export function dayTemplate(day, { weekdays, monthsLabels = defaultMonthLabels }
   return html`
     <td role="gridcell" class="calendar__day-cell">
       <button
-        id=${ifDefined(day.focused ? 'focused-day-button' : undefined)}
         class="calendar__day-button"
         tabindex=${day.central ? '0' : '-1'}
         aria-label=${`${dayNumber} ${monthName} ${year} ${weekdayName}`}

@@ -6,8 +6,8 @@ class TwoMonth extends LionCalendar {
     return [
       super.styles,
       css`
-        .calendar__day[previous-month] > button,
-        .calendar__day[next-month] > button {
+        .calendar__day-button[previous-month],
+        .calendar__day-button[next-month] {
           display: none;
         }
       `,
@@ -20,16 +20,16 @@ class TwoMonth extends LionCalendar {
     this.__pastMonths = 0;
   }
 
-  createData() {
-    return super.createData({ futureMonths: this.__futureMonths, pastMonths: this.__pastMonths });
+  __createData() {
+    return super.__createData({ futureMonths: this.__futureMonths, pastMonths: this.__pastMonths });
   }
 
-  modifyDate(modify, { type = 'Date', mode = 'future', dateType = 'centralDate' } = {}) {
+  __modifyDate(modify, { type = 'Date', mode = 'future', dateType = 'centralDate' } = {}) {
     let tmpDate = new Date(this.centralDate);
     tmpDate[`set${type}`](tmpDate[`get${type}`]() + modify);
 
-    if (!this.isEnabledDate(tmpDate)) {
-      tmpDate = this.findBestEnabledDateFor(tmpDate, { mode });
+    if (!this.__isEnabledDate(tmpDate)) {
+      tmpDate = this.__findBestEnabledDateFor(tmpDate, { mode });
     }
 
     if (mode === 'future' && tmpDate.getMonth() === this.centralDate.getMonth() + 1) {

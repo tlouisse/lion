@@ -1,7 +1,7 @@
 import { html } from '@lion/core';
 import { dayTemplate as defaultDayTemplate } from './dayTemplate.js';
 
-export function defaultDataTemplate(
+export function dataTemplate(
   data,
   { weekdaysShort, weekdays, monthsLabels, dayTemplate = defaultDayTemplate } = {},
 ) {

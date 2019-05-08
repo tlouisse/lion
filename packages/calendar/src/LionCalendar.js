@@ -1,12 +1,12 @@
 import { html, LitElement } from '@lion/core';
 import { localize, getWeekdayNames, getMonthNames, LocalizeMixin } from '@lion/localize';
 import { createMultipleMonth } from './utils/createMultipleMonth.js';
-import { defaultDataTemplate } from './utils/defaultDataTemplate.js';
+import { dayTemplate } from './utils/dayTemplate.js';
+import { dataTemplate } from './utils/dataTemplate.js';
 import { getFirstDayNextMonth } from './utils/getFirstDayNextMonth.js';
 import { getLastDayPreviousMonth } from './utils/getLastDayPreviousMonth.js';
 import { isSameDate } from './utils/isSameDate.js';
 import { calendarStyles } from './calendarStyles.js';
-import { dayTemplate } from './utils/dayTemplate.js';
 import './utils/differentKeyNamesShimIE.js';
 import { createDay } from './utils/createDay.js';
 
@@ -75,10 +75,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     ];
   }
 
-  static get styles() {
-    return [calendarStyles];
-  }
-
   static get properties() {
     return {
       /**
@@ -114,8 +110,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
        */
       weekdayHeaderNotation: { type: String },
 
-      // TODO: showWeekNumbers
-
       locale: { type: String },
 
       /**
@@ -141,16 +135,30 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.weekdayHeaderNotation = 'short';
     this.locale = localize.locale;
     this.centralDate = new Date();
-    /** @property {Date} */
     this.focusDate = null;
-    /** @property {Date} */
     this.hoverDate = null;
     this._firstUpdatedDone = false;
     this._connectedCallbackDone = false;
+  }
 
-    // TODO: what is prependZero?
-    // Answer: meant for prepending day number < 10. This should be fixed in dayProcessor
-    this.prependZero = true;
+  static get styles() {
+    return [calendarStyles];
+  }
+
+  render() {
+    return html`
+      <div class="calendar" id="calendar">
+        ${this.__renderHeader()} ${this.__renderData()}
+      </div>
+    `;
+  }
+
+  goToNextMonth() {
+    this.__modifyDate(1, { type: 'Month', mode: 'both' });
+  }
+
+  goToPreviousMonth() {
+    this.__modifyDate(-1, { type: 'Month', mode: 'both' });
   }
 
   connectedCallback() {
@@ -163,7 +171,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.centralDate = this.centralDate;
 
     // setup data for initial render
-    this._data = this.createData();
+    this._data = this.__createData();
   }
 
   disconnectedCallback() {
@@ -183,65 +191,11 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.__addEventForKeyboardNavigation();
   }
 
-  createData(options) {
-    const data = createMultipleMonth(this.centralDate, {
-      firstDayOfWeek: this.firstDayOfWeek,
-      ...options,
-    });
-    data.months.forEach((month, monthi) => {
-      month.weeks.forEach((week, weeki) => {
-        week.days.forEach((day, dayi) => {
-          // eslint-disable-next-line no-unused-vars
-          const currentDay = data.months[monthi].weeks[weeki].days[dayi];
-          const currentMonth = data.months[monthi].weeks[0].days[6].date;
-          data.months[monthi].weeks[weeki].days[dayi] = this._coreDayProcessor(currentDay, {
-            currentMonth,
-          });
-        });
-      });
-    });
-
-    this._nextMonthDisabled = this.maxDate && getFirstDayNextMonth(this.centralDate) > this.maxDate;
-    this._previousMonthDisabled =
-      this.minDate && getLastDayPreviousMonth(this.centralDate) < this.minDate;
-
-    return data;
-  }
-
-  // TODO: rename to _customDayPreprocessor. Confusing to give default preprocessor and custom
-  // similar names
-  _coreDayProcessor(_day, { currentMonth = false } = {}) {
-    const day = createDay(new Date(_day.date), _day);
-    const today = new Date();
-    day.central = isSameDate(day.date, this.centralDate);
-    day.previousMonth = currentMonth && day.date.getMonth() < currentMonth.getMonth();
-    day.currentMonth = currentMonth && day.date.getMonth() === currentMonth.getMonth();
-    day.nextMonth = currentMonth && day.date.getMonth() > currentMonth.getMonth();
-    day.selected = this.selectedDate ? isSameDate(day.date, this.selectedDate) : false;
-    day.focused = this.focusDate ? isSameDate(day.date, this.focusDate) : false;
-    day.past = day.date < today;
-    day.today = isSameDate(day.date, today);
-    day.future = day.date > today;
-    day.hovered = this.hoverDate ? isSameDate(day.date, this.hoverDate) : false;
-    // call enabledDays
-    day.disabled = !this.enabledDates(day.date); // Math.random() > 0.5;
-
-    if (this.minDate && day.date < this.minDate) {
-      day.disabled = true;
+  updated(changed) {
+    if (this._firstUpdatedDone === true && changed.has('focusDate') && this.focusDate) {
+      const button = this.shadowRoot.querySelector('button[tabindex="0"]');
+      button.focus();
     }
-    if (this.maxDate && day.date > this.maxDate) {
-      day.disabled = true;
-    }
-
-    return day;
-  }
-
-  _nextButtonClick() {
-    this.modifyDate(1, { type: 'Month', mode: 'both' });
-  }
-
-  _previousButtonClick() {
-    this.modifyDate(-1, { type: 'Month', mode: 'both' });
   }
 
   /**
@@ -260,147 +214,41 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     ];
 
     const map = {
-      selectedDate: () => this._selectedDateChanged(),
-      centralDate: () => this._centralDateChanged(),
-      enabledDates: () => this._enabledDatesChanged(),
-      focusDate: () => this._focusDateChanged(),
+      selectedDate: () => this.__selectedDateChanged(),
+      centralDate: () => this.__centralDateChanged(),
+      enabledDates: () => this.__enabledDatesChanged(),
+      focusDate: () => this.__focusDateChanged(),
     };
     if (map[name]) {
       map[name]();
     }
 
     if (updateDataOn.includes(name) && this._connectedCallbackDone) {
-      this._data = this.createData();
+      this._data = this.__createData();
     }
   }
 
-  _enabledDatesChanged() {
-    // make sure centralDate is still valid
-    this._centralDateChanged();
-  }
-
-  _selectedDateChanged() {
-    this.centralDate = this.selectedDate;
-    // TODO: composed ?
-    this.dispatchEvent(new CustomEvent('selected-date-changed', { bubbles: true }));
-  }
-
-  _centralDateChanged() {
-    if (this._connectedCallbackDone && !this.isEnabledDate(this.centralDate)) {
-      this.centralDate = this.findBestEnabledDateFor(this.centralDate);
-    }
-  }
-
-  _focusDateChanged() {
-    if (this.focusDate) {
-      this.centralDate = this.focusDate;
-    }
-  }
-
-  updated(changed) {
-    if (this._firstUpdatedDone === true && changed.has('focusDate') && this.focusDate) {
-      const button = this.shadowRoot.getElementById('focused-day-button');
-      button.focus();
-    }
-  }
-
-  // TODO: Why public? See no reason to override...
-  isEnabledDate(date) {
-    const processedDay = this._coreDayProcessor({ date });
-    return !processedDay.disabled;
-  }
-
-  /**
-   * @param {Date} date
-   * @param {Object} opts
-   * @param {String} [opts.mode] Find best date in `future/past/both`
-   */
-  findBestEnabledDateFor(date, { mode = 'both' } = {}) {
-    const futureDate =
-      this.minDate && this.minDate > date ? new Date(this.minDate) : new Date(date);
-    const pastDate = this.maxDate && this.maxDate < date ? new Date(this.maxDate) : new Date(date);
-
-    let i = 0;
-    do {
-      i += 1;
-      if (mode === 'both' || mode === 'future') {
-        futureDate.setDate(futureDate.getDate() + 1);
-        if (this.isEnabledDate(futureDate)) {
-          return futureDate;
-        }
-      }
-      if (mode === 'both' || mode === 'past') {
-        pastDate.setDate(pastDate.getDate() - 1);
-        if (this.isEnabledDate(pastDate)) {
-          return pastDate;
-        }
-      }
-    } while (i < 750); // 2 years+
-
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    throw new Error(
-      `Could not find a selectable date within +/- 750 day for ${year}/${month}/${day}`,
-    );
-  }
-
-  headerTemplate() {
+  __renderHeader() {
     const month = getMonthNames({ locale: this.__getLocale() })[this.centralDate.getMonth()];
     const year = this.centralDate.getFullYear();
     return html`
-      <div id="calendar__header" class="calendar__header">
-        ${this.previousButtonTemplate()}
+      <div class="calendar__header" id="calendar__header">
+        ${this.__renderPreviousButton()}
         <h2
-          id="month_and_year"
           class="calendar__month-heading"
+          id="month_and_year"
           aria-live="polite"
           aria-atomic="true"
         >
           ${month} ${year}
         </h2>
-        ${this.nextButtonTemplate()}
+        ${this.__renderNextButton()}
       </div>
     `;
   }
 
-  previousButtonTemplate() {
-    return html`
-      <button
-        class="calendar__prev-month-button"
-        aria-label=${this.msgLit('lion-calendar:previousMonth')}
-        title=${this.msgLit('lion-calendar:previousMonth')}
-        @click=${this._previousButtonClick}
-        ?disabled=${this._previousMonthDisabled}
-      >
-        &lt;
-      </button>
-    `;
-  }
-
-  nextButtonTemplate() {
-    return html`
-      <button
-        class="calendar__next-month-button"
-        aria-label=${this.msgLit('lion-calendar:nextMonth')}
-        title=${this.msgLit('lion-calendar:nextMonth')}
-        @click=${this._nextButtonClick}
-        ?disabled=${this._nextMonthDisabled}
-      >
-        &gt;
-      </button>
-    `;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  dayTemplate(...params) {
-    return dayTemplate(...params);
-  }
-
-  // TODO: why externaluze render fns? Goal of splitting up is making them
-  // overridable for sub classers. Also, same names is confusing
-  dataTemplate() {
-    return defaultDataTemplate(this._data, {
+  __renderData() {
+    return dataTemplate(this._data, {
       monthsLabels: getMonthNames({ locale: this.__getLocale() }),
       weekdaysShort: getWeekdayNames({
         locale: this.__getLocale(),
@@ -412,16 +260,146 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
         style: 'long',
         firstDayOfWeek: this.firstDayOfWeek,
       }),
-      dayTemplate: this.dayTemplate,
+      dayTemplate,
     });
   }
 
-  render() {
+  __renderPreviousButton() {
     return html`
-      <div id="calendar" class="calendar">
-        ${this.headerTemplate()} ${this.dataTemplate()}
-      </div>
+      <button
+        class="calendar__prev-month-button"
+        aria-label=${this.msgLit('lion-calendar:previousMonth')}
+        title=${this.msgLit('lion-calendar:previousMonth')}
+        @click=${this.goToPreviousMonth}
+        ?disabled=${this._previousMonthDisabled}
+      >
+        &lt;
+      </button>
     `;
+  }
+
+  __renderNextButton() {
+    return html`
+      <button
+        class="calendar__next-month-button"
+        aria-label=${this.msgLit('lion-calendar:nextMonth')}
+        title=${this.msgLit('lion-calendar:nextMonth')}
+        @click=${this.goToNextMonth}
+        ?disabled=${this._nextMonthDisabled}
+      >
+        &gt;
+      </button>
+    `;
+  }
+
+  __coreDayPreprocessor(_day, { currentMonth = false } = {}) {
+    const day = createDay(new Date(_day.date), _day);
+    const today = new Date();
+    day.central = isSameDate(day.date, this.centralDate);
+    day.previousMonth = currentMonth && day.date.getMonth() < currentMonth.getMonth();
+    day.currentMonth = currentMonth && day.date.getMonth() === currentMonth.getMonth();
+    day.nextMonth = currentMonth && day.date.getMonth() > currentMonth.getMonth();
+    day.selected = this.selectedDate ? isSameDate(day.date, this.selectedDate) : false;
+    day.past = day.date < today;
+    day.today = isSameDate(day.date, today);
+    day.future = day.date > today;
+    day.disabled = !this.enabledDates(day.date);
+
+    if (this.minDate && day.date < this.minDate) {
+      day.disabled = true;
+    }
+    if (this.maxDate && day.date > this.maxDate) {
+      day.disabled = true;
+    }
+
+    return this.dayPreprocessor(day);
+  }
+
+  __createData(options) {
+    const data = createMultipleMonth(this.centralDate, {
+      firstDayOfWeek: this.firstDayOfWeek,
+      ...options,
+    });
+    data.months.forEach((month, monthi) => {
+      month.weeks.forEach((week, weeki) => {
+        week.days.forEach((day, dayi) => {
+          // eslint-disable-next-line no-unused-vars
+          const currentDay = data.months[monthi].weeks[weeki].days[dayi];
+          const currentMonth = data.months[monthi].weeks[0].days[6].date;
+          data.months[monthi].weeks[weeki].days[dayi] = this.__coreDayPreprocessor(currentDay, {
+            currentMonth,
+          });
+        });
+      });
+    });
+
+    this._nextMonthDisabled = this.maxDate && getFirstDayNextMonth(this.centralDate) > this.maxDate;
+    this._previousMonthDisabled =
+      this.minDate && getLastDayPreviousMonth(this.centralDate) < this.minDate;
+
+    return data;
+  }
+
+  __enabledDatesChanged() {
+    // TODO: make sure centralDate is still valid
+    this.__centralDateChanged();
+  }
+
+  __selectedDateChanged() {
+    this.centralDate = this.selectedDate;
+    this.dispatchEvent(new CustomEvent('selected-date-changed'));
+  }
+
+  __centralDateChanged() {
+    if (this._connectedCallbackDone && !this.__isEnabledDate(this.centralDate)) {
+      this.centralDate = this.__findBestEnabledDateFor(this.centralDate);
+    }
+  }
+
+  __focusDateChanged() {
+    if (this.focusDate) {
+      this.centralDate = this.focusDate;
+    }
+  }
+
+  __isEnabledDate(date) {
+    const processedDay = this.__coreDayPreprocessor({ date });
+    return !processedDay.disabled;
+  }
+
+  /**
+   * @param {Date} date
+   * @param {Object} opts
+   * @param {String} [opts.mode] Find best date in `future/past/both`
+   */
+  __findBestEnabledDateFor(date, { mode = 'both' } = {}) {
+    const futureDate =
+      this.minDate && this.minDate > date ? new Date(this.minDate) : new Date(date);
+    const pastDate = this.maxDate && this.maxDate < date ? new Date(this.maxDate) : new Date(date);
+
+    let i = 0;
+    do {
+      i += 1;
+      if (mode === 'both' || mode === 'future') {
+        futureDate.setDate(futureDate.getDate() + 1);
+        if (this.__isEnabledDate(futureDate)) {
+          return futureDate;
+        }
+      }
+      if (mode === 'both' || mode === 'past') {
+        pastDate.setDate(pastDate.getDate() - 1);
+        if (this.__isEnabledDate(pastDate)) {
+          return pastDate;
+        }
+      }
+    } while (i < 750); // 2 years+
+
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    throw new Error(
+      `Could not find a selectable date within +/- 750 day for ${year}/${month}/${day}`,
+    );
   }
 
   __addEventDelegationForHoverDate() {
@@ -473,12 +451,12 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this._days.removeEventListener('keydown', this.__keyNavigationEvent);
   }
 
-  modifyDate(modify, { type = 'Date', mode = 'future', dateType = 'centralDate' } = {}) {
+  __modifyDate(modify, { type = 'Date', mode = 'future', dateType = 'centralDate' } = {}) {
     let tmpDate = new Date(this.centralDate);
     tmpDate[`set${type}`](tmpDate[`get${type}`]() + modify);
 
-    if (!this.isEnabledDate(tmpDate)) {
-      tmpDate = this.findBestEnabledDateFor(tmpDate, { mode });
+    if (!this.__isEnabledDate(tmpDate)) {
+      tmpDate = this.__findBestEnabledDateFor(tmpDate, { mode });
     }
 
     this[dateType] = tmpDate;
@@ -488,29 +466,29 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.__keyNavigationEvent = this._days.addEventListener('keydown', ev => {
       switch (ev.key) {
         case 'ArrowUp':
-          this.modifyDate(-7, { dateType: 'focusDate', mode: 'past' });
+          this.__modifyDate(-7, { dateType: 'focusDate', mode: 'past' });
           break;
         case 'ArrowDown':
-          this.modifyDate(7, { dateType: 'focusDate' });
+          this.__modifyDate(7, { dateType: 'focusDate' });
           break;
         case 'ArrowLeft':
-          this.modifyDate(-1, { dateType: 'focusDate', mode: 'past' });
+          this.__modifyDate(-1, { dateType: 'focusDate', mode: 'past' });
           break;
         case 'ArrowRight':
-          this.modifyDate(1, { dateType: 'focusDate' });
+          this.__modifyDate(1, { dateType: 'focusDate' });
           break;
         case 'PageDown':
           if (ev.altKey === true) {
-            this.modifyDate(1, { dateType: 'focusDate', type: 'FullYear' });
+            this.__modifyDate(1, { dateType: 'focusDate', type: 'FullYear' });
           } else {
-            this.modifyDate(1, { dateType: 'focusDate', type: 'Month' });
+            this.__modifyDate(1, { dateType: 'focusDate', type: 'Month' });
           }
           break;
         case 'PageUp':
           if (ev.altKey === true) {
-            this.modifyDate(-1, { dateType: 'focusDate', type: 'FullYear', mode: 'past' });
+            this.__modifyDate(-1, { dateType: 'focusDate', type: 'FullYear', mode: 'past' });
           } else {
-            this.modifyDate(-1, { dateType: 'focusDate', type: 'Month', mode: 'past' });
+            this.__modifyDate(-1, { dateType: 'focusDate', type: 'Month', mode: 'past' });
           }
           break;
         case 'Tab':
