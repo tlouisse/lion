@@ -170,12 +170,15 @@ export class CalendarObject {
   /**
    * States
    */
+  get activeMonthAndYear() {
+    return this.monthHeading().textContent.trim();
+  }
 
   get activeMonth() {
-    return this.monthHeading().textContent.split(' ')[0];
+    return this.activeMonthAndYear.split(' ')[0];
   }
 
   get activeYear() {
-    return this.monthHeading().textContent.split(' ')[1];
+    return this.activeMonthAndYear.split(' ')[1];
   }
 }

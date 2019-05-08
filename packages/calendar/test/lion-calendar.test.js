@@ -15,16 +15,6 @@ describe('<lion-calendar>', () => {
     localizeTearDown();
   });
 
-  it('gets locale by default from document', async () => {
-    const el = await fixture(
-      html`
-        <lion-calendar></lion-calendar>
-      `,
-    );
-    expect(el.locale).to.equal('en-GB');
-    expect(el.locale).to.equal(localize.locale);
-  });
-
   describe('Structure', () => {
     // already tested via utils tests
     it.skip('implements the calendar CSS Module for HTML structure', async () => {
@@ -786,6 +776,26 @@ describe('<lion-calendar>', () => {
   });
 
   describe('Localization', () => {
+    it('supports custom locale with a fallback to a global locale', async () => {
+      const el = await fixture(html`
+        <lion-calendar .selectedDate="${new Date('2019/12/20')}"></lion-calendar>
+      `);
+      const elObj = new CalendarObject(el);
+      expect(elObj.activeMonth).to.equal('December');
+
+      el.locale = 'fr-FR';
+      await el.updateComplete;
+      expect(elObj.activeMonth).to.equal('décembre');
+
+      localize.locale = 'cs-CZ';
+      await el.updateComplete;
+      expect(elObj.activeMonth).to.equal('décembre');
+
+      el.locale = undefined;
+      await el.updateComplete;
+      expect(elObj.activeMonth).to.equal('prosinec');
+    });
+
     it('displays the right translations according to locale', async () => {
       const el = await fixture(html`
         <lion-calendar></lion-calendar>
