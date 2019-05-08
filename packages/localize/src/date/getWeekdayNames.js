@@ -20,7 +20,7 @@ function getCachedWeekdayNames(locale) {
     weekdays = weekdayNamesCache[locale][style];
     const formatter = new Intl.DateTimeFormat(locale, { weekday: style });
 
-    const date = new Date('2019-04-07'); // start from Sunday
+    const date = new Date('2019/04/07'); // start from Sunday
     for (let i = 0; i < 7; i += 1) {
       const weekday = formatter.format(date);
       const normalizedWeekday = normalizeDate(weekday);
