@@ -140,8 +140,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.firstDayOfWeek = 0;
     this.weekdayHeaderNotation = 'short';
     this.locale = localize.locale;
-    this.selectedDate = new Date();
-    this.centralDate = this.selectedDate;
+    this.centralDate = new Date();
     /** @property {Date} */
     this.focusDate = null;
     /** @property {Date} */

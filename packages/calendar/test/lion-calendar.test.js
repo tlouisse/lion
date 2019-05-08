@@ -78,6 +78,18 @@ describe('<lion-calendar>', () => {
       expect(elObj.day(15).selected).to.equal(false);
     });
 
+    it('does not set "selectedDate" by default', async () => {
+      const selectedDateChangedSpy = sinon.spy();
+      const el = await fixture(html`
+        <lion-calendar @selected-date-changed=${selectedDateChangedSpy}></lion-calendar>
+      `);
+      const elObj = new CalendarObject(el);
+      const today = new Date();
+      expect(selectedDateChangedSpy.called).to.equal(false);
+      expect(el.selectedDate).to.equal(undefined);
+      expect(elObj.day(today.getDate()).selected).to.equal(false);
+    });
+
     it('sends event "selected-date-changed" on change of selectedDate property', async () => {
       const mySpy = sinon.spy();
       const el = await fixture(html`
