@@ -8,11 +8,19 @@ import { localizeTearDown } from '@lion/localize/test-helpers.js';
 import { CalendarObject, DayObject } from './test-utils.js';
 import './keyboardEventShimIE.js';
 
+import { isSameDate } from '../src/utils/isSameDate';
 import '../lion-calendar.js';
 
 describe('<lion-calendar>', () => {
+  let clock;
+
   beforeEach(() => {
+    clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
     localizeTearDown();
+  });
+
+  afterEach(() => {
+    clock.restore();
   });
 
   describe('Structure', () => {
@@ -267,6 +275,44 @@ describe('<lion-calendar>', () => {
         expect(elObj.monthHeading()).lightDom.to.equal('December 2000');
       });
 
+      it('handles switch to prev month when dates are disabled', async () => {
+        const el = await fixture(html`
+          <lion-calendar .centralDate="${new Date('2000/12/12')}"></lion-calendar>
+        `);
+        const elObj = new CalendarObject(el);
+        expect(elObj.monthHeading()).lightDom.to.equal('December 2000');
+
+        el.minDate = new Date('2000/11/20');
+        await el.updateComplete;
+
+        expect(elObj.prevMonthButton().hasAttribute('disabled')).to.equal(false);
+        expect(isSameDate(el.centralDate, new Date('2000/12/12'))).to.be.true;
+
+        elObj.prevMonthButton().click();
+        await el.updateComplete;
+        expect(elObj.activeMonthAndYear).to.equal('November 2000');
+        expect(isSameDate(el.centralDate, new Date('2000/11/21'))).to.be.true;
+      });
+
+      it('handles switch to next month when dates are disabled', async () => {
+        const el = await fixture(html`
+          <lion-calendar .centralDate="${new Date('2000/12/12')}"></lion-calendar>
+        `);
+        const elObj = new CalendarObject(el);
+        expect(elObj.monthHeading()).lightDom.to.equal('December 2000');
+
+        el.maxDate = new Date('2001/01/10');
+        await el.updateComplete;
+
+        expect(elObj.nextMonthButton().hasAttribute('disabled')).to.equal(false);
+        expect(isSameDate(el.centralDate, new Date('2000/12/12'))).to.be.true;
+
+        elObj.nextMonthButton().click();
+        await el.updateComplete;
+        expect(elObj.monthHeading()).lightDom.to.equal('January 2001');
+        expect(isSameDate(el.centralDate, new Date('2001/01/09'))).to.be.true;
+      });
+
       describe('Accessibility', () => {
         it('navigate buttons have a aria-label and title attribute with accessible label', async () => {
           const el = await fixture(html`
@@ -303,8 +349,6 @@ describe('<lion-calendar>', () => {
 
     describe('Day view', () => {
       it('adds "today" attribute if date is today', async () => {
-        const clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
-
         const el = await fixture(
           html`
             <lion-calendar .selectedDate="${new Date('2000/12/12')}"></lion-calendar>
@@ -314,8 +358,6 @@ describe('<lion-calendar>', () => {
         expect(elObj.day(15).today).to.be.true;
 
         expect(elObj.checkForAllDays(d => d.today, [15])).to.equal(true);
-
-        clock.restore();
       });
 
       it('adds "selected" modifier to selected date', async () => {
@@ -573,19 +615,14 @@ describe('<lion-calendar>', () => {
         });
 
         it('is today if no selected date is available', async () => {
-          const clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
-
           const el = await fixture(html`
             <lion-calendar></lion-calendar>
           `);
           const elObj = new CalendarObject(el);
           expect(elObj.centralDayObj().monthday).to.equal(15);
-          clock.restore();
         });
 
         it('is on day closest to today, if today (and surrounding dates) is/are disabled', async () => {
-          const clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
-
           const el = await fixture(html`
             <lion-calendar .enabledDates="${d => d.getDate() > 16}"></lion-calendar>
           `);
@@ -595,45 +632,44 @@ describe('<lion-calendar>', () => {
           el.enabledDates = d => d.getDate() < 12;
           await el.updateComplete;
           expect(elObj.centralDayObj().monthday).to.equal(11);
-
-          clock.restore();
         });
 
         it('future dates take precedence over past dates when "distance" between dates is equal', async () => {
-          const clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
-
           const el = await fixture(html`
             <lion-calendar .enabledDates="${d => d.getDate() !== 15}"></lion-calendar>
           `);
           const elObj = new CalendarObject(el);
           expect(elObj.centralDayObj().monthday).to.equal(16);
-
-          clock.restore();
         });
 
-        it('it will search 3650 days in the future and past', async () => {
-          const clock = sinon.useFakeTimers({ now: 976838400000 }); // new Date('2000/12/15')
-
+        it('will search 750 days in the past', async () => {
           const el = await fixture(html`
-            <lion-calendar .enabledDates="${d => d.getFullYear() >= 2010}"></lion-calendar>
+            <lion-calendar .enabledDates="${d => d.getFullYear() <= 1998}"></lion-calendar>
           `);
-          expect(el.centralDate.getFullYear()).to.equal(2010);
+          expect(el.centralDate.getFullYear()).to.equal(1998);
+          expect(el.centralDate.getMonth()).to.equal(11);
+          expect(el.centralDate.getDate()).to.equal(31);
+        });
+
+        it('will search 750 days in the future', async () => {
+          const el = await fixture(html`
+            <lion-calendar .enabledDates="${d => d.getFullYear() >= 2002}"></lion-calendar>
+          `);
+          expect(el.centralDate.getFullYear()).to.equal(2002);
           expect(el.centralDate.getMonth()).to.equal(0);
           expect(el.centralDate.getDate()).to.equal(1);
-
-          clock.restore();
         });
 
-        it('throws if no selectable date can be found within +/- 3650 days', async () => {
+        it('throws if no selectable date can be found within +/- 750 days', async () => {
           const el = await fixture(html`
-            <lion-calendar .enabledDates="${d => d.getFullYear() >= 2010}"></lion-calendar>
+            <lion-calendar .enabledDates="${d => d.getFullYear() >= 2002}"></lion-calendar>
           `);
           try {
             el.centralDate = new Date('1900/01/01');
           } catch (e) {
             expect(e).to.be.instanceof(Error);
             expect(e.message).to.equal(
-              'Could not find a selectable date within +/- 3650 day for 1900/1/1',
+              'Could not find a selectable date within +/- 750 day for 1900/1/1',
             );
             return;
           }

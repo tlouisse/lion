@@ -237,11 +237,11 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
   }
 
   _nextButtonClick() {
-    this.modifyDate(1, { type: 'Month' });
+    this.modifyDate(1, { type: 'Month', mode: 'both' });
   }
 
   _previousButtonClick() {
-    this.modifyDate(-1, { type: 'Month' });
+    this.modifyDate(-1, { type: 'Month', mode: 'both' });
   }
 
   /**
@@ -335,13 +335,13 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
           return pastDate;
         }
       }
-    } while (i < 3650);
+    } while (i < 750); // 2 years+
 
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
     throw new Error(
-      `Could not find a selectable date within +/- 3650 day for ${year}/${month}/${day}`,
+      `Could not find a selectable date within +/- 750 day for ${year}/${month}/${day}`,
     );
   }
 
