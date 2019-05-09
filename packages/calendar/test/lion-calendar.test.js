@@ -181,12 +181,6 @@ describe('<lion-calendar>', () => {
         });
       });
     });
-
-    /**
-     * Nice to have for feature releases:
-     * - intialfocusDate: the focused date on opening the calendar
-     * - helper fns for disableWeekends and disableHolidays
-     */
   });
 
   describe('Calendar header (month navigation)', () => {
