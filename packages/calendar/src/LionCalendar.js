@@ -117,7 +117,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
        */
       focusDate: { type: Date },
       centralDate: { type: Date },
-      hoverDate: { type: Date },
 
       _data: { type: Object },
     };
@@ -136,7 +135,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.locale = localize.locale;
     this.centralDate = new Date();
     this.focusDate = null;
-    this.hoverDate = null;
     this._firstUpdatedDone = false;
     this._connectedCallbackDone = false;
   }
@@ -186,7 +184,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this._firstUpdatedDone = true;
     this._days = this.shadowRoot.getElementById('content');
 
-    this.__addEventDelegationForHoverDate();
     this.__addEventDelegationForClickDate();
     this.__addEventForKeyboardNavigation();
   }
@@ -206,7 +203,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     const updateDataOn = [
       'centralDate',
       'focusDate',
-      'hoverDate',
       'minDate',
       'maxDate',
       'selectedDate',
@@ -414,37 +410,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     );
   }
 
-  __addEventDelegationForHoverDate() {
-    let timeout;
-    const isDayOrButton = el =>
-      el.classList.contains('calendar__day') || el.classList.contains('calendar__day-button');
-
-    this.__hoverDateDelegation = this._days.addEventListener('mouseover', ev => {
-      if (!timeout) {
-        // if we don't pass on the parameters to setTimeout then ev.composedPath() becomes empty
-        timeout = setTimeout(
-          (el, that) => {
-            if (isDayOrButton(el)) {
-              that.hoverDate = el.date; // eslint-disable-line no-param-reassign
-            } else {
-              that.hoverDate = null; // eslint-disable-line no-param-reassign
-            }
-            timeout = null;
-          },
-          15,
-          ev.composedPath()[0],
-          this,
-        );
-      }
-    });
-
-    this.__leaveDaysEvent = this._days.addEventListener('mouseleave', () => {
-      setTimeout(() => {
-        this.hoverDate = null;
-      }, 16); // set after debounced event
-    });
-  }
-
   __addEventDelegationForClickDate() {
     const isDayOrButton = el =>
       el.classList.contains('calendar__day') || el.classList.contains('calendar__day-button');
@@ -457,8 +422,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
   }
 
   __removeEventDelegations() {
-    this._days.removeEventListener('mouseover', this.__hoverDateDelegation);
-    this._days.removeEventListener('mouseleave', this.__leaveDaysEvent);
     this._days.removeEventListener('click', this.__clickDateDelegation);
     this._days.removeEventListener('keydown', this.__keyNavigationEvent);
   }

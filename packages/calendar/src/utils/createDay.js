@@ -12,7 +12,6 @@ export function createDay(
     past = false,
     today = false,
     future = false,
-    hovered = false,
   } = {},
 ) {
   return {
@@ -28,6 +27,5 @@ export function createDay(
     past,
     today,
     future,
-    hovered,
   };
 }
