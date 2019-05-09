@@ -346,7 +346,9 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
   }
 
   __selectedDateChanged() {
-    this.centralDate = this.selectedDate;
+    if (this.selectedDate) {
+      this.centralDate = this.selectedDate;
+    }
     this.dispatchEvent(new CustomEvent('selected-date-changed'));
   }
 
