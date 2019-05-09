@@ -87,13 +87,11 @@ describe('<lion-calendar>', () => {
     });
 
     it('does not set "selectedDate" by default', async () => {
-      const selectedDateChangedSpy = sinon.spy();
       const el = await fixture(html`
-        <lion-calendar @selected-date-changed=${selectedDateChangedSpy}></lion-calendar>
+        <lion-calendar></lion-calendar>
       `);
       const elObj = new CalendarObject(el);
       const today = new Date();
-      expect(selectedDateChangedSpy.called).to.equal(false);
       expect(el.selectedDate).to.equal(undefined);
       expect(elObj.day(today.getDate()).selected).to.equal(false);
     });
@@ -108,14 +106,22 @@ describe('<lion-calendar>', () => {
       expect(elObj.selectedDayObj()).to.be.undefined;
     });
 
-    it('sends event "selected-date-changed" on change of selectedDate property', async () => {
-      const mySpy = sinon.spy();
+    it('sends event "user-selected-date-changed" when user selects a date', async () => {
+      const dateChangedSpy = sinon.spy();
       const el = await fixture(html`
-        <lion-calendar @selected-date-changed="${() => mySpy()}"></lion-calendar>
+        <lion-calendar
+          .selectedDate="${new Date('2000/12/12')}"
+          @user-selected-date-changed="${dateChangedSpy}"
+        ></lion-calendar>
       `);
-      expect(mySpy.called).to.equal(false);
-      el.selectedDate = new Date('2000/12/12');
-      expect(mySpy.called).to.equal(true);
+      const elObj = new CalendarObject(el);
+      expect(dateChangedSpy.called).to.equal(false);
+      elObj.day(15).click();
+      await el.updateComplete;
+      expect(dateChangedSpy.calledOnce).to.equal(true);
+      expect(
+        isSameDate(dateChangedSpy.args[0][0].detail.selectedDate, new Date('2000/12/15')),
+      ).to.equal(true);
     });
 
     describe('Enabled Dates', () => {

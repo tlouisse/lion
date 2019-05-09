@@ -349,7 +349,17 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     if (this.selectedDate) {
       this.centralDate = this.selectedDate;
     }
-    this.dispatchEvent(new CustomEvent('selected-date-changed'));
+  }
+
+  __dateSelectedByUser(selectedDate) {
+    this.selectedDate = selectedDate;
+    this.dispatchEvent(
+      new CustomEvent('user-selected-date-changed', {
+        detail: {
+          selectedDate,
+        },
+      }),
+    );
   }
 
   __centralDateChanged() {
@@ -441,7 +451,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.__clickDateDelegation = this._days.addEventListener('click', ev => {
       const el = ev.composedPath()[0];
       if (isDayOrButton(el)) {
-        this.selectedDate = el.date;
+        this.__dateSelectedByUser(el.date);
       }
     });
   }
