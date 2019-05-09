@@ -63,7 +63,7 @@ export const calendarStyles = css`
   }
 
   .calendar__day-button:hover {
-    outline: 1px solid green;
+    border: 1px solid green;
   }
 
   .calendar__day-button[disabled] {
