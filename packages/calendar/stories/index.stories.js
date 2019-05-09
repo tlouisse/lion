@@ -56,7 +56,7 @@ storiesOf('Calendar|Standalone', module)
     `;
   })
   .add(
-    'enabledDates',
+    'disabledDates',
     () => html`
       <style>
         ${calendarDemoStyle}
@@ -64,7 +64,7 @@ storiesOf('Calendar|Standalone', module)
 
       <lion-calendar
         class="demo-calendar"
-        .enabledDates=${day => day.getDay() !== 6 && day.getDay() !== 0}
+        .disabledDates=${day => day.getDay() === 6 || day.getDay() === 0}
       ></lion-calendar>
     `,
   )
@@ -78,7 +78,7 @@ storiesOf('Calendar|Standalone', module)
 
       <lion-calendar
         class="demo-calendar"
-        .enabledDates=${day => day.getDay() !== 6 && day.getDay() !== 0}
+        .disabledDates=${day => day.getDay() === 6 || day.getDay() === 0}
         .minDate="${new Date()}"
         .maxDate="${maxDate}"
       ></lion-calendar>

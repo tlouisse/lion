@@ -91,9 +91,9 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
        */
       maxDate: { type: Date },
       /**
-       * Enabled dates function that is applied for every monthday within the active view
+       * Disabled dates function that is applied for every month day within the active view
        */
-      enabledDates: { type: Function },
+      disabledDates: { type: Function },
 
       /**
        * Weekday that will be displayed in first column of month grid.
@@ -129,7 +129,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.minDate = null;
     this.maxDate = null;
     this.dayPreprocessor = day => day;
-    this.enabledDates = () => true;
+    this.disabledDates = () => false;
     this.firstDayOfWeek = 0;
     this.weekdayHeaderNotation = 'short';
     this.locale = localize.locale;
@@ -165,7 +165,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
 
     this._connectedCallbackDone = true;
 
-    // calculate correct centralDate based on user provided enabledDates
+    // calculate correct centralDate based on user provided disabledDates
     this.centralDate = this.centralDate;
 
     // setup data for initial render
@@ -206,13 +206,13 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
       'minDate',
       'maxDate',
       'selectedDate',
-      'enabledDates',
+      'disabledDates',
     ];
 
     const map = {
       selectedDate: () => this.__selectedDateChanged(),
       centralDate: () => this.__centralDateChanged(),
-      enabledDates: () => this.__enabledDatesChanged(),
+      disabledDates: () => this.__disabledDatesChanged(),
       focusedDate: () => this.__focusedDateChanged(),
     };
     if (map[name]) {
@@ -299,7 +299,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     day.past = day.date < today;
     day.today = isSameDate(day.date, today);
     day.future = day.date > today;
-    day.disabled = !this.enabledDates(day.date);
+    day.disabled = this.disabledDates(day.date);
 
     if (this.minDate && day.date < this.minDate) {
       day.disabled = true;
@@ -336,7 +336,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     return data;
   }
 
-  __enabledDatesChanged() {
+  __disabledDatesChanged() {
     // TODO: make sure centralDate is still valid
     this.__centralDateChanged();
   }

@@ -11,7 +11,8 @@ It is used inside the [input-datepicker](../input-datepicker/)
 - **selectedDate**: the selected date
 - **minDate**: disable all dates before a given date
 - **maxDate**: disable all dates after a given date
-- **enabledDates**: enable a set of dates
+- **disabledDates**: disable some dates within an available range
+- **firstDayOfWeek**: typically Sunday (default) or Monday
 
 ## How to use
 
@@ -29,9 +30,9 @@ import '@lion/calendar/lion-calendar.js';
 
 ```html
 <lion-calendar
-  .enabledDates=${day => day.getDay() !== 6 && day.getDay() !== 0}
   .minDate="${new Date()}"
   .maxDate="${new Date('2019/12/09')}"
+  .disabledDates=${day => day.getDay() === 6 || day.getDay() === 0}
 >
 </lion-calendar>
 ```
