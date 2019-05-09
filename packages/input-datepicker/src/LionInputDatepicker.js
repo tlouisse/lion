@@ -31,7 +31,7 @@ export class LionInputDatepicker extends LionInputDate {
        * The title to be added on top of the calendar overlay
        */
       calendarHeading: {
-        type: 'String',
+        type: String,
         attribute: 'calendar-heading',
       },
       /**
@@ -39,7 +39,14 @@ export class LionInputDatepicker extends LionInputDate {
        * Default will be 'suffix'.
        */
       _calendarSlot: {
-        type: 'String',
+        type: String,
+      },
+
+      /**
+       * TODO: move this to LionField (or FormControl) level
+       */
+      disabled: {
+        type: Boolean,
       },
     };
   }
@@ -71,6 +78,62 @@ export class LionInputDatepicker extends LionInputDate {
     this.__virtualCalendar = {};
     this.__onCalendarSelectedChanged = this.__onCalendarSelectedChanged.bind(this);
     this.__openCalendarAndFocusDay = this.__openCalendarAndFocusDay.bind(this);
+  }
+
+  /**
+   * Problem: we need to create a getter for disabled that puts disabled attrs on the invoker
+   * button.
+   * The DelegateMixin creates getters and setters regardless of what's defined on the prototype,
+   * thats why we need to move it out from parent delegations config, in order to make our own
+   * getters and setters work.
+   *
+   * TODO: fix this on a global level:
+   * - LionField
+   *  - move all delegations of attrs and props to static get props for docs
+   * - DelegateMixin needs to be refactored, so that it:
+   *   - gets config from static get properties
+   *   - hooks into _requestUpdate
+   */
+  get delegations() {
+    return {
+      ...super.delegations,
+      properties: [...super.delegations.properties.filter(p => p !== 'disabled')],
+      attributes: [...super.delegations.attributes.filter(p => p !== 'disabled')],
+    };
+  }
+
+  /**
+   * TODO: move this to LionField (or FormControl) level
+   */
+  _requestUpdate(name, oldValue) {
+    super._requestUpdate(name, oldValue);
+    if (name === 'disabled') {
+      this.__delegateDisabled();
+    }
+  }
+
+  /**
+   * TODO: move this to LionField (or FormControl) level
+   */
+  __delegateDisabled() {
+    if (this.delegations.target()) {
+      this.delegations.target().disabled = this.disabled;
+    }
+    if (this._invokerElement) {
+      this._invokerElement.disabled = this.disabled;
+    }
+  }
+
+  /**
+   * TODO: move this to LionField (or FormControl) level
+   */
+  firstUpdated(c) {
+    super.firstUpdated(c);
+    this.__delegateDisabled();
+  }
+
+  get _invokerElement() {
+    return this.querySelector(`#${this._invokerId}`);
   }
 
   /**

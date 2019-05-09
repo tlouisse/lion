@@ -45,20 +45,6 @@ storiesOf('Forms|Input Datepicker', module)
 
       <lion-input-datepicker label="Date" .modelValue=${new Date('2017/06/15')}>
       </lion-input-datepicker>
-
-      <lion-input-datepicker label="Date" .modelValue=${new Date('2017/06/15')}>
-      </lion-input-datepicker>
-    `,
-  )
-  .add(
-    'With calendar-heading',
-    () => html`
-      <lion-input-datepicker
-        label="Date"
-        .calendarHeading="${'Custom heading'}"
-        .modelValue=${new Date()}
-      >
-      </lion-input-datepicker>
     `,
   )
   .add(
@@ -98,8 +84,19 @@ storiesOf('Forms|Input Datepicker', module)
     `,
   )
   .add(
-    'Change the position of the invoker',
+    'With calendar-heading',
     () => html`
-      <lion-input-datepicker label="Date" .calendarSlot="${'prefix'}"> </lion-input-datepicker>
+      <lion-input-datepicker
+        label="Date"
+        .calendarHeading="${'Custom heading'}"
+        .modelValue=${new Date()}
+      >
+      </lion-input-datepicker>
+    `,
+  )
+  .add(
+    'Disabled',
+    () => html`
+      <lion-input-datepicker .disabled="${true}"> </lion-input-datepicker>
     `,
   );
