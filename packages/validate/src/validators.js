@@ -80,6 +80,12 @@ export const minMaxDateValidator = (...factoryParams) => [
   ...factoryParams,
 ];
 
+export const disabledDates = (value, fn) => fn(value);
+export const disabledDatesValidator = (...factoryParams) => [
+  (...params) => ({ disabledDates: disabledDates(...params) }),
+  ...factoryParams,
+];
+
 export const randomOk = () => false;
 export const randomOkValidator = () => [(...params) => ({ randomOk: randomOk(...params) })];
 

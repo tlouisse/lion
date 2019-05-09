@@ -4,6 +4,8 @@ export { Unparseable } from './src/Unparseable.js';
 export {
   defaultOk,
   defaultOkValidator,
+  disabledDates,
+  disabledDatesValidator,
   equalsLength,
   equalsLengthValidator,
   isDate,
