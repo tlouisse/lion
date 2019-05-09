@@ -14,7 +14,6 @@ describe('dataTemplate', () => {
     const month = createMultipleMonth(date, { firstDayOfWeek: 0 });
     const el = await fixture(
       dataTemplate(month, {
-        focusedDate: date,
         weekdaysShort: weekdaysShort['en-GB'].Sunday,
         weekdays: weekdays['en-GB'].Sunday,
       }),

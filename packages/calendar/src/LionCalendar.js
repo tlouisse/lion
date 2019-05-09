@@ -135,7 +135,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     this.locale = localize.locale;
     this.centralDate = new Date();
     this.focusedDate = null;
-    this._firstUpdatedDone = false;
     this._connectedCallbackDone = false;
   }
 
@@ -181,15 +180,15 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
 
   firstUpdated() {
     super.firstUpdated();
-    this._firstUpdatedDone = true;
-    this._days = this.shadowRoot.getElementById('content');
+    this.__contentElement = this.shadowRoot.getElementById('content');
 
     this.__addEventDelegationForClickDate();
+    this.__addEventDelegationForFocusDate();
     this.__addEventForKeyboardNavigation();
   }
 
   updated(changed) {
-    if (this._firstUpdatedDone === true && changed.has('focusedDate') && this.focusedDate) {
+    if (changed.has('focusedDate') && this.focusedDate) {
       const button = this.shadowRoot.querySelector('button[tabindex="0"]');
       button.focus();
     }
@@ -200,14 +199,6 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
    */
   _requestUpdate(name, oldValue) {
     super._requestUpdate(name, oldValue);
-    const updateDataOn = [
-      'centralDate',
-      'focusedDate',
-      'minDate',
-      'maxDate',
-      'selectedDate',
-      'disabledDates',
-    ];
 
     const map = {
       selectedDate: () => this.__selectedDateChanged(),
@@ -218,6 +209,8 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
     if (map[name]) {
       map[name]();
     }
+
+    const updateDataOn = ['centralDate', 'minDate', 'maxDate', 'selectedDate', 'disabledDates'];
 
     if (updateDataOn.includes(name) && this._connectedCallbackDone) {
       this._data = this.__createData();
@@ -349,6 +342,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
 
   __dateSelectedByUser(selectedDate) {
     this.selectedDate = selectedDate;
+    this.focusedDate = selectedDate;
     this.dispatchEvent(
       new CustomEvent('user-selected-date-changed', {
         detail: {
@@ -411,19 +405,33 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
   }
 
   __addEventDelegationForClickDate() {
-    const isDayOrButton = el =>
-      el.classList.contains('calendar__day') || el.classList.contains('calendar__day-button');
-    this.__clickDateDelegation = this._days.addEventListener('click', ev => {
+    const isCellOrButton = el =>
+      el.classList.contains('calendar__day-cell') || el.classList.contains('calendar__day-button');
+    this.__clickDateDelegation = this.__contentElement.addEventListener('click', ev => {
       const el = ev.composedPath()[0];
-      if (isDayOrButton(el)) {
+      if (isCellOrButton(el)) {
         this.__dateSelectedByUser(el.date);
       }
     });
   }
 
+  __addEventDelegationForFocusDate() {
+    const isButton = el => el.classList.contains('calendar__day-button');
+    this.__focusDateDelegation = this.__contentElement.addEventListener(
+      'focus',
+      () => {
+        if (!this.focusedDate && isButton(this.shadowRoot.activeElement)) {
+          this.focusedDate = this.shadowRoot.activeElement.date;
+        }
+      },
+      true,
+    );
+  }
+
   __removeEventDelegations() {
-    this._days.removeEventListener('click', this.__clickDateDelegation);
-    this._days.removeEventListener('keydown', this.__keyNavigationEvent);
+    this.__contentElement.removeEventListener('click', this.__clickDateDelegation);
+    this.__contentElement.removeEventListener('focus', this.__focusDateDelegation);
+    this.__contentElement.removeEventListener('keydown', this.__keyNavigationEvent);
   }
 
   __modifyDate(modify, { type = 'Date', mode = 'future', dateType = 'centralDate' } = {}) {
@@ -438,7 +446,7 @@ export class LionCalendar extends LocalizeMixin(LitElement) {
   }
 
   __addEventForKeyboardNavigation() {
-    this.__keyNavigationEvent = this._days.addEventListener('keydown', ev => {
+    this.__keyNavigationEvent = this.__contentElement.addEventListener('keydown', ev => {
       switch (ev.key) {
         case 'ArrowUp':
           this.__modifyDate(-7, { dateType: 'focusedDate', mode: 'past' });

@@ -13,7 +13,7 @@ describe('dayTemplate', () => {
       }),
     );
     expect(el).dom.to.equal(`
-      <td class="calendar__day">
+      <td role="gridcell" class="calendar__day-cell">
         <button
           class="calendar__day-button"
           tabindex="-1"

@@ -115,7 +115,7 @@ export class CalendarObject {
   }
 
   day(monthDayNumber) {
-    // Relies on the fact that empty cells don't have .calendar__day--current-month class
+    // Relies on the fact that empty cells don't have .calendar__day-button[current-month]
     return this.el.shadowRoot.querySelectorAll('.calendar__day-button[current-month]')[
       monthDayNumber - 1
     ];
