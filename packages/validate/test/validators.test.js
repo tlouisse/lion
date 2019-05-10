@@ -38,7 +38,7 @@ import {
   defaultOkValidator,
 } from '../src/validators.js';
 
-describe.only('LionValidate', () => {
+describe('LionValidate', () => {
   describe('String Validation', () => {
     it('provides isString() to allow only strings', () => {
       expect(isString('foo')).to.be.true;
