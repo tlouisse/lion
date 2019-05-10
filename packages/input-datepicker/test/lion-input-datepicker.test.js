@@ -18,7 +18,7 @@ import { DatepickerInputObject } from './test-utils.js';
 import '../lion-input-datepicker.js';
 import { LionInputDatepicker } from '../src/LionInputDatepicker.js';
 
-describe('<lion-input-datepicker>', () => {
+describe.only('<lion-input-datepicker>', () => {
   beforeEach(() => {
     localizeTearDown();
   });
@@ -49,13 +49,14 @@ describe('<lion-input-datepicker>', () => {
     });
 
     // TODO: still add all translations
-    it.skip('has a close button, with a tooltip "Close"', async () => {
+    it('has a close button, with a tooltip "Close"', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
       `);
       const elObj = new DatepickerInputObject(el);
       await elObj.openCalendar();
       // Since tooltip not ready, use title which can be progressively enhanced in extension layers.
+      console.log(elObj.overlayCloseButtonEl);
       expect(elObj.overlayCloseButtonEl.getAttribute('title')).to.equal('Close');
       expect(elObj.overlayCloseButtonEl.getAttribute('aria-label')).to.equal('Close');
     });
@@ -109,7 +110,7 @@ describe('<lion-input-datepicker>', () => {
     // Relies on delegation of disabled property to invoker.
     // TODO: consider making this (delegation to interactive child nodes) generic functionality
     // inside LionField/FormControl. Or, for maximum flexibility, add a config attr
-    // to the invoker node
+    // to the invoker node like 'data-disabled-is-delegated'
     it('disabled flag also disables the datepicker invoker', async () => {
       const el = await fixture(html`
         <lion-input-datepicker disabled></lion-input-datepicker>
@@ -133,8 +134,7 @@ describe('<lion-input-datepicker>', () => {
       expect(isSameDate(el.modelValue, myOtherDate)).to.be.true;
     });
 
-    // TODO: introduce event user-selected-date-changed
-    it.skip('closes the calendar overlay on "user-selected-date-changed"', async () => {
+    it('closes the calendar overlay on "user-selected-date-changed"', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
       `);
@@ -148,7 +148,7 @@ describe('<lion-input-datepicker>', () => {
     });
 
     // TODO: fix the Overlay system, so that the backdrop/body cannot be focused
-    it.skip('closes the calendar on [esc] key', async () => {
+    it('closes the calendar on [esc] key', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
       `);
@@ -186,8 +186,7 @@ describe('<lion-input-datepicker>', () => {
         expect(headingIsLevel1).to.be.true;
       });
 
-      // TODO: add translations
-      it.skip('adds accessible label to invoker button', async () => {
+      it('adds accessible label to invoker button', async () => {
         const el = await fixture(html`
           <lion-input-datepicker></lion-input-datepicker>
         `);
@@ -198,9 +197,8 @@ describe('<lion-input-datepicker>', () => {
         expect(elObj.invokerEl.getAttribute('aria-label')).to.equal('Open date picker');
       });
 
-      // TODO: add translations
       // TODO: move this functionality to GlobalOverlay
-      it.skip('adds aria-haspopup="dialog" and aria-expanded="true" to invoker button', async () => {
+      it('adds aria-haspopup="dialog" and aria-expanded="true" to invoker button', async () => {
         const el = await fixture(html`
           <lion-input-datepicker></lion-input-datepicker>
         `);
