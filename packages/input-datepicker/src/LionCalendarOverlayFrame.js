@@ -2,13 +2,8 @@
 import { html, css, LitElement, DomHelpersMixin } from '@lion/core';
 import '../../calendar/lion-calendar.js';
 
-// !!!!!!!!!!! THIS IS A POC
-// !! could serve as insipration => but no hard feelings if completely ignored/destroyed
-
-// TODO: make separate calendar-overlay component?
-
-// Needs to be a web component (we cannot leak styles) that should be placed in the overlay invoked
-// by LionInputDatepicker.
+// Needs to be a web component (we bneed a sahdow root to not leak styles in a global overlay)
+// that should be placed in the overlay invoked by LionInputDatepicker.
 // Note this is a private web component, not intended to be exported on its own.
 export class LionCalendarOverlayFrame extends DomHelpersMixin(LitElement) {
   static get styles() {
