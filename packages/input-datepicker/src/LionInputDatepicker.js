@@ -3,7 +3,7 @@ import { html, render } from '@lion/core';
 import { LionInputDate } from '@lion/input-date';
 import { overlays, ModalDialogController } from '@lion/overlays';
 import { Unparseable } from '@lion/validate';
-import '../../calendar/lion-calendar.js';
+import '@lion/calendar/lion-calendar.js';
 import './lion-calendar-overlay-frame.js';
 
 /**
@@ -200,7 +200,7 @@ export class LionInputDatepicker extends LionInputDate {
     const node = renderAndGetFirstChild(templateResult);
     Object.assign(node, this.__virtualCalendar);
     node.selectedDate = this.__getSyncDownValue();
-    node.addEventListener('selected-date-changed', this.__onCalendarSelectedChanged);
+    node.addEventListener('user-selected-date-changed', this.__onCalendarSelectedChanged);
     return node;
   }
 
@@ -218,9 +218,8 @@ export class LionInputDatepicker extends LionInputDate {
   __openCalendarAndFocusDay(ev) {
     this._overlayCtrl.show(ev.target);
     // Give selected date focus.
-    // TODO: find a way to do this with a less private api of the calendar
     this._calendarElement.updateComplete.then(() => {
-      this._calendarElement.shadowRoot.querySelector('[role="grid"] [tabindex="0"]').focus();
+      this._calendarElement.focusedDate = this._calendarElement.centralDate;
     });
   }
 
@@ -254,11 +253,9 @@ export class LionInputDatepicker extends LionInputDate {
      * @param {Function} dummyParam - arguments needed to execute fn without failing
      * @returns {Boolean} - whether the validator (name) is applied
      */
-
     function isValidatorApplied(name, fn, dummyParam) {
       let result;
       try {
-        // if name is minDate / maxDate
         result = Object.keys(fn(new Date(), dummyParam))[0] === name;
       } catch (e) {
         result = false;
@@ -270,15 +267,16 @@ export class LionInputDatepicker extends LionInputDate {
     // we need to extract minDate, maxDate, minMaxDate and disabledDates validators
     validators.forEach(([fn, param]) => {
       const d = new Date();
+
       if (isValidatorApplied('minDate', fn, d)) {
         this.__virtualCalendar.minDate = param;
-      } else if (isValidatorApplied(fn, d, 'maxDate')) {
+      } else if (isValidatorApplied('maxDate', fn, d)) {
         this.__virtualCalendar.maxDate = param;
       } else if (isValidatorApplied('minMaxDate', fn, { min: d, max: d })) {
         this.__virtualCalendar.minDate = param.min;
         this.__virtualCalendar.maxDate = param.max;
       } else if (isValidatorApplied('disabledDates', fn, () => true)) {
-        this.__virtualCalendar.dateProcessor = param;
+        this.__virtualCalendar.disabledDates = param;
       }
     });
   }

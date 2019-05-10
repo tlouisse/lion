@@ -10,11 +10,18 @@ export class DatepickerInputObject {
    * Methods mimicing User Interaction
    */
 
-  openCalendar() {
+  async openCalendar() {
     // Make sure the calendar is opened, not closed/toggled;
     this.overlayController.hide();
     this.invokerEl.click();
-    return this.calendarEl.updateComplete;
+    return this.calendarEl ? this.calendarEl.updateComplete : false;
+  }
+
+  async selectMonthDay(day) {
+    this.overlayController.show();
+    await this.calendarEl.updateComplete;
+    this.calendarObj.day(day).click();
+    return true;
   }
 
   /**
@@ -22,11 +29,11 @@ export class DatepickerInputObject {
    */
 
   get invokerEl() {
-    return this.el.querySelector(`button[id^="${this.el.localName}"]`);
+    return this.el._invokerElement;
   }
 
   get overlayEl() {
-    return this.el._overlayCtrl._container.firstElementChild;
+    return this.el._overlayCtrl._container && this.el._overlayCtrl._container.firstElementChild;
   }
 
   get overlayHeadingEl() {
@@ -41,6 +48,9 @@ export class DatepickerInputObject {
     return this.overlayEl && this.overlayEl.querySelector('#calendar');
   }
 
+  /**
+   * @property {CalendarObject}
+   */
   get calendarObj() {
     return this.calendarEl && new CalendarObject(this.calendarEl);
   }

@@ -80,7 +80,7 @@ export const minMaxDateValidator = (...factoryParams) => [
   ...factoryParams,
 ];
 
-export const disabledDates = (value, fn) => fn(value);
+export const disabledDates = (value, isDisabledFn) => isDisabledFn(value);
 export const disabledDatesValidator = (...factoryParams) => [
   (...params) => ({ disabledDates: disabledDates(...params) }),
   ...factoryParams,

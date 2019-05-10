@@ -25,18 +25,20 @@ import {
   isDate,
   minDate,
   maxDate,
+  disabledDates,
   minMaxDate,
   isDateValidator,
   minDateValidator,
   maxDateValidator,
   minMaxDateValidator,
+  disabledDatesValidator,
   randomOk,
   defaultOk,
   randomOkValidator,
   defaultOkValidator,
 } from '../src/validators.js';
 
-describe('LionValidate', () => {
+describe.only('LionValidate', () => {
   describe('String Validation', () => {
     it('provides isString() to allow only strings', () => {
       expect(isString('foo')).to.be.true;
@@ -149,7 +151,12 @@ describe('LionValidate', () => {
       expect(minMaxDate(new Date('2018/02/05'), minMaxSetting)).to.be.false;
     });
 
-    it('provides {isDate, minDate, maxDate, minMaxDate}Validator factory function for all types', () => {
+    it('provides disabledDates() to disable dates matching specified condition', () => {
+      expect(disabledDates(new Date('2018-02-03'), d => d.getDate() === 3)).to.be.true;
+      expect(disabledDates(new Date('2018-02-04'), d => d.getDate() === 3)).to.be.false;
+    });
+
+    it('provides {isDate, minDate, maxDate, minMaxDate, disabledDates}Validator factory function for all types', () => {
       // do a smoke test for each type
       smokeTestValidator('isDate', isDateValidator, new Date());
       smokeTestValidator(
@@ -169,6 +176,12 @@ describe('LionValidate', () => {
         max: new Date('2018/02/04'),
       };
       smokeTestValidator('minMaxDate', minMaxDateValidator, new Date('2018/02/03'), minMaxSetting);
+      smokeTestValidator(
+        'disabledDates',
+        disabledDatesValidator,
+        new Date('2018/02/03'),
+        d => d.getDate() !== 15,
+      );
     });
   });
 
