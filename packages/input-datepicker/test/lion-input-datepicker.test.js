@@ -1,10 +1,8 @@
 /* eslint-env mocha */
 /* eslint-disable no-unused-expressions, no-template-curly-in-string, no-unused-vars */
-// TODO: enable linting again when proper imports can be done
-/* eslint-disable */
-import { expect, fixture, aTimeout } from '@open-wc/testing';
+import { expect, fixture, aTimeout, defineCE } from '@open-wc/testing';
 import { localizeTearDown } from '@lion/localize/test-helpers.js';
-import { html } from '@lion/core';
+import { html, LitElement } from '@lion/core';
 import {
   maxDateValidator,
   minDateValidator,
@@ -12,11 +10,12 @@ import {
   disabledDatesValidator,
 } from '@lion/validate';
 import { keyCodes } from '@lion/overlays/src/utils/key-codes.js';
-import { keyUpOn } from '@polymer/iron-test-helpers/mock-interactions.js';
+import { keyUpOn } from '@polymer/iron-test-helpers/mock-interactions.js'; // eslint-disable-line
+import { LionCalendar } from '@lion/calendar';
 import { isSameDate } from '@lion/calendar/src/utils/isSameDate.js';
 import { DatepickerInputObject } from './test-utils.js';
-import '../lion-input-datepicker.js';
 import { LionInputDatepicker } from '../src/LionInputDatepicker.js';
+import '../lion-input-datepicker.js';
 
 describe.only('<lion-input-datepicker>', () => {
   beforeEach(() => {
@@ -43,12 +42,10 @@ describe.only('<lion-input-datepicker>', () => {
       ).not.to.equal(null);
     });
 
-    // TODO: this should be implemented as option in the ModalDialogController?
     it.skip('activates full screen mode on mobile screens', async () => {
       // TODO: should this be part of globalOverlayController as option?
     });
 
-    // TODO: still add all translations
     it('has a close button, with a tooltip "Close"', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
@@ -56,7 +53,6 @@ describe.only('<lion-input-datepicker>', () => {
       const elObj = new DatepickerInputObject(el);
       await elObj.openCalendar();
       // Since tooltip not ready, use title which can be progressively enhanced in extension layers.
-      console.log(elObj.overlayCloseButtonEl);
       expect(elObj.overlayCloseButtonEl.getAttribute('title')).to.equal('Close');
       expect(elObj.overlayCloseButtonEl.getAttribute('aria-label')).to.equal('Close');
     });
@@ -89,14 +85,28 @@ describe.only('<lion-input-datepicker>', () => {
       ).lightDom.to.equal('foo');
     });
 
+    // TODO: fix the Overlay system, so that the backdrop/body cannot be focused
+    it('closes the calendar on [esc] key', async () => {
+      const el = await fixture(html`
+        <lion-input-datepicker></lion-input-datepicker>
+      `);
+      const elObj = new DatepickerInputObject(el);
+      await elObj.openCalendar();
+      expect(elObj.overlayController.isShown).to.equal(true);
+      // Mimic user input: should fire the 'selected-date-changed' event
+      // Make sure focus is inside the calendar/overlay
+      keyUpOn(elObj.calendarEl, keyCodes.escape);
+      expect(elObj.overlayController.isShown).to.equal(false);
+    });
+
     /**
      * Not in scope:
      * - centralDate can be overridden
      */
   });
 
-  describe('Input synchronization', () => {
-    it('adds invoker button for calendar overlay as suffix slot that toggles the overlay on click', async () => {
+  describe('Calendar Invoker', () => {
+    it('adds invoker button that toggles the overlay on click in suffix slot ', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
       `);
@@ -111,7 +121,7 @@ describe.only('<lion-input-datepicker>', () => {
     // TODO: consider making this (delegation to interactive child nodes) generic functionality
     // inside LionField/FormControl. Or, for maximum flexibility, add a config attr
     // to the invoker node like 'data-disabled-is-delegated'
-    it('disabled flag also disables the datepicker invoker', async () => {
+    it('delegates disabled state of host input', async () => {
       const el = await fixture(html`
         <lion-input-datepicker disabled></lion-input-datepicker>
       `);
@@ -120,7 +130,9 @@ describe.only('<lion-input-datepicker>', () => {
       await elObj.openCalendar();
       expect(elObj.overlayController.isShown).to.equal(false);
     });
+  });
 
+  describe('Input - calendar synchronization', () => {
     it('syncs modelValue with lion-calendar', async () => {
       const myDate = new Date('2019/06/15');
       const myOtherDate = new Date('2019/06/28');
@@ -147,20 +159,6 @@ describe.only('<lion-input-datepicker>', () => {
       expect(elObj.overlayController.isShown).to.equal(false);
     });
 
-    // TODO: fix the Overlay system, so that the backdrop/body cannot be focused
-    it('closes the calendar on [esc] key', async () => {
-      const el = await fixture(html`
-        <lion-input-datepicker></lion-input-datepicker>
-      `);
-      const elObj = new DatepickerInputObject(el);
-      await elObj.openCalendar();
-      expect(elObj.overlayController.isShown).to.equal(true);
-      // Mimic user input: should fire the 'selected-date-changed' event
-      // Make sure focus is inside the calendar/overlay
-      keyUpOn(elObj.calendarEl, keyCodes.escape);
-      expect(elObj.overlayController.isShown).to.equal(false);
-    });
-
     it('focuses interactable date on opening of calendar', async () => {
       const el = await fixture(html`
         <lion-input-datepicker></lion-input-datepicker>
@@ -171,44 +169,6 @@ describe.only('<lion-input-datepicker>', () => {
       expect(elObj.calendarObj.focusedDayObj().el).not.to.equal(null);
     });
 
-    describe('Accessibility', () => {
-      it('has a heading of level 1', async () => {
-        const el = await fixture(html`
-          <lion-input-datepicker calendar-heading="foo"></lion-input-datepicker>
-        `);
-        const elObj = new DatepickerInputObject(el);
-        await elObj.openCalendar();
-
-        const hNode = elObj.overlayHeadingEl;
-        const headingIsLevel1 =
-          hNode.tagName === 'H1' ||
-          (hNode.getAttribute('role') === 'heading' && hNode.getAttribute('aria-level') === '1');
-        expect(headingIsLevel1).to.be.true;
-      });
-
-      it('adds accessible label to invoker button', async () => {
-        const el = await fixture(html`
-          <lion-input-datepicker></lion-input-datepicker>
-        `);
-        const elObj = new DatepickerInputObject(el);
-        await elObj.openCalendar();
-
-        expect(elObj.invokerEl.getAttribute('title')).to.equal('Open date picker');
-        expect(elObj.invokerEl.getAttribute('aria-label')).to.equal('Open date picker');
-      });
-
-      // TODO: move this functionality to GlobalOverlay
-      it('adds aria-haspopup="dialog" and aria-expanded="true" to invoker button', async () => {
-        const el = await fixture(html`
-          <lion-input-datepicker></lion-input-datepicker>
-        `);
-        const elObj = new DatepickerInputObject(el);
-
-        expect(elObj.invokerEl.getAttribute('aria-haspopup')).to.equal('dialog');
-        expect(elObj.invokerEl.getAttribute('aria-expanded')).to.equal('false');
-      });
-    });
-
     describe('Validators', () => {
       /**
        * Validators are the Application Developer facing API in <lion-input-datepicker>:
@@ -216,7 +176,6 @@ describe.only('<lion-input-datepicker>', () => {
        * - all validators will be translated under the hood to enabledDates and passed to
        *   lion-calendar
        */
-
       it('converts disabledDatesValidator to "disabledDates" properrty', async () => {
         const no15th = d => d.getDate() !== 15;
         const no16th = d => d.getDate() !== 16;
@@ -227,21 +186,21 @@ describe.only('<lion-input-datepicker>', () => {
         `);
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
-
+  
         expect(elObj.calendarEl.disabledDates).to.equal(no15thOr16th);
       });
-
+  
       it('converts minDateValidator to "minDate" property', async () => {
         const myMinDate = new Date('2019/06/15');
         const el = await fixture(html`
-          <lion-input-datepicker .errorValidators=${[minDateValidator(myMinDate)]}>
-          </lion-input-date>`);
+            <lion-input-datepicker .errorValidators=${[minDateValidator(myMinDate)]}>
+            </lion-input-date>`);
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
-
+  
         expect(elObj.calendarEl.minDate).to.equal(myMinDate);
       });
-
+  
       it('converts maxDateValidator to "maxDate" property', async () => {
         const myMaxDate = new Date('2030/06/15');
         const el = await fixture(html`
@@ -250,10 +209,10 @@ describe.only('<lion-input-datepicker>', () => {
         `);
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
-
+  
         expect(elObj.calendarEl.maxDate).to.equal(myMaxDate);
       });
-
+  
       it('converts minMaxDateValidator to "minDate" and "maxDate" property', async () => {
         const myMinDate = new Date('2019/06/15');
         const myMaxDate = new Date('2030/06/15');
@@ -265,32 +224,275 @@ describe.only('<lion-input-datepicker>', () => {
         `);
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
-
+  
         expect(elObj.calendarEl.minDate).to.equal(myMinDate);
         expect(elObj.calendarEl.maxDate).to.equal(myMaxDate);
       });
-
+  
       /**
        * Not in scope:
        * - min/max attr (like platform has): could be added in future if observers needed
        */
     });
+  });
 
-    describe('Subclassers', () => {
+  describe('Accessibility', () => {
+    it('has a heading of level 1', async () => {
+      const el = await fixture(html`
+        <lion-input-datepicker calendar-heading="foo"></lion-input-datepicker>
+      `);
+      const elObj = new DatepickerInputObject(el);
+      await elObj.openCalendar();
+
+      const hNode = elObj.overlayHeadingEl;
+      const headingIsLevel1 =
+        hNode.tagName === 'H1' ||
+        (hNode.getAttribute('role') === 'heading' && hNode.getAttribute('aria-level') === '1');
+      expect(headingIsLevel1).to.be.true;
+    });
+
+    it('adds accessible label to invoker button', async () => {
+      const el = await fixture(html`
+        <lion-input-datepicker></lion-input-datepicker>
+      `);
+      const elObj = new DatepickerInputObject(el);
+      await elObj.openCalendar();
+
+      expect(elObj.invokerEl.getAttribute('title')).to.equal('Open date picker');
+      expect(elObj.invokerEl.getAttribute('aria-label')).to.equal('Open date picker');
+    });
+
+    // TODO: move this functionality to GlobalOverlay
+    it('adds aria-haspopup="dialog" and aria-expanded="true" to invoker button', async () => {
+      const el = await fixture(html`
+        <lion-input-datepicker></lion-input-datepicker>
+      `);
+      const elObj = new DatepickerInputObject(el);
+
+      expect(elObj.invokerEl.getAttribute('aria-haspopup')).to.equal('dialog');
+      expect(elObj.invokerEl.getAttribute('aria-expanded')).to.equal('false');
+    });
+  });
+
+  describe('Subclassers', () => {
+    describe('Providing a custom invoker', () => {
+      it('can override the invoker template', async () => {
+        const myTag = defineCE(
+          class extends LionInputDatepicker {
+            /** @override */
+            _invokerTemplate() {
+              return html`
+                <my-button>Pick my date</my-button>
+              `;
+            }
+          },
+        );
+
+        const myEl = await fixture(`<${myTag}></${myTag}>`);
+        const myElObj = new DatepickerInputObject(myEl);
+        expect(myElObj.invokerEl.tagName.toLowerCase()).to.equal('my-button');
+
+        // All other tests will still pass. Small checkup:
+        expect(myElObj.invokerEl.getAttribute('title')).to.equal('Open date picker');
+        expect(myElObj.invokerEl.getAttribute('aria-label')).to.equal('Open date picker');
+        expect(myElObj.invokerEl.getAttribute('aria-expanded')).to.equal('false');
+        expect(myElObj.invokerEl.getAttribute('aria-haspopup')).to.equal('dialog');
+        expect(myElObj.invokerEl.getAttribute('slot')).to.equal('suffix');
+        expect(myElObj.invokerEl.getAttribute('id')).to.equal(myEl._invokerId);
+        await myElObj.openCalendar();
+        expect(myElObj.overlayController.isShown).to.equal(true);
+      });
+
       it('can allocate the picker in a different slot supported by LionField', async () => {
-        class MyInputDatepicker extends LionInputDatepicker {
-          constructor() {
-            super();
-            this._calendarSlot = 'prefix';
-          }
-        }
-        customElements.define('my-input-datepicker', MyInputDatepicker);
+        /** 
+         * It's important that this api is used instead of Subclassers providing a slot.
+         * When the input-datepicker knows where the calendar invoker is, it can attach
+         * the right logic, localization and accessibility functionality.
+         */
+        const myTag = defineCE(
+          class extends LionInputDatepicker {
+            constructor() {
+              super();
+              this._calendarInvokerSlot = 'prefix';
+            }
+          },
+        );
 
-        const myEl = await fixture(html`
-          <my-input-datepicker> </my-input-datepicker>
-        `);
+        const myEl = await fixture(`<${myTag}></${myTag}>`);
         const myElObj = new DatepickerInputObject(myEl);
         expect(myElObj.invokerEl.getAttribute('slot')).to.equal('prefix');
+      });
+    });
+
+    describe('Providing a custom calendar', () => {
+      it('can override the calendar template', async () => {
+        customElements.define(
+          'my-calendar',
+          class extends LionCalendar {
+            constructor() {
+              super();
+              // Change some defaults
+              this.firstDayOfWeek = 1; // Start on Mondays instead of Sundays
+              this.weekdayHeaderNotation = 'narrow'; // 'T' instead of 'Thu'
+            }
+          },
+        );
+
+        const myTag = defineCE(
+          class extends LionInputDatepicker {
+            _calendarTemplate() {
+              return html`
+                <my-calendar id="calendar"></my-calendar>
+              `;
+            }
+          },
+        );
+
+        const myEl = await fixture(`<${myTag}></${myTag}>`);
+        const myElObj = new DatepickerInputObject(myEl);
+
+        // All other tests will still pass. Small checkup:
+        await myElObj.openCalendar();
+        expect(myElObj.calendarEl.tagName.toLowerCase()).to.equal('my-calendar');
+      });
+    });
+
+    describe('Providing a custom overlay', () => {
+      it('can override the overlay template', async () => {
+        // Keep in mind there is no logic inside this overlay frame; it only handles visuals
+        // All interaction should be delegated to parent, which interacts with the calendar
+        // component
+        customElements.define(
+          'my-calendar-overlay-frame',
+          class extends LitElement {
+            firstUpdated(...args) {
+              super.firstUpdated(...args);
+              // Delegate actions to extension of LionInputDatepicker.
+              // In InputDatepicker, add logic to interact with Calendar
+              this.shadowRoot.addEventListener('click', ({ target }) => {
+                if(['set-button', 'cancel-button', 'clear-button'].includes(target.id)) {
+                  this.dispatchEvent(new CustomEvent('delegate-action', { detail: { action: target.id.split('-')[0] }}));
+                }
+              });
+            }
+
+            render() {
+              // eslint-disable-line class-methods-use-this
+              return html`
+                <div class="c-calendar-overlay">
+                  <div class="c-calendar-overlay__header">
+                    <div role="region">
+                      <div id="overlay-heading" role="heading" aria-level="1" class="c-calendar-overlay__heading">
+                        <slot name="heading"></slot>
+                      </div>
+                    </div>
+                  </div>
+                  <slot></slot>
+                  <div class="c-calendar-overlay__footer">
+                    <button id="set-button" class="c-calendar-overlay__set-button">
+                      Set
+                    </button>
+                    <button id="cancel-button" class="c-calendar-overlay__cancel-button">
+                      Cancel
+                    </button>
+                    <button id="clear-button" class="c-calendar-overlay__clear-button">
+                      Clear
+                    </button>
+                  </div>
+                </div>
+              `;
+            }
+          },
+        );
+
+        const myTag = defineCE(
+          class extends LionInputDatepicker {
+            constructor() {
+              super();
+              this.__myDelegateOverlayAction = this.__myDelegateOverlayAction.bind(this);
+            }
+
+            /** @override */
+            _calendarOverlayTemplate() {
+              return html`
+                <my-calendar-overlay-frame id="calendar-overlay">
+                  <span slot="heading">${this.calendarHeading}</span>
+                  ${this.__calendarConfig(this._calendarTemplate())}
+                </my-calendar-overlay-frame>
+              `;
+            }
+
+            /** @override */
+            _onCalendarOverlayOpened() {
+              // Optional to call super here. By default it focuses first date.
+              super._onCalendarOverlayOpened();
+              this._calendarOverlayElement.addEventListener('delegate-action', this.__myDelegateOverlayAction);
+            }
+
+            /** @override */
+            _onCalendarUserSelectedChanged({ target: { selectedDate } }) {
+              // Don't close calendar on selection
+
+              // Synchronize new selectedDate value to input
+              this.modelValue = selectedDate;
+            }
+    
+            __myDelegateOverlayAction({ action }) {
+              switch (action) {
+                case 'set':
+                  this._calendarElement.selectedDate = this._calendarElement.centralDate;
+                  this.modelValue = this._calendarElement.selectedDate;
+                  break;
+                case 'clear':
+                  this._calendarElement.selectedDate = undefined;
+                  this.modelValue = this._calendarElement.selectedDate;
+                  break;
+                case 'cancel':
+                  this._overlayCtrl.hide();
+                  break;
+                default:
+              }
+            }
+          },
+        );
+
+        const myEl = await fixture(`<${myTag}></${myTag}>`);
+        const myElObj = new DatepickerInputObject(myEl);
+
+        // All other tests will still pass. Small checkup:
+        await myElObj.openCalendar();
+        expect(myElObj.overlayEl.tagName.toLowerCase()).to.equal('my-calendar-overlay-frame');
+      });
+
+      it.skip('can configure the overlay presentation based on media query switch', async () => {
+        customElements.define(
+          'my-calendar',
+          class extends LionCalendar {
+            constructor() {
+              super();
+              // Change some defaults
+              this.firstDayOfWeek = 1; // Start on Mondays instead of Sundays
+              this.weekdayHeaderNotation = 'narrow'; // 'T' instead of 'Thu'
+            }
+          },
+        );
+
+        const customPicker = defineCE(
+          class extends LionInputDatepicker {
+            _calendarTemplate() {
+              return html`
+                <my-calendar id="calendar"></my-calendar>
+              `;
+            }
+          },
+        );
+
+        const myEl = await fixture(`<${customPicker}></${customPicker}>`);
+        const myElObj = new DatepickerInputObject(myEl);
+
+        // All other tests will still pass. Small checkup:
+        await myElObj.openCalendar();
+        expect(myElObj.calendarEl.tagName.toLowerCase()).to.equal('my-calendar');
       });
     });
   });

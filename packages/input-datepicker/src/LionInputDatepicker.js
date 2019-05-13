@@ -29,7 +29,9 @@ export class LionInputDatepicker extends LionInputDate {
     return {
       ...super.properties,
       /**
-       * The title to be added on top of the calendar overlay
+       * The heading to be added on top of the calendar overlay.
+       * Naming chosen from an Application Developer perspective.
+       * For a Subclasser 'calendarOverlayHeading' would be more appropriate
        */
       calendarHeading: {
         type: String,
@@ -39,12 +41,12 @@ export class LionInputDatepicker extends LionInputDate {
        * The slot to put the invoker button in. Can be 'prefix', 'suffix', 'before' and 'after'.
        * Default will be 'suffix'.
        */
-      _calendarSlot: {
+      _calendarInvokerSlot: {
         type: String,
       },
 
       /**
-       * TODO: move this to LionField (or FormControl) level
+       * TODO: [delegation of disabled] move this to LionField (or FormControl) level
        */
       disabled: {
         type: Boolean,
@@ -55,7 +57,7 @@ export class LionInputDatepicker extends LionInputDate {
   get slots() {
     return {
       ...super.slots,
-      [this._calendarSlot]: () => this.__createPickerAndReturnInvokerNode(),
+      [this._calendarInvokerSlot]: () => this.__createPickerAndReturnInvokerNode(),
     };
   }
 
@@ -138,26 +140,52 @@ export class LionInputDatepicker extends LionInputDate {
     ];
   }
 
+  /**
+   * Element references, available for Subclassers.
+   * 
+   * They refer part of the templates where logic should be added:
+   * - event listeners
+   * - accessibility roles/labels/attributes (etc...)
+   * - configurations of (Custom) Elements
+   * 
+   * This allows for a separation of concerns between style and functionality.
+   * Functionality should be delivered by the Lion layer. Since it's mostly contained in private
+   * methods, the subclassers should not be bothered with it.
+   * An imperative approach (instead of via lit-html template) for handling functionality, will
+   * make templates created by subclassers readable, easy to maintain and most important, future 
+   * proof (they will only contain styling, markup and functional references(ids)).
+   * On top of that they benefit from bug fixes and features without having to update their
+   * templates.
+   */
+  
+  get _invokerElement() {
+    return this.querySelector(`#${this.__invokerId}`);
+  }
+
+  get _calendarOverlayElement() {
+    return this._overlayCtrl._container.firstElementChild;
+  }
+
   get _calendarElement() {
-    return this._overlayCtrl._container.firstElementChild.querySelector('#calendar');
+    return this._calendarOverlayElement.querySelector('#calendar');
   }
 
   constructor() {
     super();
     // Create a unique id for the invoker, since it is placed in light dom for a11y.
-    this._invokerId = `${this.localName}-${Math.random()
+    this.__invokerId = `${this.localName}-${Math.random()
       .toString(36)
       .substr(2, 10)}`;
-    this._calendarSlot = 'suffix';
+    this._calendarInvokerSlot = 'suffix';
     /**
-     * 'Virtual' synchronization object for 'pending' updates (that can only be set when the
+     * 'Virtual' synchronization object for pending updates (that can only be set when the
      * calendar is opened and thus rendered to the dom).
      * This object is synced in __calendarConfig(), right after dom has been created by
      * lit-html.
      */
     this.__virtualCalendar = {};
-    this.__onCalendarSelectedChanged = this.__onCalendarSelectedChanged.bind(this);
-    this.__openCalendarAndFocusDay = this.__openCalendarAndFocusDay.bind(this);
+    this.__openCalendarOverlay = this.__openCalendarOverlay.bind(this);
+    this._onCalendarUserSelectedChanged = this._onCalendarUserSelectedChanged.bind(this);
   }
 
   /**
@@ -167,7 +195,7 @@ export class LionInputDatepicker extends LionInputDate {
    * thats why we need to move it out from parent delegations config, in order to make our own
    * getters and setters work.
    *
-   * TODO: fix this on a global level:
+   * TODO: [delegation of disabled] fix this on a global level:
    * - LionField
    *  - move all delegations of attrs and props to static get props for docs
    * - DelegateMixin needs to be refactored, so that it:
@@ -177,13 +205,13 @@ export class LionInputDatepicker extends LionInputDate {
   get delegations() {
     return {
       ...super.delegations,
-      properties: [...super.delegations.properties.filter(p => p !== 'disabled')],
-      attributes: [...super.delegations.attributes.filter(p => p !== 'disabled')],
+      properties: super.delegations.properties.filter(p => p !== 'disabled'),
+      attributes: super.delegations.attributes.filter(p => p !== 'disabled'),
     };
   }
 
   /**
-   * TODO: move this to LionField (or FormControl) level
+   * TODO: [delegation of disabled] move this to LionField (or FormControl) level
    */
   _requestUpdate(name, oldValue) {
     super._requestUpdate(name, oldValue);
@@ -193,7 +221,7 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   /**
-   * TODO: move this to LionField (or FormControl) level
+   * TODO: [delegation of disabled] move this to LionField (or FormControl) level
    */
   __delegateDisabled() {
     if (this.delegations.target()) {
@@ -205,15 +233,11 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   /**
-   * TODO: move this to LionField (or FormControl) level
+   * TODO: [delegation of disabled] move this to LionField (or FormControl) level
    */
   firstUpdated(c) {
     super.firstUpdated(c);
     this.__delegateDisabled();
-  }
-
-  get _invokerElement() {
-    return this.querySelector(`#${this._invokerId}`);
   }
 
   /**
@@ -232,11 +256,55 @@ export class LionInputDatepicker extends LionInputDate {
     }
   }
 
+  _calendarOverlayTemplate() {
+    // TODO: try to improve 'this.__calendarConfig(tpl)' approach by creating and exposing lit
+    // directives
+    return html`
+      <lion-calendar-overlay-frame>
+        <span slot="heading">${this.calendarHeading}</span>
+        ${this.__calendarConfig(this._calendarTemplate())}
+      </lion-calendar-overlay-frame>
+    `;
+  }
+
+  /**
+   * Subclassers can replace this with their custom extension of
+   * LionCalendar, like `<my-calendar id="calendar"></my-calendar>`
+   */ // eslint-disable-next-line class-methods-use-this
+  _calendarTemplate() {
+    return html`
+      <lion-calendar id="calendar"></lion-calendar>
+    `;
+  }
+
+  /**
+   * This function is run right after the TemplateResult for calendar is created. Its goal is to
+   * abstract away all (private and protected) logic from the template, so that subclassers
+   * replacing templates 'survive' internal refactors and profit from feature upgrades.
+   */
+  __calendarConfig(templateResult) {
+    const node = renderAndGetFirstChild(templateResult);
+    Object.assign(node, this.__virtualCalendar);
+    node.selectedDate = this.__getSyncDownValue();
+    node.addEventListener('user-selected-date-changed', this._onCalendarUserSelectedChanged);
+    return node;
+  }
+
+  /**
+   * Subclassers can replace this with their custom extension invoker,
+   * like `<my-button><calendar-icon></calendar-icon></my-button>`
+   */ // eslint-disable-next-line class-methods-use-this
+  _invokerTemplate() {
+    return html`
+      <button>&#128197;</button>
+    `;
+  }
+
   // Renders the invoker button + the calendar overlay invoked by this button
   __createPickerAndReturnInvokerNode() {
     const invokerNode = renderAndGetFirstChild(this._invokerTemplate());
-    invokerNode.id = this._invokerId;
-    invokerNode.addEventListener('click', this.__openCalendarAndFocusDay);
+    invokerNode.id = this.__invokerId;
+    invokerNode.addEventListener('click', this.__openCalendarOverlay);
     invokerNode.setAttribute('aria-haspopup', 'dialog');
     invokerNode.setAttribute('aria-expanded', 'false');
 
@@ -260,66 +328,31 @@ export class LionInputDatepicker extends LionInputDate {
     return invokerNode;
   }
 
-  _calendarOverlayTemplate() {
-    return html`
-      <lion-calendar-overlay-frame>
-        <span slot="heading">${this.calendarHeading}</span>
-        ${this.__calendarConfig(this._calendarTemplate())}
-      </lion-calendar-overlay-frame>
-    `;
+  async __openCalendarOverlay() {
+    this._overlayCtrl.show();
+    await this._calendarElement.updateComplete;
+    this._onCalendarOverlayOpened();
   }
 
   /**
-   * Subclassers can replace this with their custom extension of
-   * LionCalendar, like `<my-calendar id="calendar"></my-calendar>`
+   * Lifecycle callback for subclassers
    */
-  // eslint-disable-next-line class-methods-use-this
-  _calendarTemplate() {
-    return html`
-      <lion-calendar id="calendar"></lion-calendar>
-    `;
+  _onCalendarOverlayOpened() {
+    this.__focusCentralCalendarDay();
   }
 
-  /**
-   * This function is run right after the TemplateResult for calendar is created. Its goal is to
-   * abstract away all (private and protected) logic from the template, so that subclassers
-   * replacing templates 'survive' internal refactors and profit from feature upgrades.
-   */
-  __calendarConfig(templateResult) {
-    const node = renderAndGetFirstChild(templateResult);
-    Object.assign(node, this.__virtualCalendar);
-    node.selectedDate = this.__getSyncDownValue();
-    node.addEventListener('user-selected-date-changed', this.__onCalendarSelectedChanged);
-    return node;
+  __focusCentralCalendarDay() {
+    this._calendarElement.focusedDate = this._calendarElement.centralDate;
   }
 
-  /**
-   * Subclassers can replace this with their custom extension invoker,
-   * like `<my-button><calendar-icon></calendar-icon></my-button>`
-   */
-  // eslint-disable-next-line class-methods-use-this
-  _invokerTemplate() {
-    return html`
-      <button>&#128197;</button>
-    `;
-  }
-
-  __openCalendarAndFocusDay(ev) {
-    this._overlayCtrl.show(ev.target);
-    // Give selected date focus.
-    this._calendarElement.updateComplete.then(() => {
-      this._calendarElement.focusedDate = this._calendarElement.centralDate;
-    });
-  }
-
-  __onCalendarSelectedChanged({ target: { selectedDate } }) {
+  _onCalendarUserSelectedChanged({ target: { selectedDate } }) {
     this._overlayCtrl.hide();
     // Synchronize new selectedDate value to input
     this.modelValue = selectedDate;
   }
 
   /**
-   * The lion-calendar shouldn't know anything about the modelValue;
+   * The LionCalendar shouldn't know anything about the modelValue;
    * it can't handle Unparseable dates, but does handle 'undefined'
    * @returns {Date|undefined} a 'guarded' modelValue
    */
@@ -339,13 +372,13 @@ export class LionInputDatepicker extends LionInputDate {
      * is transpiled
      * @param {String} name - a name like minDate, maxDate, minMaxDate
      * @param {Function} fn - the validator function to execute provided in [fn, param, config]
-     * @param {Function} dummyParam - arguments needed to execute fn without failing
+     * @param {Function} requiredSignature - arguments needed to execute fn without failing
      * @returns {Boolean} - whether the validator (name) is applied
      */
-    function isValidatorApplied(name, fn, dummyParam) {
+    function isValidatorApplied(name, fn, requiredSignature) {
       let result;
       try {
-        result = Object.keys(fn(new Date(), dummyParam))[0] === name;
+        result = Object.keys(fn(new Date(), requiredSignature))[0] === name;
       } catch (e) {
         result = false;
       }
