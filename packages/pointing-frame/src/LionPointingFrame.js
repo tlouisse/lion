@@ -12,6 +12,13 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
       :host {
         box-sizing: border-box;
       }
+
+      .pointing-frame {
+        box-sizing: border-box;
+        font-size: 16px;
+        color: black;
+        background-color: white;
+      }
     `;
   }
 
@@ -92,6 +99,8 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
 
       /* 5) Rotate, position and display the pointer properly */
       this.__setPointerStyles(pointerEl, defaultPointerStyles);
+
+      // TODO: Overflow auto behavior on the content box, instead of the pointing frame
     }
   }
 
@@ -104,7 +113,7 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
 
   /* eslint-disable-next-line class-methods-use-this */
   __resetPointerStyles(pointerEl) {
-    const pointerStyles = {
+    const defaultPointerStyles = {
       display: 'block',
       position: 'absolute',
       bottom: 'auto',
@@ -113,20 +122,31 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
       right: 'auto',
       transform: 'rotate(0deg)',
     };
-    Object.assign(pointerEl.style, pointerStyles);
-    pointerStyles.height = `${pointerEl.firstElementChild.getBoundingClientRect().height}px`;
-    Object.assign(pointerEl.style, pointerStyles);
-    return pointerStyles;
+
+    Object.assign(pointerEl.style, defaultPointerStyles);
+    defaultPointerStyles.height = `${pointerEl.firstElementChild.getBoundingClientRect().height}px`;
+    Object.assign(pointerEl.style, defaultPointerStyles);
+    return defaultPointerStyles;
   }
 
   __setPointerStyles(pointerEl, defaultPointerStyles) {
     const pointerStyles = defaultPointerStyles;
+    pointerStyles.display = 'block';
 
     const pointingFrameHeight = this.getBoundingClientRect().height;
     const pointingFrameWidth = this.getBoundingClientRect().width;
 
-    pointerStyles.display = 'block';
-    Object.assign(pointerEl.style, pointerStyles);
+    Object.assign(pointerEl.style, {
+      display: 'block',
+      bottom: 'auto',
+      height: '8px',
+      right: 'auto',
+      left: 'auto',
+      top: 'auto',
+      transform: 'rotate(0deg)',
+      position: 'absolute',
+    });
+
     const pointerHeight = pointerEl.firstElementChild.getBoundingClientRect().height;
     const pointerWidth = pointerEl.firstElementChild.getBoundingClientRect().width;
 
@@ -194,10 +214,6 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
     const pointingFrameEl = this.shadowRoot.querySelector('.pointing-frame');
 
     const frameStyles = {
-      boxSizing: 'border-box',
-      fontSize: '16px',
-      color: 'black',
-      backgroundColor: 'white',
       paddingBottom: 0,
       paddingTop: 0,
       paddingRight: 0,

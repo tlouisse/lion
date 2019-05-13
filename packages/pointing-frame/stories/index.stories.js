@@ -54,7 +54,7 @@ storiesOf('Pointing Frame|Pointing Frame', module)
       </style>
       <button @click=${clickHandler}>Toggle position</button>
       <div class="demo-box">
-        <lion-popup id="myPopup" position="right-of-top">
+        <lion-popup id="myPopup" position="left-of-top">
           <lion-pointing-frame
             style="outline: 1px solid pink; width: 300px;"
             slot="content"
