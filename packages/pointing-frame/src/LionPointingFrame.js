@@ -76,10 +76,14 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
        * Necessary with rectangular pointers since 90deg or 270deg rotation
        * flip height and width. Calculations will then be wrong.
        */
-      const defaultPointerStyles = this.__resetPointerStyles(pointerEl);
+      const {
+        defaultPointerStyles,
+        width: pointerWidth,
+        height: pointerHeight,
+      } = this.__resetPointerStyles(pointerEl);
 
       /* 2) Set padding / margin based on pointer */
-      this.__setFrameStyles(pointerEl);
+      this.__setFrameStyles(pointerWidth, pointerHeight);
 
       /* 3) Hide the pointer */
       this.__hidePointer(pointerEl, defaultPointerStyles);
@@ -98,7 +102,7 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
       });
 
       /* 5) Rotate, position and display the pointer properly */
-      this.__setPointerStyles(pointerEl, defaultPointerStyles);
+      this.__setPointerStyles(pointerEl, defaultPointerStyles, pointerWidth, pointerHeight);
 
       // TODO: Overflow auto behavior on the content box, instead of the pointing frame
     }
@@ -106,8 +110,7 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
 
   /* eslint-disable-next-line class-methods-use-this */
   __hidePointer(pointerEl, defaultPointerStyles) {
-    const pointerStyles = defaultPointerStyles;
-    pointerStyles.display = 'none';
+    const pointerStyles = { ...defaultPointerStyles, display: 'none' };
     Object.assign(pointerEl.style, pointerStyles);
   }
 
@@ -122,33 +125,19 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
       right: 'auto',
       transform: 'rotate(0deg)',
     };
+    Object.assign(pointerEl.style, defaultPointerStyles);
 
+    const { height, width } = pointerEl.firstElementChild.getBoundingClientRect();
+    defaultPointerStyles.height = `${height}px`;
     Object.assign(pointerEl.style, defaultPointerStyles);
-    defaultPointerStyles.height = `${pointerEl.firstElementChild.getBoundingClientRect().height}px`;
-    Object.assign(pointerEl.style, defaultPointerStyles);
-    return defaultPointerStyles;
+
+    return { defaultPointerStyles, width, height };
   }
 
-  __setPointerStyles(pointerEl, defaultPointerStyles) {
-    const pointerStyles = defaultPointerStyles;
-    pointerStyles.display = 'block';
-
+  __setPointerStyles(pointerEl, defaultPointerStyles, pointerWidth, pointerHeight) {
+    const pointerStyles = { ...defaultPointerStyles };
     const pointingFrameHeight = this.getBoundingClientRect().height;
     const pointingFrameWidth = this.getBoundingClientRect().width;
-
-    Object.assign(pointerEl.style, {
-      display: 'block',
-      bottom: 'auto',
-      height: '8px',
-      right: 'auto',
-      left: 'auto',
-      top: 'auto',
-      transform: 'rotate(0deg)',
-      position: 'absolute',
-    });
-
-    const pointerHeight = pointerEl.firstElementChild.getBoundingClientRect().height;
-    const pointerWidth = pointerEl.firstElementChild.getBoundingClientRect().width;
 
     const { vertical, horizontal, horizontalIsPrimary } = getPlacement(this.position);
 
@@ -210,7 +199,7 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
     Object.assign(pointerEl.style, pointerStyles);
   }
 
-  __setFrameStyles(pointerEl) {
+  __setFrameStyles(pointerWidth, pointerHeight) {
     const pointingFrameEl = this.shadowRoot.querySelector('.pointing-frame');
 
     const frameStyles = {
@@ -226,13 +215,6 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
       marginRight: 0,
       marginLeft: 0,
     };
-
-    // Reset to defaults before getting the content and pointer dimensions
-    Object.assign(pointingFrameEl.style, frameStyles);
-    Object.assign(this.style, hostStyles);
-
-    const pointerHeight = pointerEl.firstElementChild.getBoundingClientRect().height;
-    const pointerWidth = pointerEl.firstElementChild.getBoundingClientRect().width;
 
     const { vertical, horizontal, horizontalIsPrimary } = getPlacement(this.position);
     if (horizontalIsPrimary) {
