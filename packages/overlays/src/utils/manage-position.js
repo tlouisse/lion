@@ -55,6 +55,7 @@ export function updatePosition(el, relEl, config = {}, viewport = document.docum
     viewport,
   };
 
+  console.log(`l: ${config.placement}`);
   const placement = getPosition(positionContext, config);
   el.style.top = `${placement.top}px`;
   el.style.left = `${placement.left}px`;
@@ -140,9 +141,9 @@ export function managePosition(
     relativeTo.style.removeProperty('box-sizing');
   }
 
-  observedEvents.forEach(e =>
-    window.addEventListener(e, handleUpdateEvent, { capture: true, passive: true }),
-  );
+  observedEvents.forEach(e => {
+    window.addEventListener(e, handleUpdateEvent, { capture: true, passive: true });
+  });
   handleUpdate();
 
   return { updatePosition: handleUpdate, disconnect };

@@ -96,6 +96,7 @@ export class LionPointingFrame extends SlotMixin(LionLitElement) {
        * The parentElement position is taken (user-defined preferred position)
        * This to prevent infinite loops when using the actual position that is given
        */
+      console.log(this.parentElement.position);
       updatePosition(this, this.nextElementSibling, {
         placement: this.parentElement.position,
         position: 'absolute',

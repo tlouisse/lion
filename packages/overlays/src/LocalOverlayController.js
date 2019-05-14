@@ -111,8 +111,10 @@ export class LocalOverlayController {
           position: this.position,
         },
       ];
+
       if (!this._created) {
         managePosition(...positionParams);
+        this._created = true;
       } else {
         updatePosition(...positionParams);
       }
@@ -126,10 +128,6 @@ export class LocalOverlayController {
     }
     this._prevShown = shown;
     this._prevData = data;
-
-    if (!this._created) {
-      this._created = true;
-    }
   }
 
   /**
