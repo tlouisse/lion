@@ -3,7 +3,6 @@ import { maxDateValidator, minDateValidator, minMaxDateValidator } from '@lion/v
 import '../lion-input-datepicker.js';
 import './POCs/my-input-datepicker.js';
 
-
 // export function guardedDefineCE(name, klass) {
 //   if(!customElements.get(name)) {
 //     customElements.define(name, klass);
@@ -111,7 +110,9 @@ storiesOf('Forms|Input Datepicker', module)
     return html`
       <style>
         body {
-          font-family: Roboto,Noto Sans,-apple-system,BlinkMacSystemFont,sans-serif;
+          font-family: Roboto, Noto Sans, -apple-system, BlinkMacSystemFont, sans-serif;
+
+          --color-primary: #2196f3;
         }
       </style>
       <my-input-datepicker .modelValue="${new Date()}"></my-input-datepicker>

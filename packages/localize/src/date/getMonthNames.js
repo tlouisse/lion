@@ -9,7 +9,7 @@ const monthsLocaleCache = {};
  * @returns {Array} like: ['Januray', 'February', ...etc].
  */
 export function getMonthNames({ locale, style = 'long' } = {}) {
-  let months = monthsLocaleCache[locale];
+  let months = monthsLocaleCache[locale] && monthsLocaleCache[locale][style];
 
   if (months) {
     return months;
@@ -25,7 +25,8 @@ export function getMonthNames({ locale, style = 'long' } = {}) {
     months.push(normalizedDate);
   }
 
-  monthsLocaleCache[locale] = months;
+  monthsLocaleCache[locale] = monthsLocaleCache[locale] || {};
+  monthsLocaleCache[locale][style] = months;
 
   return months;
 }
