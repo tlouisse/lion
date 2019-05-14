@@ -142,22 +142,22 @@ export class LionInputDatepicker extends LionInputDate {
 
   /**
    * Element references, available for Subclassers.
-   * 
+   *
    * They refer part of the templates where logic should be added:
    * - event listeners
    * - accessibility roles/labels/attributes (etc...)
    * - configurations of (Custom) Elements
-   * 
+   *
    * This allows for a separation of concerns between style and functionality.
    * Functionality should be delivered by the Lion layer. Since it's mostly contained in private
    * methods, the subclassers should not be bothered with it.
    * An imperative approach (instead of via lit-html template) for handling functionality, will
-   * make templates created by subclassers readable, easy to maintain and most important, future 
+   * make templates created by subclassers readable, easy to maintain and most important, future
    * proof (they will only contain styling, markup and functional references(ids)).
    * On top of that they benefit from bug fixes and features without having to update their
    * templates.
    */
-  
+
   get _invokerElement() {
     return this.querySelector(`#${this.__invokerId}`);
   }
@@ -177,6 +177,12 @@ export class LionInputDatepicker extends LionInputDate {
       .toString(36)
       .substr(2, 10)}`;
     this._calendarInvokerSlot = 'suffix';
+
+    // Configuration flags for subclassers
+    this._focusCentralDateOnCalendarOpen = true;
+    this._hideOnUserSelect = true;
+    this._syncOnUserSelect = true;
+
     /**
      * 'Virtual' synchronization object for pending updates (that can only be set when the
      * calendar is opened and thus rendered to the dom).
@@ -268,9 +274,9 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   /**
-   * Subclassers can replace this with their custom extension of
-   * LionCalendar, like `<my-calendar id="calendar"></my-calendar>`
-   */ // eslint-disable-next-line class-methods-use-this
+  * Subclassers can replace this with their custom extension of
+  * LionCalendar, like `<my-calendar id="calendar"></my-calendar>`
+  */ // eslint-disable-next-line class-methods-use-this
   _calendarTemplate() {
     return html`
       <lion-calendar id="calendar"></lion-calendar>
@@ -291,9 +297,9 @@ export class LionInputDatepicker extends LionInputDate {
   }
 
   /**
-   * Subclassers can replace this with their custom extension invoker,
-   * like `<my-button><calendar-icon></calendar-icon></my-button>`
-   */ // eslint-disable-next-line class-methods-use-this
+  * Subclassers can replace this with their custom extension invoker,
+  * like `<my-button><calendar-icon></calendar-icon></my-button>`
+  */ // eslint-disable-next-line class-methods-use-this
   _invokerTemplate() {
     return html`
       <button>&#128197;</button>
@@ -338,17 +344,19 @@ export class LionInputDatepicker extends LionInputDate {
    * Lifecycle callback for subclassers
    */
   _onCalendarOverlayOpened() {
-    this.__focusCentralCalendarDay();
-  }
-
-  __focusCentralCalendarDay() {
-    this._calendarElement.focusedDate = this._calendarElement.centralDate;
+    if (this._focusCentralDateOnCalendarOpen) {
+      this._calendarElement.focusCentralDate();
+    }
   }
 
   _onCalendarUserSelectedChanged({ target: { selectedDate } }) {
-    this._overlayCtrl.hide();
-    // Synchronize new selectedDate value to input
-    this.modelValue = selectedDate;
+    if (this._hideOnUserSelect) {
+      this._overlayCtrl.hide();
+    }
+    if (this._syncOnUserSelect) {
+      // Synchronize new selectedDate value to input
+      this.modelValue = selectedDate;
+    }
   }
 
   /**

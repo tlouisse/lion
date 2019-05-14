@@ -3,6 +3,7 @@ import { getWeekdayNames, getMonthNames } from '@lion/localize';
 import { LionCalendar } from '@lion/calendar';
 import { LionButton } from '@lion/button';
 import { LionInputDatepicker } from '../../src/LionInputDatepicker.js';
+import { supportsAdoptingStyleSheets } from 'lit-element';
 
 // We don't have access to our main index html, so let's add Roboto font like this
 const linkNode = document.createElement('link');
@@ -361,7 +362,12 @@ customElements.define(
   class extends LionInputDatepicker {
     constructor() {
       super();
+      // Config options for subclassers
       this._calendarInvokerSlot = 'prefix';
+      this._focusCentralDateOnCalendarOpen = false;
+      this._hideOnUserSelect = false;
+      this._syncOnUserSelect = false;
+
       this.__myDelegateOverlayAction = this.__myDelegateOverlayAction.bind(this);
     }
 
@@ -400,11 +406,7 @@ customElements.define(
 
     /** @override */
     _onCalendarOverlayOpened() {
-      // We don't call super here, since By default it focuses first date.
-      // TODO: make these protected config options, so that a best practive will be to always
-      // call the super method. (similar to how Global/LocalOverlayController are built, in the
-      // sense that they enable certain features based on config)
-
+      super._onCalendarOverlayOpened();
       this._calendarOverlayElement.addEventListener(
         'delegate-action',
         this.__myDelegateOverlayAction,
@@ -413,16 +415,6 @@ customElements.define(
       this._calendarElement.addEventListener('click', this.__myFormatHeading.bind(this));
       this._calendarElement.addEventListener('keydown', this.__myFormatHeading.bind(this));
       this.__myFormatHeading();
-    }
-
-    /** @override */
-    _onCalendarUserSelectedChanged() {
-      // Ovveride, so it doesn't:
-      // - close calendar on selection
-      // - synchronize new selectedDate value to input
-      // TODO: make these protected config options, so that a best practive will be to always
-      // call the super method. (similar to how Global/LocalOverlayController are built, in the
-      // sense that they enable certain features based on config)
     }
 
     // TODO: add this lifecycle hook in LionInputDatepicker
