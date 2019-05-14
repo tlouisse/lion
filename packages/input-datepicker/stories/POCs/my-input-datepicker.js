@@ -4,6 +4,12 @@ import { LionCalendar } from '@lion/calendar';
 import { LionButton } from '@lion/button';
 import { LionInputDatepicker } from '../../src/LionInputDatepicker.js';
 
+// We don't have access to our main index html, so let's add Roboto font like this
+const linkNode = document.createElement('link');
+linkNode.href = 'https://fonts.googleapis.com/css?family=Roboto:300,400,500';
+linkNode.rel = 'stylesheet';
+linkNode.type = 'text/css';
+document.head.appendChild(linkNode);
 
 customElements.define(
   'my-calendar',
@@ -17,20 +23,83 @@ customElements.define(
             max-width: 330px; /* set via js */
             overflow: hidden;
           }
-      `];
+
+          .calendar__header {
+            border-bottom: none;
+
+            display: flex;
+            margin-top: 4px;
+            align-items: center;
+            justify-content: space-between;
+          }
+
+          .calendar__month-heading {
+            color: rgba(0, 0, 0, 0.87);
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            letter-spacing: 0.00938em;
+          }
+
+          .calendar__weekday-header {
+            color: rgba(0, 0, 0, 0.38);
+            font-size: 0.75rem;
+            line-height: 1.66;
+            letter-spacing: 0.03333em;
+
+            padding-bottom: 8px;
+          }
+
+          .calendar__day-button {
+            border-radius: 50%;
+
+            min-width: 36px;
+            min-height: 36px;
+          }
+
+          .calendar__day-button:hover {
+            border-color: transparent;
+            background-color: #eee;
+          }
+
+          .calendar__day-button:focus {
+            outline: none;
+            background-color: lightgray;
+          }
+
+          .calendar__day-button[selected] {
+            background: var(--color-primary, royalblue);
+            color: white;
+            border-radius: 50%;
+          }
+
+          .calendar__day-button[next-month],
+          .calendar__day-button[previous-month] {
+            display: none;
+          }
+
+          .calendar__prev-month-button,
+          .calendar__next-month-button {
+            color: rgba(0, 0, 0, 0.54);
+          }
+
+          .calendar__prev-month-button svg,
+          .calendar__next-month-button svg {
+            width: 24px;
+          }
+        `,
+      ];
     }
 
     constructor() {
       super();
       this.firstDayOfWeek = 1; // Start on Mondays instead of Sundays
       this.weekdayHeaderNotation = 'narrow'; // 'T' instead of 'Thu'
-      // this.__futureMonths = 1;
-      // this.__pastMonths = 1;
-
     }
 
+    // TODO: enable if swipeable/animated months need to be created
     // __createData() {
-    //   return super.__createData({ futureMonths: this.__futureMonths, pastMonths: this.__pastMonths });
+    //   return super.__createData({ futureMonths: 1, pastMonths: 1 });
     // }
 
     // TODO: align template names, allow Subclassers
@@ -38,7 +107,43 @@ customElements.define(
       return html`
         <div id="content-wrapper">
           ${super.__renderData()}
-        </div>`;
+        </div>
+      `;
+    }
+
+    // TODO: abstract away a11y and behavior in parent. Align names
+    __renderPreviousButton() {
+      return html`
+        <my-button
+          class="calendar__prev-month-button"
+          aria-label=${this.msgLit('lion-calendar:previousMonth')}
+          title=${this.msgLit('lion-calendar:previousMonth')}
+          @click=${this.goToPreviousMonth}
+          ?disabled=${this._previousMonthDisabled}
+        >
+          <svg focusable="false" viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+            <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z"></path>
+            <path fill="none" d="M0 0h24v24H0V0z"></path>
+          </svg>
+        </my-button>
+      `;
+    }
+
+    __renderNextButton() {
+      return html`
+        <my-button
+          class="calendar__next-month-button"
+          aria-label=${this.msgLit('lion-calendar:nextMonth')}
+          title=${this.msgLit('lion-calendar:nextMonth')}
+          @click=${this.goToNextMonth}
+          ?disabled=${this._nextMonthDisabled}
+        >
+          <svg focusable="false" viewBox="0 0 24 24" aria-hidden="true" role="presentation">
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"></path>
+            <path fill="none" d="M0 0h24v24H0V0z"></path>
+          </svg>
+        </my-button>
+      `;
     }
   },
 );
@@ -50,36 +155,47 @@ customElements.define(
       return [
         ...super.styles,
         css`
-          :host {
-          }
-
           .btn {
-            font-family: Roboto,sans-serif;
+            font-family: Roboto, sans-serif;
             -moz-osx-font-smoothing: grayscale;
             -webkit-font-smoothing: antialiased;
-            font-size: .875rem;
+            font-size: 0.875rem;
             line-height: 2.25rem;
             font-weight: 500;
-            letter-spacing: .0892857143em;
+            letter-spacing: 0.0892857143em;
             text-decoration: none;
             text-transform: uppercase;
 
             border: transparent;
             border-radius: 0;
             background: none;
+
+            color: var(--color-primary);
           }
 
+          :host(:focus) .btn,
           :host(:hover) .btn {
-            background: lightgrey;
+            background-color: rgba(33, 150, 243, 0.08);
+            color: var(--color-primary);
           }
 
-        `];
+          :host(:focus) .btn {
+            outline: none;
+            border-color: transparent;
+            box-shadow: none;
+          }
+
+          :host(:active) .btn {
+            background-color: rgba(33, 150, 243, 0.16);
+          }
+        `,
+      ];
     }
 
     __clickDelegationHandler() {
       this.$$slot('_button').click();
     }
-  }
+  },
 );
 
 customElements.define(
@@ -87,8 +203,8 @@ customElements.define(
   class extends LitElement {
     static get properties() {
       return {
-        headingParts: { type: Object }
-      }
+        headingParts: { type: Object },
+      };
     }
 
     static get styles() {
@@ -98,30 +214,44 @@ customElements.define(
             display: inline-block;
             background: white;
             position: relative;
-          }
 
-          @media only screen and (min-width: 640px) {
-            .c-calendar-overlay {
-              flex-direction: row;
-              display: flex
-            }
-            
-            .c-calendar-overlay__header {
-              width: 160px;
-            }
+            border-radius: 4px;
+            box-shadow: 0px 11px 15px -7px rgba(0, 0, 0, 0.2), 0px 24px 38px 3px rgba(0, 0, 0, 0.14),
+              0px 9px 46px 8px rgba(0, 0, 0, 0.12);
           }
 
           .c-calendar-overlay__header {
             display: flex;
+            background: var(--color-primary, royalblue);
+            color: white;
           }
 
           .c-calendar-overlay__heading {
-            padding: 16px 16px 8px;
-            flex: 1;
+            padding: 0 24px;
+
+            font-size: 2.125rem;
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            font-weight: 400;
+            line-height: 1.17;
+            letter-spacing: 0.00735em;
+
+            height: 100px;
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+            justify-content: center;
           }
 
           .c-calendar-overlay__heading > .c-calendar-overlay__close-button {
             flex: none;
+          }
+
+          .c-calendar-overlay__heading__year {
+            color: rgba(255, 255, 255, 0.54);
+
+            font-size: 1rem;
+            line-height: 1.75;
+            letter-spacing: 0.00938em;
           }
 
           .c-calendar-overlay__close-button {
@@ -135,6 +265,7 @@ customElements.define(
           .c-calendar-overlay__footer {
             display: flex;
             padding: var(--spacer, 8px);
+            justify-content: flex-end;
           }
 
           .c-calendar-overlay__footer > *:not(:last-child) {
@@ -145,7 +276,24 @@ customElements.define(
             display: flex;
             flex-direction: column;
           }
-      `];
+
+          @media only screen and (min-width: 640px) {
+            .c-calendar-overlay {
+              flex-direction: row;
+              display: flex;
+            }
+
+            .c-calendar-overlay__header {
+              width: 160px;
+              padding-top: 8px;
+            }
+
+            .c-calendar-overlay__heading {
+              height: auto;
+            }
+          }
+        `,
+      ];
     }
 
     firstUpdated(...args) {
@@ -153,10 +301,9 @@ customElements.define(
       // Delegate actions to extension of LionInputDatepicker.
       // In InputDatepicker, interaction with Calendar is provided
       this.shadowRoot.addEventListener('click', ({ target }) => {
-        if(['set-button', 'cancel-button', 'clear-button'].includes(target.id)) {
-          this.dispatchEvent(new CustomEvent('delegate-action', { 
-            detail: { action: target.id.split('-')[0] },
-          }));
+        if (['set-button', 'cancel-button', 'clear-button'].includes(target.id)) {
+          const action = target.id.split('-')[0];
+          this.dispatchEvent(new CustomEvent('delegate-action', { detail: { action } }));
         }
       });
     }
@@ -167,21 +314,30 @@ customElements.define(
         <div class="c-calendar-overlay">
           <div class="c-calendar-overlay__header">
             <div role="region">
-              <div id="overlay-heading" role="heading" aria-level="1" class="c-calendar-overlay__heading">
+              <div
+                id="overlay-heading"
+                role="heading"
+                aria-level="1"
+                class="c-calendar-overlay__heading"
+              >
                 <span class="c-calendar-overlay__heading__year">${this.headingParts.year}</span>
                 <div class="c-calendar-overlay__heading__date">
-                  <strong class="c-calendar-overlay__heading__dayname">
-                    ${this.headingParts.dayName}, 
-                  </strong> 
-                  <strong class="c-calendar-overlay__heading__day">${this.headingParts.dayWeekNumber}</strong>
-                  <strong class="c-calendar-overlay__heading__monthname">${this.headingParts.monthName}</strong> 
+                  <span class="c-calendar-overlay__heading__dayname">
+                    ${this.headingParts.dayName},
+                  </span>
+                  <span class="c-calendar-overlay__heading__day"
+                    >${this.headingParts.dayWeekNumber}</span
+                  >
+                  <span class="c-calendar-overlay__heading__monthname"
+                    >${this.headingParts.monthName}</span
+                  >
                 </div>
               </div>
             </div>
           </div>
           <div class="c-calendar-overlay__body">
             <slot></slot>
-            
+
             <div class="c-calendar-overlay__footer">
               <my-button id="clear-button" class="c-calendar-overlay__clear-button">
                 Clear
@@ -193,7 +349,6 @@ customElements.define(
                 Set
               </my-button>
             </div>
-
           </div>
         </div>
       `;
@@ -207,9 +362,9 @@ customElements.define(
     constructor() {
       super();
       this._calendarInvokerSlot = 'prefix';
-      this.__mdDelegateOverlayAction = this.__mdDelegateOverlayAction.bind(this);
+      this.__myDelegateOverlayAction = this.__myDelegateOverlayAction.bind(this);
     }
-    
+
     /** @override */
     _invokerTemplate() {
       return html`
@@ -232,7 +387,7 @@ customElements.define(
     }
 
     /** @override */
-    // TODO: if globalOverlay would support shadow dom, this would be more straightforward, 
+    // TODO: if globalOverlay would support shadow dom, this would be more straightforward,
     // a.k.a. not require an extra web component
     _calendarOverlayTemplate() {
       return html`
@@ -245,20 +400,29 @@ customElements.define(
 
     /** @override */
     _onCalendarOverlayOpened() {
-      // Optional to call super here. By default it focuses first date.
-      // super._onCalendarOverlayOpened();
-      this._calendarOverlayElement.addEventListener('delegate-action', this.__mdDelegateOverlayAction);
+      // We don't call super here, since By default it focuses first date.
+      // TODO: make these protected config options, so that a best practive will be to always
+      // call the super method. (similar to how Global/LocalOverlayController are built, in the
+      // sense that they enable certain features based on config)
+
+      this._calendarOverlayElement.addEventListener(
+        'delegate-action',
+        this.__myDelegateOverlayAction,
+      );
       // TODO: Change events to one 'central-date-changed' once exposed
-      this._calendarElement.addEventListener('click', this.__mdFormatHeading.bind(this));
-      this._calendarElement.addEventListener('keydown', this.__mdFormatHeading.bind(this));
-      this.__mdFormatHeading();
+      this._calendarElement.addEventListener('click', this.__myFormatHeading.bind(this));
+      this._calendarElement.addEventListener('keydown', this.__myFormatHeading.bind(this));
+      this.__myFormatHeading();
     }
 
     /** @override */
     _onCalendarUserSelectedChanged() {
-      // Ovveride, so it doesn't: 
-      // - close calendar on selection 
+      // Ovveride, so it doesn't:
+      // - close calendar on selection
       // - synchronize new selectedDate value to input
+      // TODO: make these protected config options, so that a best practive will be to always
+      // call the super method. (similar to how Global/LocalOverlayController are built, in the
+      // sense that they enable certain features based on config)
     }
 
     // TODO: add this lifecycle hook in LionInputDatepicker
@@ -268,7 +432,7 @@ customElements.define(
       return { ...super._getOverlayConfig(), ...{ hidesOnOutsideClick: true } };
     }
 
-    __mdFormatHeading() {
+    __myFormatHeading() {
       // TODO: needs to run on 'central-date-changed': fire this event in LionCalendar
       const d = this._calendarElement.centralDate;
       const locale = this._calendarElement.__getLocale();
@@ -278,13 +442,12 @@ customElements.define(
         dayName: getWeekdayNames({ locale, style: 'short', firstDayOfWeek })[d.getDay()],
         dayWeekNumber: d.getDate(),
         year: d.getFullYear(),
-      }
+      };
     }
 
-    __mdDelegateOverlayAction({ detail: { action } }) {
+    __myDelegateOverlayAction({ detail: { action } }) {
       switch (action) {
         case 'set':
-          // Set selectedDate, synchronization to modelValue will be done by InputDatepicker
           this._calendarElement.selectedDate = this._calendarElement.centralDate;
           this.modelValue = this._calendarElement.selectedDate;
           break;
