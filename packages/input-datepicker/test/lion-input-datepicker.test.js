@@ -155,7 +155,6 @@ describe.only('<lion-input-datepicker>', () => {
       await elObj.openCalendar();
       expect(elObj.overlayController.isShown).to.equal(true);
       // Mimic user input: should fire the 'user-selected-date-changed' event
-      // elObj.calendarEl.dispatchEvent(new Event('user-selected-date-changed'));
       await elObj.selectMonthDay(12);
       expect(elObj.overlayController.isShown).to.equal(false);
     });
@@ -188,14 +187,14 @@ describe.only('<lion-input-datepicker>', () => {
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
 
-        expect(elObj.calendarEl.disabledDates).to.equal(no15thOr16th);
+        expect(elObj.calendarEl.disableDates).to.equal(no15thOr16th);
       });
 
       it('converts minDateValidator to "minDate" property', async () => {
         const myMinDate = new Date('2019/06/15');
         const el = await fixture(html`
-            <lion-input-datepicker .errorValidators=${[minDateValidator(myMinDate)]}>
-            </lion-input-date>`);
+          <lion-input-datepicker .errorValidators=${[minDateValidator(myMinDate)]}>
+          </lion-input-date>`);
         const elObj = new DatepickerInputObject(el);
         await elObj.openCalendar();
 
@@ -360,7 +359,7 @@ describe.only('<lion-input-datepicker>', () => {
 
     describe('Providing a custom overlay', () => {
       it('can override the overlay template', async () => {
-        // Keep in mind there is no logic inside this overlay frame; it only handles visuals
+        // Keep in mind there is no logic inside this overlay frame; it only handles visuals.
         // All interaction should be delegated to parent, which interacts with the calendar
         // component
         customElements.define(
@@ -370,18 +369,6 @@ describe.only('<lion-input-datepicker>', () => {
               // eslint-disable-line class-methods-use-this
               return html`
                 <div class="c-calendar-overlay">
-                  <div class="c-calendar-overlay__header">
-                    <div role="region">
-                      <div
-                        id="overlay-heading"
-                        role="heading"
-                        aria-level="1"
-                        class="c-calendar-overlay__heading"
-                      >
-                        <slot name="heading"></slot>
-                      </div>
-                    </div>
-                  </div>
                   <slot></slot>
                   <div class="c-calendar-overlay__footer">
                     <button id="cancel-button" class="c-calendar-overlay__cancel-button">
@@ -404,20 +391,20 @@ describe.only('<lion-input-datepicker>', () => {
               return html`
                 <my-calendar-overlay-frame id="calendar-overlay">
                   <span slot="heading">${this.calendarHeading}</span>
-                  ${this.__calendarConfig(this._calendarTemplate())}
+                  ${this._calendarTemplateConfig(this._calendarTemplate())}
                 </my-calendar-overlay-frame>
               `;
             }
 
             /** @override */
-            _onCalendarOverlayOpened() {
-              super._onCalendarOverlayOpened();
+            _onCalendarOverlayOpened(...args) {
+              super._onCalendarOverlayOpened(...args);
               myOverlayOpenedCbHandled = true;
             }
 
             /** @override */
-            _onCalendarUserSelectedChanged({ target: { selectedDate } }) {
-              super._onCalendarUserSelectedChanged();
+            _onCalendarUserSelectedChanged(...args) {
+              super._onCalendarUserSelectedChanged(...args);
               myUserSelectedChangedCbHandled = true;
             }
           },
@@ -430,8 +417,8 @@ describe.only('<lion-input-datepicker>', () => {
         await myElObj.openCalendar();
         expect(myElObj.overlayEl.tagName.toLowerCase()).to.equal('my-calendar-overlay-frame');
         expect(myOverlayOpenedCbHandled).to.be.true;
-        // await myElObj.selectMonthDay(1);
-        // expect(myUserSelectedChangedCbHandled).to.be.true;
+        await myElObj.selectMonthDay(1);
+        expect(myUserSelectedChangedCbHandled).to.be.true;
       });
 
       it.skip('can configure the overlay presentation based on media query switch', async () => {});

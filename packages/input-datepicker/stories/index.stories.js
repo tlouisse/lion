@@ -1,13 +1,7 @@
 import { storiesOf, html } from '@open-wc/demoing-storybook';
 import { maxDateValidator, minDateValidator, minMaxDateValidator } from '@lion/validate';
 import '../lion-input-datepicker.js';
-import './POCs/my-input-datepicker.js';
-
-// export function guardedDefineCE(name, klass) {
-//   if(!customElements.get(name)) {
-//     customElements.define(name, klass);
-//   }
-// }
+import './POCs/md-input-datepicker.js';
 
 storiesOf('Forms|Input Datepicker', module)
   .add(
@@ -111,10 +105,13 @@ storiesOf('Forms|Input Datepicker', module)
       <style>
         body {
           font-family: Roboto, Noto Sans, -apple-system, BlinkMacSystemFont, sans-serif;
-
           --color-primary: #2196f3;
         }
       </style>
-      <my-input-datepicker .modelValue="${new Date()}"></my-input-datepicker>
+      <md-input-datepicker
+        .modelValue="${new Date()}"
+        label="Pick a date"
+        help-text="Pick a date, rakker"
+      ></md-input-datepicker>
     `;
   });

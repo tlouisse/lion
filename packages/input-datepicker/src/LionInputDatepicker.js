@@ -268,16 +268,15 @@ export class LionInputDatepicker extends LionInputDate {
     return html`
       <lion-calendar-overlay-frame>
         <span slot="heading">${this.calendarHeading}</span>
-        ${this.__calendarConfig(this._calendarTemplate())}
+        ${this._calendarTemplateConfig(this._calendarTemplate())}
       </lion-calendar-overlay-frame>
     `;
-  }
+  } // eslint-disable-next-line class-methods-use-this
 
   /**
   * Subclassers can replace this with their custom extension of
   * LionCalendar, like `<my-calendar id="calendar"></my-calendar>`
-  */ // eslint-disable-next-line class-methods-use-this
-  _calendarTemplate() {
+  */ _calendarTemplate() {
     return html`
       <lion-calendar id="calendar"></lion-calendar>
     `;
@@ -288,19 +287,18 @@ export class LionInputDatepicker extends LionInputDate {
    * abstract away all (private and protected) logic from the template, so that subclassers
    * replacing templates 'survive' internal refactors and profit from feature upgrades.
    */
-  __calendarConfig(templateResult) {
+  _calendarTemplateConfig(templateResult) {
     const node = renderAndGetFirstChild(templateResult);
     Object.assign(node, this.__virtualCalendar);
     node.selectedDate = this.__getSyncDownValue();
     node.addEventListener('user-selected-date-changed', this._onCalendarUserSelectedChanged);
     return node;
-  }
+  } // eslint-disable-next-line class-methods-use-this
 
   /**
   * Subclassers can replace this with their custom extension invoker,
   * like `<my-button><calendar-icon></calendar-icon></my-button>`
-  */ // eslint-disable-next-line class-methods-use-this
-  _invokerTemplate() {
+  */ _invokerTemplate() {
     return html`
       <button>&#128197;</button>
     `;
@@ -406,7 +404,7 @@ export class LionInputDatepicker extends LionInputDate {
         this.__virtualCalendar.minDate = param.min;
         this.__virtualCalendar.maxDate = param.max;
       } else if (isValidatorApplied('disabledDates', fn, () => true)) {
-        this.__virtualCalendar.disabledDates = param;
+        this.__virtualCalendar.disableDates = param;
       }
     });
   }
