@@ -37,4 +37,22 @@ describe('<lion-form>', () => {
       firstName: 'Foo',
     });
   });
+
+  it('works with the native submit event (triggered via a button)', async () => {
+    let isSubmitted = false;
+    const mySubmit = () => {
+      isSubmitted = true;
+    };
+    const el = await fixture(html`
+      <lion-form @submit=${mySubmit}>
+        <form>
+          <button type="submit">submit</button>
+        </form>
+      </lion-form>
+    `);
+
+    const button = el.querySelector('button');
+    button.click();
+    expect(isSubmitted).to.be.true;
+  });
 });
