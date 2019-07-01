@@ -30,9 +30,7 @@ import { FormatMixin } from './FormatMixin.js';
 export class LionField extends FormControlMixin(
   InteractionStateMixin(
     FormatMixin(
-      ValidateMixin(
-        CssClassMixin(ElementMixin(DelegateMixin(SlotMixin(ObserverMixin(LionLitElement))))),
-      ),
+      ValidateMixin(ElementMixin(DelegateMixin(SlotMixin(ObserverMixin(LionLitElement))))),
     ),
   ),
 ) {

@@ -15,7 +15,7 @@ const pascalCase = str => str.charAt(0).toUpperCase() + str.slice(1);
 export const ValidateMixin = dedupeMixin(
   superclass =>
     // eslint-disable-next-line no-unused-vars, no-shadow, max-len
-    class ValidateMixin extends CssClassMixin(ObserverMixin(LocalizeMixin(SlotMixin(superclass)))) {
+    class ValidateMixin extends ObserverMixin(LocalizeMixin(SlotMixin(superclass))) {
       /* * * * * * * * * *
     Configuration  */
 

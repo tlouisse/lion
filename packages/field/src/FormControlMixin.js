@@ -76,7 +76,31 @@ export const FormControlMixin = dedupeMixin(
       }
 
       get inputElement() {
-        return (this.$$slot && this.$$slot('input')) || this.querySelector('[slot=input]'); // eslint-disable-line
+        if (this.__inputElementCache) {
+          return this.__inputElementCache;
+        }
+        this.__inputElementCache = this.querySelector('[slot=input]');
+      }
+
+      get labelElement() {
+        if (this.__labelElementCache) {
+          return this.__labelElementCache;
+        }
+        this.__labelElementCache = this.querySelector('[slot=label]');
+      }
+
+      get helpTextElement() {
+        if (this.__helpTextElementCache) {
+          return this.__helpTextElementCache;
+        }
+        this.__helpTextElementCache = this.querySelector('[slot=help-text]');
+      }
+
+      get feedbackElement() {
+        if (this.__feedbackElementCache) {
+          return this.__feedbackElementCache;
+        }
+        this.__feedbackElementCache = this.querySelector('[slot=feedback]');
       }
 
       constructor() {
@@ -110,26 +134,26 @@ export const FormControlMixin = dedupeMixin(
         if (this.inputElement) {
           this.inputElement.id = this.inputElement.id || this._inputId;
         }
-        if (this.$$slot('label')) {
-          this.$$slot('label').setAttribute('for', this._inputId);
-          this.$$slot('label').id = this.$$slot('label').id || `label-${this._inputId}`;
-          const labelledById = ` ${this.$$slot('label').id}`;
+        if (this.labelElement) {
+          this.labelElement.setAttribute('for', this._inputId);
+          this.labelElement.id = this.labelElement.id || `label-${this._inputId}`;
+          const labelledById = ` ${this.labelElement.id}`;
           if (this._ariaLabelledby.indexOf(labelledById) === -1) {
-            this._ariaLabelledby += ` ${this.$$slot('label').id}`;
+            this._ariaLabelledby += ` ${this.labelElement.id}`;
           }
         }
-        if (this.$$slot('help-text')) {
-          this.$$slot('help-text').id = this.$$slot('help-text').id || `help-text-${this._inputId}`;
-          const describeIdHelpText = ` ${this.$$slot('help-text').id}`;
+        if (this.helpTextElement) {
+          this.helpTextElement.id = this.helpTextElement.id || `help-text-${this._inputId}`;
+          const describeIdHelpText = ` ${this.helpTextElement.id}`;
           if (this._ariaDescribedby.indexOf(describeIdHelpText) === -1) {
-            this._ariaDescribedby += ` ${this.$$slot('help-text').id}`;
+            this._ariaDescribedby += ` ${this.helpTextElement.id}`;
           }
         }
-        if (this.$$slot('feedback')) {
-          this.$$slot('feedback').id = this.$$slot('feedback').id || `feedback-${this._inputId}`;
-          const describeIdFeedback = ` ${this.$$slot('feedback').id}`;
+        if (this.feedbackElement) {
+          this.feedbackElement.id = this.feedbackElement.id || `feedback-${this._inputId}`;
+          const describeIdFeedback = ` ${this.feedbackElement.id}`;
           if (this._ariaDescribedby.indexOf(describeIdFeedback) === -1) {
-            this._ariaDescribedby += ` ${this.$$slot('feedback').id}`;
+            this._ariaDescribedby += ` ${this.feedbackElement.id}`;
           }
         }
         this._enhanceLightDomA11yForAdditionalSlots();
@@ -181,7 +205,7 @@ export const FormControlMixin = dedupeMixin(
         additionalSlots = ['prefix', 'suffix', 'before', 'after'],
       ) {
         additionalSlots.forEach(additionalSlot => {
-          const element = this.$$slot(additionalSlot);
+          const element = this.querySelector(`[slot=${additionalSlot}]`);
           if (element) {
             element.id = element.id || `${additionalSlot}-${this._inputId}`;
             if (element.hasAttribute('data-label') === true) {
@@ -218,14 +242,14 @@ export const FormControlMixin = dedupeMixin(
       }
 
       _onLabelChanged({ label }) {
-        if (this.$$slot && this.$$slot('label')) {
-          this.$$slot('label').textContent = label;
+        if (this.labelElement) {
+          this.labelElement.textContent = label;
         }
       }
 
       _onHelpTextChanged({ helpText }) {
-        if (this.$$slot && this.$$slot('help-text')) {
-          this.$$slot('help-text').textContent = helpText;
+        if (this.helpTextElement) {
+          this.helpTextElement.textContent = helpText;
         }
       }
 
@@ -552,7 +576,7 @@ export const FormControlMixin = dedupeMixin(
 
       // Returns dom references to all elements that should be referred to by field(s)
       _getAriaDescriptionElements() {
-        return [this.$$slot('help-text'), this.$$slot('feedback')];
+        return [this.helpTextElement, this.feedbackElement];
       }
 
       /**

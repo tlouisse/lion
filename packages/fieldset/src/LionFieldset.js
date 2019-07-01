@@ -15,7 +15,7 @@ const pascalCase = str => str.charAt(0).toUpperCase() + str.slice(1);
  * @extends LionLitElement
  */
 export class LionFieldset extends FormControlMixin(
-  ValidateMixin(CssClassMixin(SlotMixin(ObserverMixin(LionLitElement)))),
+  ValidateMixin(SlotMixin(ObserverMixin(LionLitElement))),
 ) {
   static get properties() {
     return {
@@ -337,11 +337,13 @@ export class LionFieldset extends FormControlMixin(
     // aria-describedby of (nested) children
     let parent = this;
     while (parent) {
-      this.constructor._addDescriptionElementIdsToField(
-        child,
-        parent._getAriaDescriptionElements(),
-      );
-      // Also check if the newly added child needs to refer grandparents
+      if (parent._getAriaDescriptionElements) {
+        this.constructor._addDescriptionElementIdsToField(
+          child,
+          parent._getAriaDescriptionElements(),
+        );
+        // Also check if the newly added child needs to refer grandparents
+      }
       parent = parent.__parentFormGroup;
     }
 

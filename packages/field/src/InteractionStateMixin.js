@@ -16,7 +16,7 @@ import { FocusMixin } from './FocusMixin.js';
 export const InteractionStateMixin = dedupeMixin(
   superclass =>
     // eslint-disable-next-line no-unused-vars, no-shadow
-    class InteractionStateMixin extends CssClassMixin(FocusMixin(ObserverMixin(superclass))) {
+    class InteractionStateMixin extends ObserverMixin(superclass) {
       static get properties() {
         return {
           ...super.properties,
