@@ -1,5 +1,5 @@
 import { html, css } from '@lion/core';
-import { FormControlMixin, InteractionStateMixin } from '@lion/field';
+// import { FormControlMixin } from '@lion/field';
 import { ChoiceInputMixin } from '@lion/choice-input';
 import { LitElement } from 'lit-element';
 
@@ -10,7 +10,7 @@ import { LitElement } from 'lit-element';
  * Element gets state supplied externally, reflects this to attributes,
  * enabling Subclassers to style based on those states
  */
-export class LionOption extends ChoiceInputMixin(InteractionStateMixin(LitElement)) {
+export class LionOption extends ChoiceInputMixin(LitElement) {
   static get properties() {
     return {
       disabled: {
@@ -79,54 +79,6 @@ export class LionOption extends ChoiceInputMixin(InteractionStateMixin(LitElemen
 
   /************************** FORKED for now :( ***************************/
 
-  /**
-   * Let the order of adding ids to aria element by DOM order, so that the screen reader
-   * respects visual order when reading:
-   * https://developers.google.com/web/fundamentals/accessibility/focus/dom-order-matters
-   * @param {array} descriptionElements - holds references to description or label elements whose
-   * id should be returned
-   * @returns {array} sorted set of elements based on dom order
-   *
-   * TODO: make this method part of a more generic mixin or util and also use for lion-field
-   */
-  static _getAriaElementsInRightDomOrder(descriptionElements) {
-    const putPrecedingSiblingsAndLocalParentsFirst = (a, b) => {
-      // https://developer.mozilla.org/en-US/docs/Web/API/Node/compareDocumentPosition
-      const pos = a.compareDocumentPosition(b);
-      if (pos === Node.DOCUMENT_POSITION_PRECEDING || pos === Node.DOCUMENT_POSITION_CONTAINED_BY) {
-        return 1;
-      }
-      return -1;
-    };
-
-    const descriptionEls = descriptionElements.filter(el => el); // filter out null references
-    return descriptionEls.sort(putPrecedingSiblingsAndLocalParentsFirst);
-  }
-
-  // Returns dom references to all elements that should be referred to by field(s)
-  _getAriaDescriptionElements() {
-    return [this.helpTextElement, this.feedbackElement];
-  }
-
-  /**
-   * Meant for Application Developers wanting to add to aria-labelledby attribute.
-   * @param {string} id - should be the id of an element that contains the label for the
-   * concerned field or fieldset, living in the same shadow root as the host element of field or
-   * fieldset.
-   */
-  addToAriaLabel(id) {
-    this._ariaLabelledby += ` ${id}`;
-  }
-
-  /**
-   * Meant for Application Developers wanting to add to aria-describedby attribute.
-   * @param {string} id - should be the id of an element that contains the label for the
-   * concerned field or fieldset, living in the same shadow root as the host element of field or
-   * fieldset.
-   */
-  addToAriaDescription(id) {
-    this._ariaDescribedby += ` ${id}`;
-  }
 
   /**
    * Fires a registration event in the next frame.

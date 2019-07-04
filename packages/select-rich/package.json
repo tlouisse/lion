@@ -40,7 +40,7 @@
     "@lion/radio-group": "^0.1.11",
     "@lion/overlays": "^0.2.5",
     "@lion/button": "^0.1.11",
-    "@lion/listbox": "^0.0.0"
+    "@lion/option": "^0.0.0"
   },
   "devDependencies": {
     "@open-wc/demoing-storybook": "^0.2.0",

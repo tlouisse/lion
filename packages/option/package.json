@@ -1,5 +1,5 @@
 {
-  "name": "@lion/listbox",
+  "name": "@lion/option",
   "version": "0.0.0",
   "description": "Provide a way for users to select (multiple) options",
   "author": "ing-bank",

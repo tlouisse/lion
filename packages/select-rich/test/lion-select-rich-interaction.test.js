@@ -1,30 +1,36 @@
 import { expect, fixture, html } from '@open-wc/testing';
 
-import '../lion-option.js';
-import '../lion-listbox.js';
+import '@lion/option/lion-option.js';
+import '../lion-options.js';
+import '../lion-select-rich.js';
 
 describe('lion-listbox', () => {
   describe('values', () => {
-    it('requires a set name', async () => {
+    it('registers options', async () => {
       const el = await fixture(html`
-        <lion-listbox name="foo">
-          <lion-option .choiceValue=${10}>Item 1</lion-option>
-          <lion-option .choiceValue=${20}>Item 2</lion-option>
-        </lion-listbox>
+        <lion-select-rich>
+          <lion-options slot="input">
+            <lion-option .choiceValue=${10}>Item 1</lion-option>
+            <lion-option .choiceValue=${20}>Item 2</lion-option>
+          </lion-options>
+        </lion-select-rich>
       `);
-      expect(el.modelValue).to.equal([{ value: 10, checked: true }, { value: 20, checked: false }]);
-      expect(el.choiceValue).to.equal(10);
+      expect(el.formElements.length).to.equal(2);
+      // expect(el.formElements).to.eql({...});
     });
 
-    it('has the first element as default selection', async () => {
+    it.only('has the first element as default selection', async () => {
       const el = await fixture(html`
-        <lion-listbox name="foo">
-          <lion-option .choiceValue=${10}>Item 1</lion-option>
-          <lion-option .choiceValue=${20}>Item 2</lion-option>
-        </lion-listbox>
+        <lion-select-rich>
+          <lion-options slot="input">
+            <lion-option .choiceValue=${10}>Item 1</lion-option>
+            <lion-option .choiceValue=${20}>Item 2</lion-option>
+          </lion-options>
+        </lion-select-rich>
       `);
-      expect(el.modelValue).to.equal([{ value: 10, checked: true }, { value: 20, checked: false }]);
-      expect(el.choiceValue).to.equal(10);
+      expect(el.querySelector('lion-option').checked).to.equal(true);
+      expect(el.modelValue).to.deep.equal([{ value: 10, checked: true }, { value: 20, checked: false }]);
+      expect(el.checkedValue).to.equal(10);
     });
 
     it('allows null choiceValue', async () => {
@@ -260,16 +266,20 @@ describe('lion-listbox', () => {
 
     it('puts "aria-posinset" on all options to indicate their position in the listbox', async () => {
       const el = await fixture(html`
-        <lion-listbox>
-          <lion-option .choiceValue=${10}>Item 1</lion-option>
-          <lion-option .choiceValue=${20}>Item 2</lion-option>
-          <lion-option .choiceValue=${30}>Item 3</lion-option>
-        </lion-listbox>
+        <lion-select-rich>
+          <lion-options slot="input">
+            <lion-option .choiceValue=${10}>Item 1</lion-option>
+            <lion-option .choiceValue=${20}>Item 2</lion-option>
+            <lion-option .choiceValue=${30}>Item 3</lion-option>
+          </lion-options>
+        </lion-select-rich>
       `);
       const optionEls = [].slice.call(el.querySelectorAll('lion-option'));
       optionEls.forEach((oEl, i) => {
         expect(oEl.getAttribute('aria-posinset')).to.equal(`${i + 1}`);
       });
+
+
     });
   });
 });

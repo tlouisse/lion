@@ -2,7 +2,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 
 import '../lion-option.js';
 
-describe.only('lion-option', () => {
+describe('lion-option', () => {
   describe('values', () => {
     it('has a modelValue', async () => {
       const el = await fixture(html`

@@ -1,6 +1,6 @@
 import { SlotMixin, html } from '@lion/core';
 import { LionLitElement } from '@lion/core/src/LionLitElement.js';
-import { CssClassMixin } from '@lion/core/src/CssClassMixin.js';
+// import { CssClassMixin } from '@lion/core/src/CssClassMixin.js';
 import { ObserverMixin } from '@lion/core/src/ObserverMixin.js';
 import { ValidateMixin } from '@lion/validate';
 import { FormControlMixin } from '@lion/field';
