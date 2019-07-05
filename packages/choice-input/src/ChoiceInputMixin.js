@@ -61,6 +61,7 @@ export const ChoiceInputMixin = superclass =>
           this.__syncCheckedToModel(this.checked);
         }
       }
+
     }
 
     firstUpdated(c) {
@@ -181,6 +182,7 @@ export const ChoiceInputMixin = superclass =>
      */
     _onModelValueChanged({ modelValue }, { modelValue: old }) {
       if (this.constructor._classProperties.get('modelValue').hasChanged(modelValue, old)) {
+        console.log('_onModelValueChanged');
         super._onModelValueChanged({ modelValue });
       }
     }

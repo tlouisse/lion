@@ -2,10 +2,10 @@ import { storiesOf, html } from '@open-wc/demoing-storybook';
 import { css } from '@lion/core';
 
 import '@lion/form/lion-form.js';
-import '@lion/listbox/lion-option.js';
-import '@lion/listbox/listbox.js';
+import '@lion/option/lion-option.js';
 
 import '../lion-select-rich.js';
+// import '../lion-options.js';
 
 const selectRichDemoStyle = css`
   .demo-listbox {
@@ -25,11 +25,11 @@ storiesOf('Forms|Select Rich', module)
         ${selectRichDemoStyle}
       </style>
       <lion-select-rich label="Favorite color" name="color">
-        <lion-listbox slot="input">
+        <lion-options slot="input">
           <lion-option .modelValue=${{ value: 'red', checked: false }}>Red</lion-option>
           <lion-option .modelValue=${{ value: 'hotpink', checked: true }}>Hotpink</lion-option>
           <lion-option .modelValue=${{ value: 'teal', checked: false }}>Teal</lion-option>
-        </lion-listbox>
+        </lion-options>
       </lion-select-rich>
     `,
   )
@@ -40,7 +40,7 @@ storiesOf('Forms|Select Rich', module)
         ${selectRichDemoStyle}
       </style>
       <lion-select-rich label="Favorite color" name="color">
-        <lion-listbox slot="input" class="demo-listbox">
+        <lion-options slot="input" class="demo-listbox">
           <lion-option .modelValue=${{ value: 'red', checked: false }}>
             <p style="color: red;">I am red</p>
             <p>and multi Line</p>
@@ -53,7 +53,7 @@ storiesOf('Forms|Select Rich', module)
             <p style="color: teal;">I am teal</p>
             <p>and multi Line</p>
           </lion-option>
-        </lion-listbox>
+        </lion-options>
       </lion-select-rich>
     `,
   )

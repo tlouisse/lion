@@ -1,5 +1,10 @@
 import { html, css, LitElement } from '@lion/core';
 import { LocalOverlayController, overlays } from '@lion/overlays';
+import { FormControlMixin } from '@lion/field';
+import { ValidateMixin } from '@lion/validate';
+
+import { ListboxMixin } from './ListboxMixin.js';
+import { GroupMixin } from './GroupMixin.js';
 
 import '../lion-listbox-invoker.js';
 
@@ -9,7 +14,7 @@ import '../lion-listbox-invoker.js';
  * @customElement
  * @extends LionField
  */
-export class LionSelectRich extends LitElement {
+export class LionSelectRich extends ValidateMixin(FormControlMixin(ListboxMixin(GroupMixin((LitElement))))) {
   static get properties() {
     return {
       ...super.properties,
@@ -200,71 +205,59 @@ export class LionSelectRich extends LitElement {
   //   }
   // }
 
-  get formElementsArray() {
-    return Object.keys(this.formElements).reduce((result, name) => {
-      const element = this.formElements[name];
-      return result.concat(Array.isArray(element) ? element : [element]);
-    }, []);
+  get _listboxNode() {
+    return this.querySelector('lion-options');
   }
 
   constructor() {
     super();
-    this.formElements = [];
+    this.__onModelValueChanged = this.__onModelValueChanged.bind(this);
   }
 
   connectedCallback() {
-    // eslint-disable-next-line wc/guard-super-call
-    super.connectedCallback();
-    this.addEventListener('form-element-register', this.__onFormElementRegister);
-    this.addEventListener('form-element-unregister', this.__onFormElementUnRegister);
-    this.__onModelValueChanged = this.__onModelValueChanged.bind(this);
+    super.connectedCallback(); // eslint-disable-line wc/guard-super-call
     this.addEventListener('model-value-changed', this.__onModelValueChanged);
   }
 
   disconnectedCallback() {
-    // eslint-disable-next-line wc/guard-super-call
-    super.disconnectedCallback();
-    this.removeEventListener('form-element-register', this.__onFormElementRegister);
-    this.removeEventListener('form-element-unregister', this.__onFormElementUnRegister);
-    if (this.__parentFormGroup) {
-      const event = new CustomEvent('form-element-unregister', {
-        detail: { element: this },
-        bubbles: true,
-      });
-      this.__parentFormGroup.dispatchEvent(event);
-    }
+    super.disconnectedCallback(); // eslint-disable-line wc/guard-super-call
+    this.removeEventListener('model-value-changed', this.__onModelValueChanged);
   }
 
-  isRegisteredFormElement(el) {
-    return Object.keys(this.formElements).some(name => el.name === name);
-  }
-
-  __onFormElementRegister(event) {
-    const child = event.detail.element;
-
-    if (child === this) return; // as we fire and listen - don't add ourselves
-
-    event.stopPropagation();
-
-    if (this.disabled) {
-      child.disabled = true;
-    }
+  /**
+   * @override from GroupMixin
+   */
+  _onBeforeFormElementRegister(childElement) {
+    const child = childElement;
+    super._onBeforeFormElementRegister(child);
     if (this.formElements.length === 0) {
       child.checked = true;
+      child.resetInteractionState();
     }
-
-    this.formElements.push(child);
-    // This is a way to let the child element (a lion-fieldset or lion-field) know, about its parent
-    child.__parentFormGroup = this;
-
-    this.__syncToCheckedValue();
-    this.__syncModelValue();
   }
 
-  // =============================
+  /**
+   * @override from GroupMixin
+   */
+  _onAfterFormElementRegister(child) {
+    super._onAfterFormElementRegister(child)
+    this.__onModelValueChanged({ target: child });
+  }
 
+  __listboxUnCheckOthers(option) {
+    if (option.checked) {
+      this.formElements.forEach(opt => {
+        if (opt !== option) {
+          opt.checked = false;
+        }
+      });
+    }
+  }
 
-  __onModelValueChanged() {
+  __onModelValueChanged({ target }) {
+    // Uncheck others if not multiselect. TODO: move to listbox
+    this.__listboxUnCheckOthers(target);
+
     this.__syncToCheckedValue();
     this.__syncModelValue();
   }
@@ -283,13 +276,17 @@ export class LionSelectRich extends LitElement {
     return filtered.length > 0 ? filtered[0] : undefined;
   }
 
-  _getFromAllFormElements(property) {
-    return this.formElements.map( e => e[property]);
+  get dirty() {
+    return this._anyFormElementHas('dirty');
   }
 
-  // _setValueForAllFormElements(property, value) {
-  //   this.formElementsArray.forEach(el => {
-  //     el[property] = value; // eslint-disable-line no-param-reassign
-  //   });
-  // }
+  _anyFormElementHas(property) {
+    return Boolean(this.formElements.filter(e => e[property]).length);
+    // return Object.keys(this.formElements).some(name => {
+    //   if (Array.isArray(this.formElements[name])) {
+    //     return this.formElements[name].some(el => !!el[property]);
+    //   }
+    //   return !!this.formElements[name][property];
+    // });
+  }
 }

@@ -3,7 +3,7 @@ import { expect, fixture, html } from '@open-wc/testing';
 import '../lion-option.js';
 
 describe('lion-option', () => {
-  describe('values', () => {
+  describe('Values', () => {
     it('has a modelValue', async () => {
       const el = await fixture(html`
         <lion-option .choiceValue=${10}></lion-option>
@@ -63,6 +63,30 @@ describe('lion-option', () => {
       await el2.updateComplete;
       expect(el1.getAttribute('aria-disabled')).to.equal('true');
       expect(el2.getAttribute('aria-disabled')).to.equal('false');
+    });
+  });
+
+  describe('State reflection', () => {
+    it('can be active', async () => {
+      const el = await fixture(html`
+        <lion-option .choiceValue=${10}></lion-option>
+      `);
+      expect(el.active).to.equal(false);
+      expect(el.getAttribute('active')).to.equal(null);
+      el.active = true;
+      expect(el.active).to.equal(true);
+      expect(el.getAttribute('active')).to.equal('');    
+    });
+
+    it('can be disabled', async () => {
+      const el = await fixture(html`
+        <lion-option .choiceValue=${10}></lion-option>
+      `);
+      expect(el.disabled).to.equal(false);
+      expect(el.getAttribute('disabled')).to.equal(null);
+      el.disabled = true;
+      expect(el.disabled).to.equal(true);
+      expect(el.getAttribute('disabled')).to.equal('');    
     });
   });
 });

@@ -2,6 +2,7 @@ import { html, css } from '@lion/core';
 // import { FormControlMixin } from '@lion/field';
 import { ChoiceInputMixin } from '@lion/choice-input';
 import { LitElement } from 'lit-element';
+import { InteractionStateMixin } from '@lion/field';
 
 /**
  * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option
@@ -10,10 +11,14 @@ import { LitElement } from 'lit-element';
  * Element gets state supplied externally, reflects this to attributes,
  * enabling Subclassers to style based on those states
  */
-export class LionOption extends ChoiceInputMixin(LitElement) {
+export class LionOption extends ChoiceInputMixin(InteractionStateMixin((LitElement))) {
   static get properties() {
     return {
       disabled: {
+        type: Boolean,
+        reflect: true,
+      },
+      active: {
         type: Boolean,
         reflect: true,
       },
@@ -30,12 +35,16 @@ export class LionOption extends ChoiceInputMixin(LitElement) {
           border: 1px solid #333;
         }
 
-        :host(.state-checked) {
+        :host([checked]) {
           background: lightblue;
         }
 
-        :host(.state-disabled) {
+        :host([disabled]) {
           color: lightgray;
+        }
+
+        :host([active]) {
+          background: lightblue;
         }
       `,
     ];
@@ -44,6 +53,18 @@ export class LionOption extends ChoiceInputMixin(LitElement) {
   constructor() {
     super();
     this.disabled = false;
+    this.active = false;
+  }
+
+  _requestUpdate(name, oldValue) {
+    super._requestUpdate(name, oldValue);
+
+    if (name === 'checked') {
+      this.setAttribute('aria-selected', `${this.checked}`);
+    }
+    else if (name === 'disabled') {
+      this.setAttribute('aria-disabled', `${this.disabled}`);
+    }
   }
 
   render() {
@@ -77,7 +98,7 @@ export class LionOption extends ChoiceInputMixin(LitElement) {
     }
   }
 
-  /************************** FORKED for now :( ***************************/
+  /** ************************ FORKED for now :( ************************** */
 
 
   /**
