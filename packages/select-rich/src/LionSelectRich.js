@@ -242,13 +242,18 @@ export class LionSelectRich extends ValidateMixin(FormControlMixin(ListboxMixin(
   _onAfterFormElementRegister(child) {
     super._onAfterFormElementRegister(child)
     this.__onModelValueChanged({ target: child });
+
+    this.__listboxUnCheckOthers();
   }
 
-  __listboxUnCheckOthers(option) {
+  __listboxUnCheckOthers(option, isRegistering = false) {
     if (option.checked) {
       this.formElements.forEach(opt => {
         if (opt !== option) {
           opt.checked = false;
+          if (isRegistering) {
+            opt.resetInteractionState();
+          }
         }
       });
     }
@@ -282,11 +287,5 @@ export class LionSelectRich extends ValidateMixin(FormControlMixin(ListboxMixin(
 
   _anyFormElementHas(property) {
     return Boolean(this.formElements.filter(e => e[property]).length);
-    // return Object.keys(this.formElements).some(name => {
-    //   if (Array.isArray(this.formElements[name])) {
-    //     return this.formElements[name].some(el => !!el[property]);
-    //   }
-    //   return !!this.formElements[name][property];
-    // });
   }
 }

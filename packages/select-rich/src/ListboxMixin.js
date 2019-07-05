@@ -28,7 +28,7 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
       /**
        * Automatically select active items on [up] and [down] keys
        */
-      dautoSelect: {
+      autoSelect: {
         type: Boolean,
         attribute: 'auto-select',
       }
@@ -37,19 +37,6 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
 
   constructor() {
     super();
-
-    // Config for the listboxElement that can be overridden
-    this._listboxConfig = {
-      // multiselectable : false,
-      // moveUpDownEnabled : false,
-      // siblingList : null,
-      // upButton : null,
-      // downButton : null,
-      // moveButton : null,
-      // keysSoFar : '',
-      // handleFocusChange : () => {},
-      // handleItemChange : (event, items) => {},
-    };
 
     this.autoSelect = true; // TODO: change default to false? Aligns with platform and uic... 
     this._listboxActiveDescendant = null;
@@ -72,13 +59,9 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
     super.connectedCallback();
     this._listboxNode.role = 'listbox';
     this._listboxNode.tabIndex = -1;
-    // if (this.multiselectable) {
-    //   this._listboxNode.setAttribute('aria-multiselectable', '');
-    // }
 
     this.addEventListener('keydown', this.__listboxOnKeyDown);
     this._listboxNode.addEventListener('click', this.__listboxOnOptionClick);
-    // this._listboxNode.addEventListener('focus', this.__listboxSetupActive);
     this.updateComplete.then(() => {
       setTimeout(() => {
         this.__listboxSetupActive();
@@ -95,9 +78,6 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
 
   __listboxSetupActive() {
     const selectedOption = this.formElements.find(e => e.checked);
-    // const activeIndex = this.formElements.indexOf(this._listboxActiveDescendantNode);
-    console.log('selectedOption', selectedOption)
-
     this.__listboxActivateItem(selectedOption || this.formElements[0]);
   }
 
@@ -110,15 +90,6 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
    */
   __listboxOnKeyDown(evt) {
     const { key } = evt;
-    // let nextItem = this._listboxNode.querySelector(`#${this._listboxActiveDescendant}`);
-
-    // // TODO: // get info from context, no need for expensive queries every keypress
-    // const itemList = [].slice.call(this._listboxNode.querySelectorAll('[role="option"]'));
-    // const nextItemIndex = itemList.indexOf(nextItem);
-
-    // if (!nextItem) {
-    //   return;
-    // }
 
     // We assume 'single select' (see GroupMixin documentation) only for now
     const activeIndex = this.formElements.indexOf(this._listboxActiveDescendantNode);
@@ -126,49 +97,17 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
     const lastItem = this.formElements[this.formElements.length - 1];
     let nextActiveItem;
 
-    console.log('activeIndex', activeIndex, this._listboxActiveDescendantNode);
-
     switch (key) {
-      // case 'PageUp':
-      // case 'PageDown':
-      //   if (this.moveUpDownEnabled) {
-      //     evt.preventDefault();
-
-      //     if (key === 'PageUp') {
-      //       this.moveUpItems();
-      //     } else {
-      //       this.moveDownItems();
-      //     }
-      //   }
-
-      //   break;
       case 'ArrowUp':
       case 'ArrowDown':
         evt.preventDefault();
-
-        // if (this.moveUpDownEnabled && evt.altKey) {
-        //   if (key === 'ArrowUp') {
-        //     this.moveUpItems();
-        //   } else {
-        //     this.moveDownItems();
-        //   }
-        //   return;
-        // }
-
         if (key === 'ArrowUp') {
-          // nextItem = itemList[nextItemIndex - 1];
-          // this.modelValue[selectedIndex].checked = false;
-          // this.modelValue[selectedIndex - 1].checked = true;
           nextActiveItem = this.formElements[activeIndex - 1];
         } else {
-          // nextItem = itemList[nextItemIndex + 1];
-          // this.modelValue[selectedIndex].checked = false;
-          // this.modelValue[selectedIndex + 1].checked = true;
           nextActiveItem = this.formElements[activeIndex + 1];
         }
 
         if (nextActiveItem) {
-          console.log('nextActiveItem', nextActiveItem, activeIndex);
           this.__listboxActivateItem(nextActiveItem);
         }
 
@@ -186,51 +125,7 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
         evt.preventDefault();
         this.__listboxToggleSelected(nextActiveItem);
         break;
-      case 'Backspace':
-      case 'Delete':
-      case 'Enter':
-        // if (!this.moveButton) {
-        //   return;
-        // }
-
-        // const keyshortcuts = this.moveButton.getAttribute('aria-keyshortcuts');
-        // if (key === 'Enter' && keyshortcuts.indexOf('Enter') === -1) {
-        //   return;
-        // }
-        // if ((key === 'Backspace' || key === 'Delete') && keyshortcuts.indexOf('Delete') === -1) {
-        //   return;
-        // }
-
-        // evt.preventDefault();
-
-        // let nextUnselected = nextItem.nextElementSibling;
-        // while (nextUnselected) {
-        //   if (nextUnselected.getAttribute('aria-selected') != 'true') {
-        //     break;
-        //   }
-        //   nextUnselected = nextUnselected.nextElementSibling;
-        // }
-        // if (!nextUnselected) {
-        //   nextUnselected = nextItem.previousElementSibling;
-        //   while (nextUnselected) {
-        //     if (nextUnselected.getAttribute('aria-selected') != 'true') {
-        //       break;
-        //     }
-        //     nextUnselected = nextUnselected.previousElementSibling;
-        //   }
-        // }
-
-        // this.moveItems();
-
-        // if (!this._listboxActiveDescendant && nextUnselected) {
-        //   this.__listboxActivateItem(nextUnselected);
-        // }
-        break;
       default:
-        // const itemToFocus = this.findItemToFocus(key);
-        // if (itemToFocus) {
-        //   this.__listboxActivateItem(itemToFocus);
-        // }
         break;
     }
   }
@@ -265,16 +160,7 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
     option.active = true;
     this._listboxNode.setAttribute('aria-activedescendant', option.id);
     this._listboxActiveDescendant = option.id;
-    console.log('this._listboxActiveDescendant', this._listboxActiveDescendant, option);
-
     this.__listBoxScrollCorrection(option);
-
-    // if (!this.multiselectable && this.moveButton) {
-    //   this.moveButton.setAttribute('aria-disabled', false);
-    // }
-
-    // this.checkUpDownButtons();
-    // this.handleFocusChange(option);
   }
 
   __listBoxScrollCorrection(option) {
@@ -297,17 +183,12 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
    */
   __listboxDeactivateItem(optionElement) {
     const option = optionElement;
-    console.log('__listboxDeactivateItem', option);
-
     if (!option) {
       return;
     }
     if (this.autoSelect) {
-
-      // option.removeAttribute('aria-selected');
       option.checked = false;
     }
-    // option.removeAttribute('focused');
     option.active = false;
   }
 
@@ -322,19 +203,6 @@ export const ListboxMixin = superclass => class ListboxMixin extends superclass 
 
     if (!this.autoSelect) {
       option.checked = !option.checked;
-
-      // if (this.moveButton) {
-      //   if (this.listboxNode.querySelector('[aria-selected="true"]')) {
-      //     this.moveButton.setAttribute('aria-disabled', 'false');
-      //   } else {
-      //     this.moveButton.setAttribute('aria-disabled', 'true');
-      //   }
-      // }
     }
   }
-}
-
-// Here we add everything related to arrangable option listboxes
-export const ListboxArrangableMixin = superclass => class GroupMixin extends ListboxMixin(superclass) {
-
 }
