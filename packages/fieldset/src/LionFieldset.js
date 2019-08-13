@@ -3,7 +3,7 @@ import { LionLitElement } from '@lion/core/src/LionLitElement.js';
 import { CssClassMixin } from '@lion/core/src/CssClassMixin.js';
 import { ObserverMixin } from '@lion/core/src/ObserverMixin.js';
 import { ValidateMixin } from '@lion/validate';
-import { FormControlMixin, FormRegistrarMixin } from '@lion/field';
+import { FormControlMixin, FormRegistrarMixin, FormRegisteringMixin } from '@lion/field';
 
 // TODO: extract from module like import { pascalCase } from 'lion-element/CaseMapUtils.js'
 const pascalCase = str => str.charAt(0).toUpperCase() + str.slice(1);
@@ -11,11 +11,11 @@ const pascalCase = str => str.charAt(0).toUpperCase() + str.slice(1);
 /**
  * LionFieldset: fieldset wrapper providing extra features and integration with lion-field elements.
  *
- * @customElement
+ * @customElement lion-fieldset
  * @extends LionLitElement
  */
-export class LionFieldset extends FormRegistrarMixin(
-  FormControlMixin(ValidateMixin(CssClassMixin(SlotMixin(ObserverMixin(LionLitElement))))),
+export class LionFieldset extends FormRegistrarMixin(FormRegisteringMixin(
+  FormControlMixin(ValidateMixin(CssClassMixin(SlotMixin(ObserverMixin(LionLitElement)))))),
 ) {
   static get properties() {
     return {
@@ -159,7 +159,15 @@ export class LionFieldset extends FormRegistrarMixin(
   }
 
   resetGroup() {
-    this.modelValue = this.resetModelValue;
+    this.formElementsArray.forEach(child => {
+      if (typeof child.resetGroup === 'function') {
+        child.resetGroup();
+      } else if (typeof child.reset === 'function') {
+        child.reset();
+      }
+    });
+
+    this.modelValue = this._initialModelValue;
     this.resetInteractionState();
   }
 
@@ -228,7 +236,7 @@ export class LionFieldset extends FormRegistrarMixin(
   }
 
   /**
-   * Get's triggered by event 'validatin-done' which enabled us to handle 2 different situations
+   * Gets triggered by event 'validation-done' which enabled us to handle 2 different situations
    *   - react on modelValue change, which says something about the validity as a whole
    *       (at least two checkboxes for instance) and nothing about the children's values
    *   - children validatity states have changed, so fieldset needs to update itself based on that
@@ -338,23 +346,16 @@ export class LionFieldset extends FormRegistrarMixin(
   }
 
   /**
-   * Updates the resetModelValue of this fieldset and asks it's parent fieldset/group to also
-   * update.
-   * This is needed as the upgrade order is not guaranteed. We have 3 main cases:
-   * 1. if `street-name` gets updated last then `address` and `details` needs to update their
-   *    resetModelValue to also incorporate the correct value of `street-name`/`address`.
-   * 2. If `address` get updated last then it already has the correct `street-name` so it
-   *    requests an update only for `details`.
-   * 3. If `details` get updated last nothing happens here as all data are up to date
-   *
-   * @example
-   * <lion-fieldset name="details">
-   *   <lion-fieldset name="address">
-   *     <lion-input name="street-name" .modelValue=${'street 1'}>
+   * Gathers initial model values of all children. Used
+   * when resetGroup() is called.
    */
-  _updateResetModelValue() {
-    this.resetModelValue = this.modelValue;
-    this._requestParentFormGroupUpdateOfResetModelValue();
+  get _initialModelValue() {
+    return this._getFromAllFormElements('_initialModelValue');
+  }
+
+  /** @deprecated */
+  get resetModelValue() {
+    return this._initialModelValue;
   }
 
   /**
