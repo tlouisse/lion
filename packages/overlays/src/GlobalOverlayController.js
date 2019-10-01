@@ -64,7 +64,7 @@ export class GlobalOverlayController extends BaseOverlayController {
   async show(elementToFocusAfterHide) {
     if (!this.manager) {
       throw new Error(
-        'Could not find a manger did you use "overlays.add(new GlobalOverlayController())"?',
+        'Could not find a manager did you use "overlays.add(new GlobalOverlayController())"?',
       );
     }
 
@@ -76,6 +76,10 @@ export class GlobalOverlayController extends BaseOverlayController {
     if (!this.content.isConnected) {
       this.content.classList.add(this.overlayContainerClass);
       this.content.classList.add(this.overlayContainerPlacementClass);
+
+      // this.content.appendChild(this.contentNode);
+      console.log('this.content', this.content);
+
       this.manager.globalRootNode.appendChild(this.content);
     }
 
@@ -124,7 +128,7 @@ export class GlobalOverlayController extends BaseOverlayController {
     this.__disableFeatures();
 
     this.hideDone();
-    if (this.contentTemplate) {
+    if (this.contentTemplate && this._showHideMode !== 'css') {
       this.content.classList.remove(this.overlayContainerPlacementClass);
       this.manager.globalRootNode.removeChild(this.content);
     }
@@ -142,7 +146,15 @@ export class GlobalOverlayController extends BaseOverlayController {
     if (this.isShown) {
       this.content.style.display = '';
     } else {
+      console.log('none display inside __showHideViaCss');
+      console.log('globalRootNode', this.manager.globalRootNode.innerHTML);
+
       this.content.style.display = 'none';
+
+      setTimeout(() => {
+        console.log('globalRootNode', this.manager.globalRootNode.innerHTML);
+
+      });
     }
   }
 

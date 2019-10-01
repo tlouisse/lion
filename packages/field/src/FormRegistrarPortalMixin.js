@@ -27,10 +27,8 @@ export const FormRegistrarPortalMixin = dedupeMixin(
         });
       }
 
-      connectedCallback() {
-        if (super.connectedCallback) {
-          super.connectedCallback();
-        }
+      _initRegistrarPortal({ registrationTarget }) {
+        this.registrationTarget = registrationTarget;
         this.__checkRegistrationTarget();
 
         formRegistrarManager.add(this);
@@ -49,6 +47,12 @@ export const FormRegistrarPortalMixin = dedupeMixin(
           'form-element-register',
           this.__redispatchEventForFormRegistrarPortalMixin,
         );
+      }
+
+      connectedCallback() {
+        if (super.connectedCallback) {
+          super.connectedCallback();
+        }
       }
 
       disconnectedCallback() {

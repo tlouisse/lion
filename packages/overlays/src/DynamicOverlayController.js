@@ -32,7 +32,7 @@ export class DynamicOverlayController {
     this.__active = undefined;
     this.nextOpen = undefined;
     if (!this.content) {
-      this.content = document.createElement('div');
+      // this.content = document.createElement('div');
     }
     this.__fakeExtendsEventTarget();
     this.__delegateEvent = this.__delegateEvent.bind(this);
@@ -50,7 +50,7 @@ export class DynamicOverlayController {
 
     if (this.active && ctrlToAdd instanceof LocalOverlayController) {
       // eslint-disable-next-line no-param-reassign
-      ctrlToAdd.content = this.content;
+      // ctrlToAdd.content = this.content;
     }
 
     return ctrlToAdd;
@@ -79,6 +79,7 @@ export class DynamicOverlayController {
     ctrlToSwitchTo.switchIn();
     this.__active = ctrlToSwitchTo;
 
+    console.log('switchTo');
     this._delegateEvents(this.__active, prevActive);
   }
 
@@ -108,12 +109,14 @@ export class DynamicOverlayController {
 
   _delegateEvents(active, prevActive) {
     ['show', 'hide'].forEach(event => {
+      console.log('add', event);
       active.addEventListener(event, this.__delegateEvent);
       prevActive.removeEventListener(event, this.__delegateEvent);
     });
   }
 
   __delegateEvent(ev) {
+    console.log('__delegateEvent');
     ev.stopPropagation();
     this.dispatchEvent(new Event(ev.type));
   }

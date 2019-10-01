@@ -12,6 +12,7 @@ export class BottomSheetController extends GlobalOverlayController {
       },
       ...params,
     });
+    console.log('BottomSheetController constr');
   }
 
   onContentUpdated() {

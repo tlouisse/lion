@@ -1,6 +1,7 @@
 import { render, html } from '@lion/core';
 import '@lion/core/src/differentKeyEventNamesShimIE.js';
 import { containFocus } from './utils/contain-focus.js';
+import { overlays } from './overlays.js';
 
 /**
  * This is the interface for a controller
@@ -8,6 +9,10 @@ import { containFocus } from './utils/contain-focus.js';
 export class BaseOverlayController {
   get _showHideMode() {
     return this.__showHideMode; // dom, css
+  }
+
+  set _showHideMode(mode) {
+    this.__showHideMode = mode;
   }
 
   get isShown() {
@@ -65,13 +70,15 @@ export class BaseOverlayController {
     this.__contentNode = node;
     this.content = node;
     // setting a contentNode means hide/show with css
-    this.__showHideMode = 'css';
+    this.__showHideMode = this.__showHideMode || 'css';
     if (this.isShown === false) {
       this.contentNode.style.display = 'none';
     }
   }
 
   constructor(params = {}) {
+    overlays.add(this);
+
     this.__fakeExtendsEventTarget();
     this.__firstContentTemplateRender = false;
     this.__showHideMode = 'dom';
@@ -82,6 +89,7 @@ export class BaseOverlayController {
     // Features initial state
     this.__hasActiveTrapsKeyboardFocus = false;
     this.__hasActiveHidesOnEsc = false;
+
   }
 
   // TODO: add an ctrl.updateComplete e.g. when async show is done?
@@ -135,15 +143,38 @@ export class BaseOverlayController {
   // eslint-disable-next-line class-methods-use-this
   onContentUpdated() {}
 
-  __setupContent(params) {
+  async __setupContent(params) {
     if (params.contentTemplate && params.contentNode) {
       throw new Error('You can only provide a .contentTemplate or a .contentNode but not both');
     }
     if (!params.contentTemplate && !params.contentNode) {
       throw new Error('You need to provide a .contentTemplate or a .contentNode');
     }
+    if (params.showHideMode) {
+      if (!(params.showHideMode === 'css' || params.showHideMode === 'dom')) {
+        throw new Error('You need to provide a .showHideMode of "css" or "dom"');
+      }
+      this._showHideMode = params.showHideMode;
+    }
     if (params.contentTemplate) {
       this.contentTemplate = params.contentTemplate;
+
+      if (this._showHideMode === 'css') {
+        // render once. After this, all updates go via css
+        render(this.contentTemplate(this.contentData), this.content);
+        this.__contentNode = this.content.firstElementChild;
+        this.__firstContentTemplateRender = true;
+
+        this.show();
+        // setTimeout(() => {
+          this.hide();
+          console.log('globalRootNode', this.manager.globalRootNode)
+        // });
+
+        console.log('showHide init');
+
+        // this.manager.show(this);
+      }
     }
     if (params.contentNode) {
       this.contentNode = params.contentNode;
@@ -151,6 +182,7 @@ export class BaseOverlayController {
   }
 
   __handleShowChange() {
+    console.log('__handleShowChange _showHideMode', this._showHideMode);
     if (this._showHideMode === 'dom') {
       this.__showHideViaDom();
     }
@@ -173,17 +205,21 @@ export class BaseOverlayController {
     }
 
     if (this.isShown) {
+      console.log('voor render __showHideViaDom');
       render(this.contentTemplate(this.contentData), this.content);
       this.__contentNode = this.content.firstElementChild;
       this.onContentUpdated();
     } else {
+      console.log('voor delete render __showHideViaDom');
       render(html``, this.content);
       this.__contentNode = undefined;
     }
   }
 
   // eslint-disable-next-line class-methods-use-this
-  __showHideViaCss() {}
+  __showHideViaCss() {
+
+  }
 
   // TODO: this method has to be removed when EventTarget polyfill is available on IE11
   __fakeExtendsEventTarget() {

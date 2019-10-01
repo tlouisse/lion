@@ -139,7 +139,6 @@ export class LionSelectRich extends FormRegistrarMixin(
     this._listboxActiveDescendant = null;
     this.__hasInitialSelectedFormElement = false;
 
-    this.__setupEventListeners();
   }
 
   connectedCallback() {
@@ -147,9 +146,15 @@ export class LionSelectRich extends FormRegistrarMixin(
       super.connectedCallback();
     }
 
-    this.__setupOverlay();
-    this.__setupInvokerNode();
-    this.__setupListboxNode();
+    // setTimeout(() => {
+
+      this.__setupOverlay();
+      this.__setupInvokerNode();
+      this.__setupListboxNode();
+
+      this.__setupEventListeners();
+
+    // }, 100);
   }
 
   disconnectedCallback() {
@@ -293,15 +298,15 @@ export class LionSelectRich extends FormRegistrarMixin(
     this.__onChildModelValueChanged = this.__onChildModelValueChanged.bind(this);
     this.__onKeyUp = this.__onKeyUp.bind(this);
 
-    this.addEventListener('active-changed', this.__onChildActiveChanged);
-    this.addEventListener('model-value-changed', this.__onChildModelValueChanged);
-    this.addEventListener('keyup', this.__onKeyUp);
+    // this._listboxNode.addEventListener('active-changed', this.__onChildActiveChanged);
+    this._listboxNode.addEventListener('model-value-changed', this.__onChildModelValueChanged);
+    this._listboxNode.addEventListener('keyup', this.__onKeyUp);
   }
 
   __teardownEventListeners() {
-    this.removeEventListener('active-changed', this.__onChildActiveChanged);
-    this.removeEventListener('model-value-changed', this.__onChildModelValueChanged);
-    this.removeEventListener('keyup', this.__onKeyUp);
+    // this._listboxNode.removeEventListener('active-changed', this.__onChildActiveChanged);
+    this._listboxNode.removeEventListener('model-value-changed', this.__onChildModelValueChanged);
+    this._listboxNode.removeEventListener('keyup', this.__onKeyUp);
   }
 
   __onChildActiveChanged({ target }) {
@@ -578,12 +583,20 @@ export class LionSelectRich extends FormRegistrarMixin(
       contentNode: this._listboxNode,
     });
 
+    console.log('this.__overlay', this.__overlay);
+
     this.__overlayOnShow = () => {
       this.opened = true;
       if (this.checkedIndex) {
         this.activeIndex = this.checkedIndex;
       }
-      this._listboxNode.focus();
+      console.log('__overlayOnShow, this._listboxNode', this._listboxNode);
+
+      setTimeout(() => {
+        this._listboxNode.focus();
+        console.log(document.activeElement);
+      }, 1000);
+
     };
     this.__overlay.addEventListener('show', this.__overlayOnShow);
 
