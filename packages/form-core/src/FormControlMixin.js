@@ -604,84 +604,107 @@ const FormControlMixinImplementation = superclass =>
     }
 
     /**
-     * All CSS below is written from a generic mindset, following BEM conventions:
-     * https://en.bem.info/methodology/
-     * Although the CSS and HTML are implemented by the component, they should be regarded as
-     * totally decoupled.
+     * States
+     * - Use '@state' for attributes that will be placed on the host when a certain condition
+     * applies, c.q. a state is active.
+     * - Make sure to wrap the name of the state in square brackets.
      *
-     * Not only does this force us to write better structured css, it also allows for future
-     * reusability in many different ways like:
-     *  - disabling shadow DOM for a component (for water proof encapsulation can be combined with
-     *    a build step)
-     *  - easier translation to more flexible, WebComponents agnostic solutions like JSS
-     *    (allowing extends, mixins, reasoning, IDE integration, tree shaking etc.)
-     *  - export to a CSS module for reuse in an outer context
+     * Parts
+     * - Use '@part' for elements/blocks
+     * - When a part is optional, put '?' in front of its name
+     * - Indentations (2 spaces) are used to resemble (required) dom structure
+     * - Use '-wrapper' suffix _around_ parts, so `label-wrapper` around `label`
+     * - Use '-container' suffix _within_ parts, so `inputgroup-container` within `inputgroup`
+     * - Prefer a minimal use of hyphens, like the platform does (so inputgroup instead of
+     * input-group). This makes it easier to
      *
+     * Slots
+     * - Use '@slot' for slot names
+     * - When a slot is optional, put '?' in front of its name
      *
-     * Please note that the HTML structure is purposely 'loose', allowing multiple design systems
-     * to be compatible
-     * with the CSS component.
-     * Note that every occurence of '::slotted(*)' can be rewritten to '> *' for use in an other
-     * context
+     * Refs
+     * - Use '@ref' to indicate what parts of the dom are required in order for the component to
+     * function properly. Refs are usually the components that:
+     *   - contain aria attributes
+     *   - interact via events (by sending or receiving them)
+     *
      */
 
     /**
-     * {block} .form-field
+     * // TODO: states should be inherited from mixins
      *
-     * Structure:
-     * - {element}  .form-field__label : a wrapper element around the projected label
-     * - {element}  .form-field__help-text (optional) : a wrapper element around the projected
-     *               help-text
-     * - {block}    .input-group : a container around the input element, including prefixes and
-     *               suffixes
-     * - {element}  .form-field__feedback (optional) : a wrapper element around the projected
-     *               (validation) feedback message
+     * @state [disabled]                     when [slot=input] has disabled set to true
+     * @state [filled]                       whether [slot=input] has a value
+     * @state [prefilled]                    whether [slot=input] had a value on first load
+     * @state [touched]                      whether the user had blurred the field once
+     * @state [dirty]                        whether the value has changed since initial value
+     * @state [focused]                      when [slot=input] has focus
+     * @state [focused-visible]              when [slot=input] has focus:within
      *
-     * Modifiers:
-     * - {state} [disabled] when .form-control (<input>, <textarea> etc.) has disabled set
-     *            to true
-     * - {state} [filled] whether <input> has a value
-     * - {state} [touched] whether the user had blurred the field once
-     * - {state} [dirty] whether the value has changed since initial value
+     * @state [has-feedback-for~=error]      when input has error message(s)
+     * @state [shows-feedback-for~=error]    when input has error message(s) that should be shown
+     *                                       in [slot=feedback]
+     * @state [has-feedback-for~=success]    when input has success message(s)
+     * @state [shows-feedback-for~=success]  when input has success message(s) that should be
+     *                                       shown in [slot=feedback]
      *
-     * TODO: update states below
-     * These classes are now attributes. Check them agains the new attribute names inside ValidateMixin
-     * and InteractionStateMixin. Some states got renamed. Make sure to use the correct ones!
-     * - {state} .state-focused: when .form-control (<input>, <textarea> etc.) <input> has focus
-     * - {state} .state-invalid: when input has error(s) (regardless of whether they should be
-     *            shown to the user)
-     * - {state} .state-error: when input has error(s) and this/these should be shown to the user
-     * - {state} .state-warning: when input has warning(s) and this/these should be shown to the
-     *            user
-     * - {state} .state-info: when input has info feedback message(s) and this/these should be shown
-     *            to the user
-     * - {state} .state-success: when input has success feedback message(s) and this/these should be
-     *            shown to the user
-     */
+     * @state [size-container-300]
+     * @state [size-viewport-600]
+     * @state [variant=xyz]
+     *
+     * @part group1                     wrapper that logically groups other 'main parts' from the
+     *                                  template; provides sensible defaults for horizontally
+     *                                  aligned FormControls
+     * @part group2                     wrapper that logically groups other 'main parts' from the
+     *                                  template; provides sensible defaults for horizontally
+     *                                  aligned FormControls
+     *
+     * @part label-wrapper              wrapper element around the projected label
+     *   @slot label                    the `<label>` element [slot=input] is labelled by
 
-    /**
-     * {block} .input-group
      *
-     * Structure:
-     * - {element} .input-group__before (optional) : a prefix that resides outside the container
-     * - {element} .input-group__container : an inner container: this element contains all styling
-     *  - {element} .input-group__prefix (optional) : a prefix that resides in the container,
-     *               allowing it to be detectable as a :first-child
-     *  - {element} .input-group__input : a wrapper around the form-control component
-     *   - {block} .form-control : the actual input element (input/select/textarea)
-     *  - {element} .input-group__suffix (optional) : a suffix that resides inside the container,
-     *               allowing it to be detectable as a :last-child
-     *  - {element} .input-group__bottom (optional) : placeholder element for additional styling
-     *               (like an animated line for material design input)
-     * - {element} .input-group__after (optional) :  a suffix that resides outside the container
+     * @part ?helptext-wrapper          wrapper element around the projected help-text
+     *   @slot ?helptext                optional element [slot=input] is described by
+     *
+     * @part inputgroup                 container around the input element, including prefixes
+     *                                  and suffixes
+     *   @part ?inputgroup-before       prefix that resides outside the container
+     *     @slot ?before                can be used for buttons, currency indicators etc.;
+     *                                  add [data-label] or [data-description] when its contents
+     *                                  should add to label and description respectively.
+     *   @part inputgroup-container     an inner container: this element contains all styling
+     *     @part ?inputgroup-prefix     :first-child in [part=inputgroup-container]
+     *       @slot ?prefix              can be used for buttons, currency indicators etc.;
+     *                                  add [data-label] or [data-description] when its contents
+     *                                  should add to label and description respectively.
+     *     @part inputgroup-input       wrapper around [slot=input]
+     *       @slot input                this is the focusable interaction element (`<input>`,
+     *                                  `<textarea>`, `<select>`, `[role=listbox|combobox|*])
+     *     @part ?inputgroup-suffix     :last-child in [part=inputgroup-container]
+     *       @slot ?suffix              can be used for buttons, currency indicators etc.;
+     *                                  add [data-label] or [data-description] when its contents
+     *                                  should add to label and description respectively.
+     *     @part ?inputgroup-bottom     placeholder element for additional styling (like an
+     *                                  animated line for material design input)
+     *   @part ?inputgroup-after        suffix that resides outside the container
+     *     @slot ?after                 can be used for buttons, currency indicators etc.;
+     *                                  add [data-label] or [data-description] when its contents
+     *                                  should add to label and description respectively.
+     *
+     * @part feedback-wrapper           wrapper around validation feedback message(s)
+     *   @slot feedback                 optional element [part=input] is described by
+     *
+     *
+     *
+     * @ref [slot=input]                add `<slot name="input">`, referenced via `_inputNode`
+     * @ref [slot=label]                add `<slot name="label">`, referenced via `_labelNode`
+     * @ref [slot=helptext]             add `<slot name="helptext">`, referenced via `_helptextNode`
+     * @ref [slot=feedback]             add `<slot name="feedback">`, referenced via `_feedbackNode`
+     *
      */
     static get styles() {
       return [
         css`
-          /**********************
-            {block} .form-field
-           ********************/
-
           :host {
             display: block;
           }
@@ -694,31 +717,31 @@ const FormControlMixinImplementation = superclass =>
             pointer-events: none;
           }
 
-          :host([disabled]) .form-field__label ::slotted(*),
-          :host([disabled]) .form-field__help-text ::slotted(*) {
+          :host([disabled]) [data-part='label-wrapper'] ::slotted(*),
+          :host([disabled]) [data-part='helptext-wrapper'] ::slotted(*) {
             color: var(--disabled-text-color, #767676);
           }
 
           /***********************
-            {block} .input-group
+            @part input-group
            *********************/
 
-          .input-group__container {
+          [data-part='inputgroup-container'] {
             display: flex;
           }
 
-          .input-group__input {
+          [data-part='inputgroup-container-input'] {
             flex: 1;
             display: flex;
           }
 
-          /***** {state} :disabled *****/
-          :host([disabled]) .input-group ::slotted([slot='input']) {
+          /***** @state [disabled] *****/
+          :host([disabled]) [data-part='inputgroup'] ::slotted([slot='input']) {
             color: var(--disabled-text-color, #767676);
           }
 
           /***********************
-            {block} .form-control
+            @slot input
            **********************/
 
           .input-group__container > .input-group__input ::slotted(.form-control) {
