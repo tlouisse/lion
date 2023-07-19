@@ -124,8 +124,5 @@
     "singleQuote": true,
     "arrowParens": "avoid",
     "trailingComma": "all"
-  },
-  "overrides": {
-    "sharp": "^0.29.x"
   }
 }

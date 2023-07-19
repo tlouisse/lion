@@ -1,0 +1,20 @@
+{
+  "name": "webcontainers-api-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "create-virtual-fs-output": "node ./scripts/create-virtual-fs-output.js",
+    "dev": "npm run create-virtual-fs-output && vite",
+    "build": "vite build",
+    "preview": "ite preview"
+  },
+  "devDependencies": {
+    "vite": "^4.4.4"
+  },
+  "dependencies": {
+    "@webcontainer/api": "^1.1.5",
+    "lit": "^2.7.6",
+    "xterm": "^5.2.1"
+  }
+}

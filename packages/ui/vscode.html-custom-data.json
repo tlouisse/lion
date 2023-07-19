@@ -1,0 +1,738 @@
+{
+  "version": 1.1,
+  "tags": [
+    {
+      "name": "lion-accordion",
+      "description": "# <lion-accordion> webcomponent\n\n\n---\n\n\n",
+      "attributes": [
+        {
+          "name": "focusedIndex",
+          "description": "index number of the focused accordion",
+          "values": []
+        },
+        {
+          "name": "expanded",
+          "description": "array of indices of the expanded accordions",
+          "values": []
+        }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-button",
+      "description": "Use LionButton (or LionButtonReset|LionButtonSubmit) when there is a need to extend HTMLButtonElement.\nIt allows to create complex shadow DOM for buttons needing this. Think of:\n- a material Design button that needs a JS controlled ripple\n- a LionSelectRich invoker that needs a complex shadow DOM structure\n(for styling/maintainability purposes)\n- a specialized button (for instance a primary button or icon button in a Design System) that\nneeds a simple api: `<my-button>text</my-button>` is always better than\n`<button class=\"my-button\"><div class=\"my-button__container\">text</div><button>`\n\nIn other cases, whenever you can, still use native HTMLButtonElement (`<button>`).\n\nNote that LionButton is meant for buttons with type=\"button\". It's cleaner and more\nlightweight than LionButtonReset and LionButtonSubmit, which should only be considered when native\n`<form>` support is needed:\n- When type=\"reset|submit\" should be supported, use LionButtonReset.\n- When implicit form submission should be supported on top, use LionButtonSubmit.\n\n\n---\n\n\n",
+      "attributes": [
+        { "name": "active", "values": [] },
+        { "name": "type", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-button-reset",
+      "description": "This adds functionality for form buttons (type 'submit' and 'reset').\nIt allows to submit or reset a <form> by spawning a click on a temporrary native button inside\nthe form.\nUse LionButtonSubmit when implicit form submission should be supported as well.\n\nFunctionality in this button is not purely for type=\"reset\", also for type=\"submit\".\nFor mainainability purposes the submit functionality is part of LionButtonReset\n(it needs the same logic).\nLionButtonReset could therefore actually be considered as 'LionButtonForm' (without the\nimplicit form submission logic), but LionButtonReset is an easier to grasp name for\nApplication Developers: for reset buttons, always use LionButtonReset, for submit\nbuttons always use LionButtonSubmit.\n\n\n---\n\n\n\n\n### **Methods:**\n - **__clickDelegationHandler(ev: _Event_): _Promise<void>_** - Delegate click, by flashing a native button as a direct child\nof the form, and firing click on this button. This will fire the form submit\nwithout side effects caused by the click bubbling back up to lion-button.",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-button-submit",
+      "description": "Contains all the funcionaility of LionButton and LionButtonReset. On top of that it\nsupports implicit form submission.\n\nUse when:\n- the Application Developer should be able to switch types between 'submit'|'reset'|'button'\n(this is similar to how native HTMLButtonElement works)\n- a submit button with native form support is needed\n\n\n---\n\n\n\n\n### **Methods:**\n - **__clickDelegationHandler(ev: _Event_): _Promise<void>_** - Delegate click, by flashing a native button as a direct child\nof the form, and firing click on this button. This will fire the form submit\nwithout side effects caused by the click bubbling back up to lion-button.",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-calendar",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **user-selected-date-changed** - undefined\n\n### **Methods:**\n - **initCentralDate()** - This exposes an interface for datepickers that want to\nreinitialize when calendar is opened",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-checkbox",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-checkbox-group",
+      "description": "A wrapper around multiple checkboxes\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-checkbox-indeterminate",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [
+        {
+          "name": "indeterminate",
+          "description": "Indeterminate state of the checkbox",
+          "values": []
+        },
+        { "name": "mixed-state", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-collapsible",
+      "description": "`LionCollapsible` is a class for custom collapsible element (`<lion-collapsible>` web component).\n\n\n---\n\n\n\n\n### **Events:**\n - **opened-changed** - undefined\n\n### **Methods:**\n - **show()** - Show extra content.\n- **hide()** - Hide extra content.\n- **toggle()** - Toggle the current(opened/closed) state.\n- **_showAnimation(opts: _Object_)** - Show animation implementation in sub-classer.\n- **_hideAnimation(opts: _Object_)** - Hide animation implementation in sub-classer.",
+      "attributes": [{ "name": "opened", "values": [] }],
+      "references": []
+    },
+    {
+      "name": "lion-combobox",
+      "description": "LionCombobox: implements the wai-aria combobox design pattern and integrates it as a Lion\nFormControl\n\n\n---\n\n\n\n\n### **Methods:**\n - **parser(value: _string_): _*_** - Converts viewValue to modelValue\n- **__unsyncCheckedIndexOnInputChange()** - When textbox value doesn't match checkedIndex anymore, update accordingly...\n- **matchCondition(option: _LionOption_, textboxValue: _string_)** - When the preconfigurable `match-mode` conditions are not sufficient,\none can define a custom matching function.\n- **_getTextboxValueFromOption(option: _LionOption_): _string_** - Return the value to be used for the input value\n- **_handleAutocompletion()** - Handles autocompletion. This entails:\n- list: shows a list on keydown character press\n- filter: filters list of potential matches according to matchmode or provided matchCondition\n- focus: automatically focuses closest match (makes it the activedescendant)\n- check: automatically checks/selects closest match when selection-follows-focus is enabled\n(this is the default configuration)\n- complete: completes the textbox value inline (the 'missing characters' will be added as\nselected text)\n- **_autoSelectCondition()** - When this condition is false, an end user will have to manually select a suggested\noption from the list (by default when autocomplete is 'none' or 'list').\nFor autocomplete 'both' or 'inline', it will automatically select on a match.",
+      "attributes": [
+        { "name": "autocomplete", "values": [] },
+        { "name": "match-mode", "values": [] },
+        { "name": "show-all-on-empty", "values": [] },
+        { "name": "requireOptionMatch", "values": [] },
+        { "name": "__shouldAutocompleteNextUpdate", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-dialog",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-drawer",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **opened-changed** - undefined\n\n### **Methods:**\n - **_showAnimation({ contentNode }, options: _@param {HTMLElement} options.contentNode\n   * _): _Promise<void>_** - Trigger show animation and wait for transition to be finished.\n- **_hideAnimation({ contentNode }, options: _@param {HTMLElement} options.contentNode\n   * _): _Promise<void>_** - Trigger hide animation and wait for transition to be finished.\n- **_waitForTransition({ contentNode }, options: _@param {HTMLElement} options.contentNode\n   * _): _Promise<void>_** - Wait until the transition event is finished.\n- **toggle(): _void_** - Toggle the current(opened/closed) state.\n- **show(): _void_** - Show extra content.\n- **hide(): _void_** - Hide extra content.",
+      "attributes": [
+        { "name": "transitioning", "values": [] },
+        { "name": "opened", "values": [] },
+        { "name": "position", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-fieldset",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-form",
+      "description": "LionForm: form wrapper providing extra features and integration with lion-field elements.\n\n\n---\n\n\n\n\n### **Events:**\n - **submit** - undefined\n- **reset** - undefined",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-field",
+      "description": "`LionField`: wraps <input>, <textarea>, <select> and other interactable elements.\nAlso it would follow a nice hierarchy: lion-form -> lion-fieldset -> lion-field\n\nNote: We don't support placeholders, because we have a helper text and\nplaceholders confuse the user with accessibility needs.\n\nPlease see the docs for in depth information.\n\n\n---\n\n\n\n\n### **Events:**\n - **user-input-changed** - undefined\n\n### **Methods:**\n - **reset()** - Resets modelValue to initial value.\nInteraction states are cleared\n- **clear()** - Clears modelValue.\nInteraction states are not cleared (use resetInteractionState for this)\n- **_onChange(ev: _Event=_)** - Dispatches custom bubble event",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "sb-action-logger",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **log(content: _string_)** - Renders the passed content as a node, and appends it to the logger\nOnly supports simple values, will be interpreted to a String\nE.g. an Object will become '[object Object]'\n- **_logTemplate(content: _string_): _TemplateResult_** - Protected getter that returns the template of a single log",
+      "attributes": [
+        { "name": "title", "values": [] },
+        { "name": "simple", "values": [] },
+        { "name": "__logCounter", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "sb-locale-switcher",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [{ "name": "show-locales", "values": [] }],
+      "references": []
+    },
+    {
+      "name": "lion-icon",
+      "description": "Custom element for rendering SVG icons\n\n\n---\n\n\n",
+      "attributes": [
+        { "name": "aria-label", "values": [] },
+        { "name": "icon-id", "values": [] },
+        { "name": "role", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-input",
+      "description": "LionInput: extension of lion-field with native input element in place and user friendly API.\n\n\n---\n\n\n",
+      "attributes": [
+        {
+          "name": "readonly",
+          "description": "A Boolean attribute which, if present, indicates that the user should not be able to edit\nthe value of the input. The difference between disabled and readonly is that read-only\ncontrols can still function, whereas disabled controls generally do not function as\ncontrols until they are enabled.\n\n(From: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input#attr-readonly)",
+          "values": []
+        },
+        { "name": "type", "values": [] },
+        { "name": "placeholder", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-amount",
+      "description": "`LionInputAmount` is a class for an amount custom form element (`<lion-input-amount>`).\n\n\n---\n\n\n\n\n### **Methods:**\n - **_connectSlotMixin()** - Upon connecting slot mixin, we should check if\nthe required slot was created by the slot mixin,\nand if so, we should execute the currency changed flow\nwhich evaluates whether the slot node should be\nremoved for invalid currencies",
+      "attributes": [
+        { "name": "currency", "values": [] },
+        { "name": "modelValue", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-date",
+      "description": "`LionInputDate` has a .modelValue of type Date. It parses, formats and validates based\non locale.\n\n\n---\n\n\n",
+      "attributes": [{ "name": "modelValue", "values": [] }],
+      "references": []
+    },
+    {
+      "name": "lion-input-datepicker",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_overlayTemplate()** - Defining this overlay as a templates from OverlayMixin\nthis is our source to give as .contentNode to OverlayController.\nImportant: do not change the name of this method.\n- **_calendarTemplate()** - Subclassers can replace this with their custom extension of\nLionCalendar, like `<my-calendar id=\"calendar\"></my-calendar>`\n- **_invokerTemplate()** - Subclassers can replace this with their custom extension invoker,\nlike `<my-button><calendar-icon></calendar-icon></my-button>`\n- **_invokerIconTemplate()** - Subclassers can replace this with their custom extension invoker icon\n- **_onCalendarOverlayOpened()** - Lifecycle callback for subclassers\n- **__getSyncDownValue(modelValue: _?_): _Date | undefined_** - The LionCalendar shouldn't know anything about the modelValue;\nit can't handle Unparseable dates, but does handle 'undefined'\n- **__syncDisabledDates(validators: _Validator[]_)** - Validators contain the information to synchronize the input with\nthe min, max and enabled dates of the calendar.\n- **_onValidatorUpdated(e: _Event|CustomEvent_, metaData: _{validator: Validator}_)** - Responsible for listening param change event and\nsync the calendar dates with the updated validator params",
+      "attributes": [
+        {
+          "name": "calendar-heading",
+          "description": "The heading to be added on top of the calendar overlay.\nNaming chosen from an Application Developer perspective.\nFor a Subclasser 'calendarOverlayHeading' would be more appropriate.",
+          "values": []
+        }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-email",
+      "description": "LionInputEmail: extension of lion-input\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-file",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **file-list-changed** - undefined\n- **file-removed** - undefined\n\n### **Methods:**\n - **clear()** - Clears modelValue.\nInteraction states are not cleared (use resetInteractionState for this)\n- **_onClick(ev: _Event_)** - Clear _inputNode.value to make sure onChange is called even for duplicate files\n- **_processFiles(selectedFiles: _InputFile[]_)** - Runs on drag or change event\n- **_reflectBackOn(): _boolean_** - Every time .formattedValue is attempted to sync to the view value (on change/blur and on\nmodelValue change), this condition is checked. In case of the input-file we don't want\nthis sync to happen, since the view value is already correct.\n- **_isEmpty()** - Helper method for the mutually exclusive Required Validator",
+      "attributes": [
+        { "name": "accept", "values": [] },
+        { "name": "multiple", "values": [] },
+        { "name": "button-label", "values": [] },
+        { "name": "max-file-size", "values": [] },
+        { "name": "enable-drop-zone", "values": [] },
+        { "name": "upload-on-select", "values": [] },
+        { "name": "uploadResponse", "values": [] },
+        { "name": "_selectedFilesMetaData", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-selected-file-list",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **file-remove-requested** - undefined",
+      "attributes": [
+        { "name": "fileList", "values": [] },
+        { "name": "multiple", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-iban",
+      "description": "`LionInputIban` is a class for an IBAN custom form element (`<lion-input-iban>`).\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-range",
+      "description": "LionInputRange: extension of lion-input.\n\n\n---\n\n\n",
+      "attributes": [
+        { "name": "min", "values": [] },
+        { "name": "max", "values": [] },
+        { "name": "unit", "values": [] },
+        { "name": "step", "values": [] },
+        { "name": "no-min-max-labels", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-stepper",
+      "description": "`LionInputStepper` is a class for custom input-stepper element (`<lion-input-stepper>` web component).\n\n\n---\n\n\n\n\n### **Events:**\n - **undefined** - undefined\n\n### **Methods:**\n - **_onChange()** - Toggle +/- buttons on change\n- **_decrementorSignTemplate(): _String|TemplateResult_** - Get the decrementor button sign template\n- **_incrementorSignTemplate(): _String|TemplateResult_** - Get the incrementor button sign template\n- **_decrementorTemplate(): _TemplateResult_** - Get the increment button template\n- **_incrementorTemplate(): _TemplateResult_** - Get the decrement button template\n- **_onLeaveButton()** - Redispatch leave event on host when catching leave event\non the incrementor and decrementor button.\n\nThis redispatched leave event will be caught by\nInteractionStateMixin to set \"touched\" state to true.\n\nInteracting with the buttons is \"user interactions\"\nthe same way as focusing + blurring the field (native input)",
+      "attributes": [
+        { "name": "min", "values": [] },
+        { "name": "max", "values": [] },
+        { "name": "step", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-tel",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_setActiveRegion(newValue: _RegionCode|undefined_)** - Protected setter for activeRegion, only meant for subclassers\n- **_reflectBackOn(): _boolean_** - Do not reflect back .formattedValue during typing (this normally wouldn't happen when\nFormatMixin calls _calculateValues based on user input, but for LionInputTel we need to\ncall it on .activeRegion change)",
+      "attributes": [
+        { "name": "allowedRegions", "values": [] },
+        { "name": "format-strategy", "values": [] },
+        { "name": "format-country-code-style", "values": [] },
+        { "name": "activeRegion", "values": [] },
+        { "name": "_phoneUtil", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-input-tel-dropdown",
+      "description": "LionInputTelDropdown renders a dropdown like element next to the text field, inside the\nprefix slot. This could be a LionSelect, a LionSelectRich or a native select.\nBy default, the native `<select>` element is used for this, so that it's as lightweight as\npossible. Also, it doesn't need to be a `FormControl`, because it's purely a helper element\nto provide better UX: the modelValue (the text field) contains all needed info, since it's in\n`e164` format that contains all info (both region code and national phone number).\n\n\n---\n\n\n\n\n### **Methods:**\n - **_isEmpty(modelValue: _string_): _boolean_** - Used for Required validation and computation of interaction states.\nWe need to override this, because we prefill the input with the region code (like +31), but for proper UX,\nwe don't consider this as having interaction state `prefilled`\n- **_repropagationCondition()** - Usually, we don't use composition in regular LionFields (non choice-groups). Here we use a LionSelect(Rich) inside.\nWe don't want to repropagate any children, since an Application Developer is not concerned with these internals (see repropate logic in FormControlMixin)\nAlso, we don't want to give (wrong) info to InteractionStateMixin, that will set the wrong interaction states based on child info.\nTODO: Make \"this._repropagationRole !== 'child'\" the default for FormControlMixin\n(so that FormControls used within are never repropagated for LionFields)\n- **_setActiveRegion(newValue: _RegionCode|undefined_): _void_** - Protected setter for activeRegion, only meant for subclassers",
+      "attributes": [{ "name": "preferredRegions", "values": [] }],
+      "references": [null, null]
+    },
+    {
+      "name": "lion-listbox",
+      "description": "LionListbox: implements the wai-aria listbox design pattern and integrates it as a Lion\nFormControl\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-option",
+      "description": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option\nCan be a child of datalist/select, or role=\"listbox\"\n\nElement gets state supplied externally, reflects this to attributes,\nenabling SubClassers to style based on those states\n\n\n---\n\n\n\n\n### **Events:**\n - **active-changed** - undefined",
+      "attributes": [{ "name": "active", "values": [] }],
+      "references": [null]
+    },
+    {
+      "name": "lion-options",
+      "description": "LionOptions\n\n\n---\n\n\n",
+      "attributes": [
+        { "name": "role", "values": [] },
+        { "name": "tabindex", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-pagination",
+      "description": "`LionPagination` is a class for custom Pagination element (`<lion-pagination>` web component).\n\n\n---\n\n\n\n\n### **Methods:**\n - **next()** - Go next in pagination\n- **first()** - Go to first page\n- **last()** - Go to the last page\n- **goto(pageNumber: _number_)** - Go to the specific page\n- **previous()** - Go back in pagination\n- **_prevNextIconTemplate(label: _String_): _TemplateResult_** - Get previous or next button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_prevNextButtonTemplate(label: _String_, pageNumber: _Number_, namespace: _String_): _TemplateResult_** - Get next or previous button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_disabledButtonTemplate(label: _String_): _TemplateResult_** - Get disabled button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_renderNavList(): _TemplateResult[]_** - Render navigation list",
+      "attributes": [
+        { "name": "current", "values": [] },
+        { "name": "count", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-progress-indicator",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [
+        { "name": "value", "values": [] },
+        { "name": "min", "values": [] },
+        { "name": "max", "values": [] },
+        { "name": "aria-label", "values": [] },
+        { "name": "aria-labelledby", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-radio",
+      "description": "Lion-radio can be used inside a lion-radio-group.\n\n<lion-radio-group name=\"radios\">\n  <label slot=\"label\">My Radio</label>\n  <lion-radio>\n    <label slot=\"label\">Male</label>\n  </lion-radio>\n  <lion-radio>\n    <label slot=\"label\">Female</label>\n  </lion-radio>\n</lion-radio-group>\n\nYou can preselect an option by setting marking an lion-radio checked.\n  Example:\n  <lion-radio checked>\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-radio-group",
+      "description": "A wrapper around multiple radios.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-select",
+      "description": "LionSelect: wraps the native HTML element select\n\n<lion-select>\n  <label slot=\"label\">My Input</label>\n  <select slot=\"input\">\n   <option value=\"top\">top</option>\n   <option value=\"bottom\">bottom</option>\n  </select>\n</lion-select>\n\nYou can preselect an option by setting the property modelValue.\n  Example:\n    <lion-select .modelValue=\"${'<value of option 2>'}\">\n\nIt extends LionField so it inherits required and disabled.\n\nThe option element needs to be a direct child of the select element.\n\nYou cannot use interactive elements inside the options. Avoid very long names to\nfacilitate the understandability and perceivability for screen reader users. Sets of options\nwhere each option name starts with the same word or phrase can also significantly degrade\nusability for keyboard and screen reader users.\n\n\n---\n\n\n\n\n### **Events:**\n - **user-input-changed** - undefined\n\n### **Methods:**\n - **_onChange(ev: _Event=_): _void_** - Dispatches custom bubble event\n- **reset(): _void_** - Resets modelValue to initial value.\nInteraction states are cleared\n- **clear(): _void_** - Clears modelValue.\nInteraction states are not cleared (use resetInteractionState for this)",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-select-invoker",
+      "description": "LionSelectInvoker: invoker button consuming a selected element\n\n\n---\n\n\n\n\n### **Methods:**\n - **_noSelectionTemplate(): _TemplateResult_** - To be overriden for a placeholder, used when `hasNoDefaultSelected` is true on the select rich",
+      "attributes": [
+        { "name": "selectedElement", "values": [] },
+        { "name": "hostElement", "values": [] },
+        { "name": "readonly", "values": [] },
+        { "name": "single-option", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-select-rich",
+      "description": "LionSelectRich: wraps the <lion-listbox> element\n\n\n---\n\n\n\n\n### **Events:**\n - **blur** - undefined\n\n### **Methods:**\n - **_getCheckedElements()** - In the select disabled options are still going to a possible value for example\nwhen prefilling or programmatically setting it.\n- **_noDefaultSelectedInheritsWidth()** - With no selected element, we should override the inheritsReferenceWidth in most cases.\nBy default, we will set it to 'min', and then set it back to what it was initially when\nsomething is selected.\nAs a subclasser you can override this behavior.\n- **_alignInvokerWidth()** - Align invoker width with content width\nMake sure display is not set to \"none\" while calculating the content width",
+      "attributes": [
+        { "name": "navigate-within-invoker", "values": [] },
+        { "name": "interaction-mode", "values": [] },
+        { "name": "single-option", "values": [] }
+      ],
+      "references": [null]
+    },
+    {
+      "name": "lion-step",
+      "description": "`LionStep` is one of many in a LionSteps Controller\n\n\n---\n\n\n\n\n### **Events:**\n - **enter** - undefined\n- **leave** - undefined\n- **skip** - undefined",
+      "attributes": [
+        {
+          "name": "status",
+          "description": "Step status, one of: \"untouched\", \"entered\", \"left\", \"skipped\".",
+          "values": []
+        },
+        {
+          "name": "invert-condition",
+          "description": "Allows to invert condition function result.",
+          "values": []
+        },
+        {
+          "name": "forward-only",
+          "description": "Allows transition to step only in forward direction. Skips it if transitioned back.\nMay be useful if the step is only showing some messages and does data loading and\nthen makes transition to next step automatically.",
+          "values": []
+        },
+        {
+          "name": "initial-step",
+          "description": "If set this step will be the initially enabled step\nThere should be only ONE intial step in each steps",
+          "values": []
+        }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-steps",
+      "description": "`LionSteps` is a controller for a multi step system.\n\n\n---\n\n\n\n\n### **Events:**\n - **transition** - undefined",
+      "attributes": [
+        {
+          "name": "data",
+          "description": "Storage for data gathered across different steps.\nData is passed into each step condition function as a first argument.",
+          "values": []
+        },
+        {
+          "name": "current",
+          "description": "Number of the current entered step.",
+          "values": []
+        }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-switch",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_isEmpty()** - Override this function from ChoiceInputMixin.",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-switch-button",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **checked-changed** - undefined",
+      "attributes": [
+        { "name": "role", "values": [] },
+        { "name": "checked", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-tabs",
+      "description": "\n\n\n---\n\n\n\n\n### **Events:**\n - **selected-changed** - undefined",
+      "attributes": [{ "name": "selected-index", "values": [] }],
+      "references": []
+    },
+    {
+      "name": "lion-textarea",
+      "description": "LionTextarea: extension of lion-field with native input element in place and user friendly API\n\n\n---\n\n\n\n\n### **Methods:**\n - **setTextareaMaxHeight()** - To support maxRows we need to set max-height of the textarea",
+      "attributes": [
+        { "name": "max-rows", "values": [] },
+        { "name": "rows", "values": [] },
+        { "name": "readonly", "values": [] },
+        { "name": "placeholder", "values": [] }
+      ],
+      "references": []
+    },
+    {
+      "name": "lion-tooltip",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [{ "name": "invoker-relation", "values": [] }],
+      "references": []
+    },
+    {
+      "name": "lion-validation-feedback",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "umbrella-form",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **waitForAllChildrenUpdates()** - Prevents errors outside test from being thrown",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-accordion",
+      "description": "# <lion-accordion> webcomponent\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-button",
+      "description": "Use LionButton (or LionButtonReset|LionButtonSubmit) when there is a need to extend HTMLButtonElement.\nIt allows to create complex shadow DOM for buttons needing this. Think of:\n- a material Design button that needs a JS controlled ripple\n- a LionSelectRich invoker that needs a complex shadow DOM structure\n(for styling/maintainability purposes)\n- a specialized button (for instance a primary button or icon button in a Design System) that\nneeds a simple api: `<my-button>text</my-button>` is always better than\n`<button class=\"my-button\"><div class=\"my-button__container\">text</div><button>`\n\nIn other cases, whenever you can, still use native HTMLButtonElement (`<button>`).\n\nNote that LionButton is meant for buttons with type=\"button\". It's cleaner and more\nlightweight than LionButtonReset and LionButtonSubmit, which should only be considered when native\n`<form>` support is needed:\n- When type=\"reset|submit\" should be supported, use LionButtonReset.\n- When implicit form submission should be supported on top, use LionButtonSubmit.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-button-reset",
+      "description": "This adds functionality for form buttons (type 'submit' and 'reset').\nIt allows to submit or reset a <form> by spawning a click on a temporrary native button inside\nthe form.\nUse LionButtonSubmit when implicit form submission should be supported as well.\n\nFunctionality in this button is not purely for type=\"reset\", also for type=\"submit\".\nFor mainainability purposes the submit functionality is part of LionButtonReset\n(it needs the same logic).\nLionButtonReset could therefore actually be considered as 'LionButtonForm' (without the\nimplicit form submission logic), but LionButtonReset is an easier to grasp name for\nApplication Developers: for reset buttons, always use LionButtonReset, for submit\nbuttons always use LionButtonSubmit.\n\n\n---\n\n\n\n\n### **Methods:**\n - **__clickDelegationHandler(ev: _Event_): _Promise<void>_** - Delegate click, by flashing a native button as a direct child\nof the form, and firing click on this button. This will fire the form submit\nwithout side effects caused by the click bubbling back up to lion-button.",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-button-submit",
+      "description": "Contains all the funcionaility of LionButton and LionButtonReset. On top of that it\nsupports implicit form submission.\n\nUse when:\n- the Application Developer should be able to switch types between 'submit'|'reset'|'button'\n(this is similar to how native HTMLButtonElement works)\n- a submit button with native form support is needed\n\n\n---\n\n\n\n\n### **Methods:**\n - **__clickDelegationHandler(ev: _Event_): _Promise<void>_** - Delegate click, by flashing a native button as a direct child\nof the form, and firing click on this button. This will fire the form submit\nwithout side effects caused by the click bubbling back up to lion-button.",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-calendar",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **initCentralDate(): _void_** - This exposes an interface for datepickers that want to\nreinitialize when calendar is opened",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-checkbox",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-checkbox-group",
+      "description": "A wrapper around multiple checkboxes\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-checkbox-indeterminate",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-collapsible",
+      "description": "`LionCollapsible` is a class for custom collapsible element (`<lion-collapsible>` web component).\n\n\n---\n\n\n\n\n### **Methods:**\n - **toggle(): _void_** - Toggle the current(opened/closed) state.\n- **show(): _void_** - Show extra content.\n- **hide(): _void_** - Hide extra content.\n- **_showAnimation(opts: _Object_): _Promise<void>_** - Show animation implementation in sub-classer.\n- **_hideAnimation(opts: _Object_): _Promise<void>_** - Hide animation implementation in sub-classer.",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-combobox",
+      "description": "LionCombobox: implements the wai-aria combobox design pattern and integrates it as a Lion\nFormControl\n\n\n---\n\n\n\n\n### **Methods:**\n - **parser(value: _string_): _*_** - Converts viewValue to modelValue\n- **__unsyncCheckedIndexOnInputChange(): _void_** - When textbox value doesn't match checkedIndex anymore, update accordingly...\n- **matchCondition(option: _LionOption_, textboxValue: _string_): _boolean_** - When the preconfigurable `match-mode` conditions are not sufficient,\none can define a custom matching function.\n- **_getTextboxValueFromOption(option: _LionOption_): _string_** - Return the value to be used for the input value\n- **_handleAutocompletion(): _void_** - Handles autocompletion. This entails:\n- list: shows a list on keydown character press\n- filter: filters list of potential matches according to matchmode or provided matchCondition\n- focus: automatically focuses closest match (makes it the activedescendant)\n- check: automatically checks/selects closest match when selection-follows-focus is enabled\n(this is the default configuration)\n- complete: completes the textbox value inline (the 'missing characters' will be added as\nselected text)\n- **_autoSelectCondition(): _boolean_** - When this condition is false, an end user will have to manually select a suggested\noption from the list (by default when autocomplete is 'none' or 'list').\nFor autocomplete 'both' or 'inline', it will automatically select on a match.",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-dialog",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-drawer",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_showAnimation({ contentNode }: _{\n        contentNode: HTMLElement;\n    }_, options: _@param {HTMLElement} options.contentNode\n     * _): _Promise<void>_** - Trigger show animation and wait for transition to be finished.\n- **_hideAnimation({ contentNode }: _{\n        contentNode: HTMLElement;\n    }_, options: _@param {HTMLElement} options.contentNode\n     * _): _Promise<void>_** - Trigger hide animation and wait for transition to be finished.\n- **_waitForTransition({ contentNode }: _{\n        contentNode: HTMLElement;\n    }_, options: _@param {HTMLElement} options.contentNode\n     * _): _Promise<void>_** - Wait until the transition event is finished.\n- **toggle(): _void_** - Toggle the current(opened/closed) state.\n- **show(): _void_** - Show extra content.\n- **hide(): _void_** - Hide extra content.",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-fieldset",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-form",
+      "description": "LionForm: form wrapper providing extra features and integration with lion-field elements.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-field",
+      "description": "`LionField`: wraps <input>, <textarea>, <select> and other interactable elements.\nAlso it would follow a nice hierarchy: lion-form -> lion-fieldset -> lion-field\n\nNote: We don't support placeholders, because we have a helper text and\nplaceholders confuse the user with accessibility needs.\n\nPlease see the docs for in depth information.\n\n\n---\n\n\n\n\n### **Methods:**\n - **_onChange(ev: _Event=_): _void_** - Dispatches custom bubble event\n- **reset(): _void_** - Resets modelValue to initial value.\nInteraction states are cleared\n- **clear(): _void_** - Clears modelValue.\nInteraction states are not cleared (use resetInteractionState for this)",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "sb-action-logger",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **log(content: _string_): _void_** - Renders the passed content as a node, and appends it to the logger\nOnly supports simple values, will be interpreted to a String\nE.g. an Object will become '[object Object]'\n- **_logTemplate(content: _string_): _TemplateResult_** - Protected getter that returns the template of a single log",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "sb-locale-switcher",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-icon",
+      "description": "Custom element for rendering SVG icons\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-input",
+      "description": "LionInput: extension of lion-field with native input element in place and user friendly API.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-amount",
+      "description": "`LionInputAmount` is a class for an amount custom form element (`<lion-input-amount>`).\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-date",
+      "description": "`LionInputDate` has a .modelValue of type Date. It parses, formats and validates based\non locale.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-datepicker",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **__getSyncDownValue(modelValue: _?_): _Date | undefined_** - The LionCalendar shouldn't know anything about the modelValue;\nit can't handle Unparseable dates, but does handle 'undefined'\n- **_overlayTemplate(): _import(\"lit-html\").TemplateResult<1>_** - Defining this overlay as a templates from OverlayMixin\nthis is our source to give as .contentNode to OverlayController.\nImportant: do not change the name of this method.\n- **_calendarTemplate(): _import(\"lit-html\").TemplateResult<1>_** - Subclassers can replace this with their custom extension of\nLionCalendar, like `<my-calendar id=\"calendar\"></my-calendar>`\n- **_invokerTemplate(): _import(\"lit-html\").TemplateResult<1>_** - Subclassers can replace this with their custom extension invoker,\nlike `<my-button><calendar-icon></calendar-icon></my-button>`\n- **_invokerIconTemplate(): _import(\"lit-html\").TemplateResult<1>_** - Subclassers can replace this with their custom extension invoker icon\n- **_onCalendarOverlayOpened(): _void_** - Lifecycle callback for subclassers\n- **__syncDisabledDates(validators: _Validator[]_): _void_** - Validators contain the information to synchronize the input with\nthe min, max and enabled dates of the calendar.\n- **_onValidatorUpdated(e: _Event|CustomEvent_, metaData: _{validator: Validator}_): _void_** - Responsible for listening param change event and\nsync the calendar dates with the updated validator params",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-email",
+      "description": "LionInputEmail: extension of lion-input\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-file",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_onClick(ev: _Event_): _void_** - Clear _inputNode.value to make sure onChange is called even for duplicate files\n- **_processFiles(selectedFiles: _InputFile[]_): _void_** - Runs on drag or change event\n- **_isEmpty(): _boolean_** - Helper method for the mutually exclusive Required Validator",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-selected-file-list",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-iban",
+      "description": "`LionInputIban` is a class for an IBAN custom form element (`<lion-input-iban>`).\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-range",
+      "description": "LionInputRange: extension of lion-input.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-stepper",
+      "description": "`LionInputStepper` is a class for custom input-stepper element (`<lion-input-stepper>` web component).\n\n\n---\n\n\n\n\n### **Methods:**\n - **_onChange(): _void_** - Toggle +/- buttons on change\n- **_decrementorSignTemplate(): _String|TemplateResult_** - Get the decrementor button sign template\n- **_incrementorSignTemplate(): _String|TemplateResult_** - Get the incrementor button sign template\n- **_decrementorTemplate(): _TemplateResult_** - Get the increment button template\n- **_incrementorTemplate(): _TemplateResult_** - Get the decrement button template\n- **_onLeaveButton(): _void_** - Redispatch leave event on host when catching leave event\non the incrementor and decrementor button.\n\nThis redispatched leave event will be caught by\nInteractionStateMixin to set \"touched\" state to true.\n\nInteracting with the buttons is \"user interactions\"\nthe same way as focusing + blurring the field (native input)",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-tel",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_setActiveRegion(newValue: _RegionCode|undefined_): _void_** - Protected setter for activeRegion, only meant for subclassers",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-input-tel-dropdown",
+      "description": "LionInputTelDropdown renders a dropdown like element next to the text field, inside the\nprefix slot. This could be a LionSelect, a LionSelectRich or a native select.\nBy default, the native `<select>` element is used for this, so that it's as lightweight as\npossible. Also, it doesn't need to be a `FormControl`, because it's purely a helper element\nto provide better UX: the modelValue (the text field) contains all needed info, since it's in\n`e164` format that contains all info (both region code and national phone number).\n\n\n---\n\n\n\n\n### **Methods:**\n - **_isEmpty(modelValue: _string_): _boolean_** - Used for Required validation and computation of interaction states.\nWe need to override this, because we prefill the input with the region code (like +31), but for proper UX,\nwe don't consider this as having interaction state `prefilled`\n- **_repropagationCondition(): _boolean_** - Usually, we don't use composition in regular LionFields (non choice-groups). Here we use a LionSelect(Rich) inside.\nWe don't want to repropagate any children, since an Application Developer is not concerned with these internals (see repropate logic in FormControlMixin)\nAlso, we don't want to give (wrong) info to InteractionStateMixin, that will set the wrong interaction states based on child info.\nTODO: Make \"this._repropagationRole !== 'child'\" the default for FormControlMixin\n(so that FormControls used within are never repropagated for LionFields)\n- **_setActiveRegion(newValue: _RegionCode|undefined_): _void_** - Protected setter for activeRegion, only meant for subclassers",
+      "attributes": [],
+      "references": [null, null]
+    },
+    {
+      "name": "lion-listbox",
+      "description": "LionListbox: implements the wai-aria listbox design pattern and integrates it as a Lion\nFormControl\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-option",
+      "description": "https://developer.mozilla.org/en-US/docs/Web/HTML/Element/option\nCan be a child of datalist/select, or role=\"listbox\"\n\nElement gets state supplied externally, reflects this to attributes,\nenabling SubClassers to style based on those states\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-options",
+      "description": "LionOptions\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-pagination",
+      "description": "`LionPagination` is a class for custom Pagination element (`<lion-pagination>` web component).\n\n\n---\n\n\n\n\n### **Methods:**\n - **next(): _void_** - Go next in pagination\n- **first(): _void_** - Go to first page\n- **last(): _void_** - Go to the last page\n- **goto(pageNumber: _number_): _void_** - Go to the specific page\n- **previous(): _void_** - Go back in pagination\n- **_prevNextIconTemplate(label: _String_): _TemplateResult_** - Get previous or next button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_prevNextButtonTemplate(label: _String_, pageNumber: _Number_, namespace: _String_): _TemplateResult_** - Get next or previous button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_disabledButtonTemplate(label: _String_): _TemplateResult_** - Get disabled button template.\nThis method can be overridden to apply customized template in wrapper.\n- **_renderNavList(): _TemplateResult[]_** - Render navigation list",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-progress-indicator",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-radio",
+      "description": "Lion-radio can be used inside a lion-radio-group.\n\n<lion-radio-group name=\"radios\">\n  <label slot=\"label\">My Radio</label>\n  <lion-radio>\n    <label slot=\"label\">Male</label>\n  </lion-radio>\n  <lion-radio>\n    <label slot=\"label\">Female</label>\n  </lion-radio>\n</lion-radio-group>\n\nYou can preselect an option by setting marking an lion-radio checked.\n  Example:\n  <lion-radio checked>\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-radio-group",
+      "description": "A wrapper around multiple radios.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-select",
+      "description": "LionSelect: wraps the native HTML element select\n\n<lion-select>\n  <label slot=\"label\">My Input</label>\n  <select slot=\"input\">\n   <option value=\"top\">top</option>\n   <option value=\"bottom\">bottom</option>\n  </select>\n</lion-select>\n\nYou can preselect an option by setting the property modelValue.\n  Example:\n    <lion-select .modelValue=\"${'<value of option 2>'}\">\n\nIt extends LionField so it inherits required and disabled.\n\nThe option element needs to be a direct child of the select element.\n\nYou cannot use interactive elements inside the options. Avoid very long names to\nfacilitate the understandability and perceivability for screen reader users. Sets of options\nwhere each option name starts with the same word or phrase can also significantly degrade\nusability for keyboard and screen reader users.\n\n\n---\n\n\n\n\n### **Methods:**\n - **_onChange(ev: _Event=_): _void_** - Dispatches custom bubble event\n- **reset(): _void_** - Resets modelValue to initial value.\nInteraction states are cleared\n- **clear(): _void_** - Clears modelValue.\nInteraction states are not cleared (use resetInteractionState for this)",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-select-invoker",
+      "description": "LionSelectInvoker: invoker button consuming a selected element\n\n\n---\n\n\n\n\n### **Methods:**\n - **_noSelectionTemplate(): _TemplateResult_** - To be overriden for a placeholder, used when `hasNoDefaultSelected` is true on the select rich",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-select-rich",
+      "description": "LionSelectRich: wraps the <lion-listbox> element\n\n\n---\n\n\n\n\n### **Methods:**\n - **_getCheckedElements(): _import(\"../../listbox/src/LionOption.js\").LionOption[]_** - In the select disabled options are still going to a possible value for example\nwhen prefilling or programmatically setting it.\n- **_noDefaultSelectedInheritsWidth(): _void_** - With no selected element, we should override the inheritsReferenceWidth in most cases.\nBy default, we will set it to 'min', and then set it back to what it was initially when\nsomething is selected.\nAs a subclasser you can override this behavior.\n- **_alignInvokerWidth(): _Promise<void>_** - Align invoker width with content width\nMake sure display is not set to \"none\" while calculating the content width",
+      "attributes": [],
+      "references": [null]
+    },
+    {
+      "name": "lion-step",
+      "description": "`LionStep` is one of many in a LionSteps Controller\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-steps",
+      "description": "`LionSteps` is a controller for a multi step system.\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-switch",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **_isEmpty(): _boolean_** - Override this function from ChoiceInputMixin.",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-switch-button",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-tabs",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-textarea",
+      "description": "LionTextarea: extension of lion-field with native input element in place and user friendly API\n\n\n---\n\n\n\n\n### **Methods:**\n - **setTextareaMaxHeight(): _void_** - To support maxRows we need to set max-height of the textarea",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-tooltip",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "lion-validation-feedback",
+      "description": "\n\n\n---\n\n\n",
+      "attributes": [],
+      "references": []
+    },
+    {
+      "name": "umbrella-form",
+      "description": "\n\n\n---\n\n\n\n\n### **Methods:**\n - **waitForAllChildrenUpdates(): _Promise<any[]>_** - Prevents errors outside test from being thrown",
+      "attributes": [],
+      "references": []
+    }
+  ]
+}

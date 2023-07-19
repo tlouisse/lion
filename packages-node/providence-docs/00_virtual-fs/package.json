@@ -1,0 +1,13 @@
+{
+  "name": "providence-local-demo",
+  "type": "module",
+  "dependencies": {
+    "express": "latest",
+    "nodemon": "latest"
+  },
+  "scripts": {
+    "start": "nodemon index.js",
+    "prov-install": "cd providence-analytics && npm install",
+    "prov-dashboard": "cd providence-analytics && node src/cli/index.js dashboard"
+  }
+}
