@@ -13,8 +13,12 @@
     "vite": "^4.4.4"
   },
   "dependencies": {
+    "@codemirror/lang-javascript": "^6.1.9",
+    "@open-wc/scoped-elements": "^2.2.0",
     "@webcontainer/api": "^1.1.5",
+    "codemirror": "^6.0.1",
     "lit": "^2.7.6",
+    "open-props": "^1.5.10",
     "xterm": "^5.2.1"
   }
 }

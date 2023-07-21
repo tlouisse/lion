@@ -1,5 +1,8 @@
 import { LitElement, html, css } from 'lit';
 import { uuid } from '@lion/ui/core.js';
+
+// TODO: consume DisclosureMixin
+
 /**
  * `LionCollapsible` is a class for custom collapsible element (`<lion-collapsible>` web component).
  *

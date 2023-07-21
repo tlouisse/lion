@@ -1,36 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" color-scheme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/stackblitz-favicon-editor.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My first WebContainers app</title>
+    <link rel="stylesheet" href="01_src/core/open-props/open-props.css" />
+    <link rel="stylesheet" href="01_src/core/open-props/open-props-themes.css" />
+    <link rel="stylesheet" href="01_src/core/open-props/open-props-hsl-colors-for-themes.css" />
     <style>
       * {
         box-sizing: border-box;
+        margin: 0;
       }
 
-      :root {
-        font-family: Inter, system-ui, Segoe UI, Roboto, Helvetica Neue, sans-serif;
-        color: black;
-        background: white;
+      html {
+        block-size: 100%;
+        background-color: var(--surface-1);
+        color: var(--text-1);
+        accent-color: var(--brand);
       }
 
       body {
-        margin: 0.5rem 1rem;
+        min-block-size: 100%;
+        font-family: system-ui, sans-serif;
+        padding: var(--size-6);
+        display: grid;
+        place-content: center;
+        gap: var(--size-6);
+      }
+
+      @font-face {
+        font-family: 'Consolas';
+        src: url('01_src/core/font/consola.ttf') format('ttf');
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1>Hello, <span class="wc">WebContainers API</span>!</h1>
-      <p>
-        <a class="docs" href="https://webcontainers.io" target="_blank" rel="noreferrer noopener">
-          Read the docs 📖
-        </a>
-      </p>
-    </header>
-
     <main-element></main-element>
 
     <script type="module" src="/01_src/index.js"></script>
