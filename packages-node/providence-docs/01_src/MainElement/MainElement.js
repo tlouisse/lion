@@ -1,87 +1,52 @@
-import { html, css } from 'lit-element';
+import { html } from 'lit-element';
 import { ref, createRef } from 'lit/directives/ref.js';
 import { Terminal } from 'xterm';
-import { LionSwitch } from '@lion/ui/switch.js';
-import { LionSwitchButton } from '@lion/ui/switch.js';
+import { PgDarkModeSwitch } from './PgDarkModeSwitch.js';
+import { LionAccordion } from '@lion/ui/accordion.js';
 import { webcontainerManager } from '../webcontainerManager.js';
-import darkIcon from '../core/icons/dark.svg.js';
-import lightIcon from '../core/icons/light.svg.js';
+import chevronRightIcon from '../core/icons/chevronRight.svg.js';
 import xtermStyle from './style/xterm.css.js';
 import mainElementStyle from './style/MainElement.css.js';
 import { FileTreeElement } from '../FileTreeElement/FileTreeElement.js';
 import { EditorElement } from '../EditorElement/EditorElement.js';
 import { PgElement } from '../core/PgElement.js';
-import globalCss from '../core/global.css.js';
-
-// We patch the prototype of LionSwitchButton in order to change its template
-// TODO: in the future, expose this decoration in a more user friendly way, having access to
-// relevant renderData as well
-
-// N.B. since this is a switch specifically for dark mode, normally we would have created an extension for this
-// This just shows how we can decorate the visual idenity of a component without extending it (allowing you not having to rewrite complex templates that are already semantcially correct), today
-
-LionSwitchButton.prototype.render = function render() {
-  return html`
-    <div class="btn">
-      <div class="switch-button__track surface-2"></div>
-      <div class="switch-button__thumb surface-4 --icon-wrapper">
-        <span class="light">${lightIcon}</span>
-        <span class="dark">${darkIcon}</span>
-      </div>
-    </div>
-  `;
-};
-
-Object.defineProperty(LionSwitchButton, 'styles', {
-  value: LionSwitchButton.styles,
-  writable: true,
-});
-// @ts-expect-error
-LionSwitchButton.styles = [
-  ...LionSwitchButton.styles,
-  globalCss,
-  css`
-    :host([checked]) .light {
-      display: none;
-    }
-
-    :host(:not([checked])) .dark {
-      display: none;
-    }
-
-    .btn {
-      border-radius: var(--size-4);
-      outline: 1px solid var(--text-2);
-    }
-
-    .switch-button__track,
-    .switch-button__thumb {
-      border-radius: inherit;
-      outline: none !important;
-    }
-  `,
-];
 
 /**
  * @typedef {import('@webcontainer/api').WebContainer} WebContainer
  */
 
-// /**
-//  * @param {{ content:string; webcontainerInstance:WebContainer; }} context
-//  */
-// async function writeIndexJS({ content, webcontainerInstance }) {
-//   await webcontainerInstance.fs.writeFile('/index.js', content);
-// }
+/**
+ * @param {{completeFs:*; path:string;}}} context
+ */
+function getSliceOfVirtualFs({ completeFs, path }) {
+  if (!path) return {};
 
-// /**
-//  * @param {{webcontainerInstance:WebContainer; textareaEl:HTMLTextAreaElement; virtualFs:* }} context
-//  */
-// function initCodeEditor({ webcontainerInstance, virtualFs, textareaEl }) {
-//   textareaEl.value = virtualFs['index.js'].file.contents;
-//   textareaEl.addEventListener('input', () => {
-//     writeIndexJS({ content: textareaEl.value, webcontainerInstance });
-//   });
-// }
+  let result = completeFs;
+  const pathSlices = path.split('/');
+
+  try {
+    for (const pathSlice of pathSlices) {
+      // const isLastSlice = pathSlices.indexOf(pathSlice) === pathSlices.length - 1;
+
+      const nextDir = result[pathSlice].directory;
+      if (nextDir) {
+        result = result[pathSlice].directory;
+      }
+
+      // // Now give it the folder name as key (or @scope/foldername)
+      // if (isLastSlice) {
+      //   const isScopedPackage = pathSlices[pathSlices.length - 2].startsWith('@');
+      //   result[pathSlice] = { directory: result };
+      //   if (isScopedPackage) {
+      //     result[pathSlices[pathSlices.length - 2]] = { directory: result };
+      //   }
+      // }
+    }
+  } catch (err) {
+    console.error(err);
+  }
+  return result;
+}
 
 /**
  * @param {{terminalEl:HTMLElement}} context
@@ -135,6 +100,12 @@ async function installProvidenceDependencies({ terminal, webcontainerInstance })
 }
 
 export class MainElement extends PgElement {
+  static properties = {
+    _activeAnalyzer: { type: String, state: true },
+    _targetRepositoryPath: { type: String, state: true },
+    _referenceRepositoryPath: { type: String, state: true },
+  };
+
   static styles = [...super.styles, xtermStyle, mainElementStyle];
 
   static scopedElements = {
@@ -142,7 +113,8 @@ export class MainElement extends PgElement {
     ...super.scopedElements,
     'file-tree-element': FileTreeElement,
     'editor-element': EditorElement,
-    'lion-switch': LionSwitch,
+    'pg-darkmode-switch': PgDarkModeSwitch,
+    'lion-accordion': LionAccordion,
   };
 
   refs = {
@@ -157,32 +129,84 @@ export class MainElement extends PgElement {
     super();
 
     this._onFileSelected = this._onFileSelected.bind(this);
+    this._targetRepositoryPath = 'providence-playground';
+    this._referenceRepositoryPath = '@lion/ui';
+    // this._referenceRepositoryPath = 'repos/lit';
   }
 
   render() {
     return html`
       <div class="main-grid">
-        <header class="main-grid__header --flex">
-          <h1 class="--relative">
-            providence<span class="--highlight-text"> playground</span
-            ><sup class="--super-text">beta</sup>
+        <header class="main-grid__header -l-flex" style="gap: var(--size-3);">
+          <h1 class="-relative">
+            providence<span class="-highlight-text"> playground</span>
+            <sup class="-super-text">beta</sup>
           </h1>
-          <lion-switch
+          <pg-darkmode-switch
             ${ref(this.refs.themeSwitch)}"
             checked
             label-sr-only
             label="switch theme"
             @checked-changed="${this._setTheme}"
-          ></lion-switch>
+          ></pg-darkmode-switch>
         </header>
         <div class="main-grid__sidebar">
-          <file-tree-element
-            .virtualFs="${webcontainerManager.virtualFs}"
-            @file-selected="${this._onFileSelected}"
-          ></file-tree-element>
+          <lion-accordion expanded="[0]">
+
+            ${this._accordionHeadingTemplate({ text: 'Analyzer Query' })}
+            <div slot="content">
+              <fieldset class="fieldset" @input="${this.__handleAnalyzer}">
+                <legend class="-sr-only">Active Analyzer</legend>
+                <label><input name="activeAnalyzer" type="radio" value="find-imports">find-imports</label>
+                <label><input name="activeAnalyzer" type="radio" value="find-exports">find-exports</label>
+                <label><input name="activeAnalyzer" type="radio" value="match-imports">match-imports</label>
+                <label><input name="activeAnalyzer" type="radio" value="match-subclassers">match-subclassers</label>
+                <label><input name="activeAnalyzer" type="radio" value="custom">custom...</label>
+              </fieldset>
+            </div>
+
+
+            ${this._accordionHeadingTemplate({
+              text: 'Target Repository',
+              path: this._targetRepositoryPath,
+            })}
+            <div slot="content">
+              <file-tree-element
+                .virtualFs="${getSliceOfVirtualFs({
+                  completeFs: webcontainerManager.virtualFs,
+                  path: this._targetRepositoryPath,
+                })}"
+                @file-selected="${this._onFileSelected}"
+              ></file-tree-element>
+            </div>
+
+            ${this._accordionHeadingTemplate({
+              text: 'Reference Repository',
+              path: this._referenceRepositoryPath,
+            })}
+            <div slot="content">
+              <file-tree-element
+                .virtualFs="${getSliceOfVirtualFs({
+                  completeFs: webcontainerManager.virtualFs,
+                  path: this._referenceRepositoryPath,
+                })}"
+                @file-selected="${this._onFileSelected}"
+              ></file-tree-element>
+            </div>
+
+
+            ${this._accordionHeadingTemplate({ text: 'File System' })}
+            <file-tree-element
+              slot="content"
+              .virtualFs="${webcontainerManager.virtualFs}"
+              @file-selected="${this._onFileSelected}"
+            ></file-tree-element>
+
+          </lion-accordion>
+
         </div>
         <div class="main-grid__editor">
-          <editor-element ${ref(this.refs.editor)}> </editor-element>
+          <editor-element class="editor" ${ref(this.refs.editor)}> </editor-element>
         </div>
         <div class="main-grid__preview">
           <iframe ${ref(this.refs.iframe)} src="loading.html"></iframe>
@@ -195,10 +219,30 @@ export class MainElement extends PgElement {
   }
 
   /**
+   * @param {{text:string;path?:string;}} context
+   */
+  _accordionHeadingTemplate({ text, path }) {
+    return html`<div role="heading" aria-level="3" slot="invoker">
+      <button class="accordion-heading -l-flex surface-2">
+        <span class="accordion-heading__icon -icon-wrapper">${chevronRightIcon}</span
+        ><span class="accordion-heading__text">${text}</span>
+        ${path ? html`<span style="text-transform: lowercase;">(${path})</span>` : ''}
+      </button>
+    </div>`;
+  }
+
+  /**
    * @param {CustomEvent} event
    */
   _onFileSelected(event) {
     this._openCodeEditorTab(event.detail);
+  }
+
+  /**
+   * @param {*} ev
+   */
+  __handleAnalyzer(ev) {
+    this._activeAnalyzer = ev.target.value;
   }
 
   /**
@@ -225,6 +269,24 @@ export class MainElement extends PgElement {
 
     await webcontainerManager.initComplete;
     this.init();
+  }
+
+  /**
+   * @param {import('lit').PropertyValues} changedProperties
+   */
+  updated(changedProperties) {
+    super.updated(changedProperties);
+
+    if (changedProperties.has('_activeAnalyzer') && this._activeAnalyzer === 'custom') {
+      // create new file in FS
+
+      this._openCodeEditorTab({
+        // Analyzer template
+        content: 'console.log("hello world")',
+        name: 'custom.js',
+        path: '/custom.js',
+      });
+    }
   }
 
   async init() {

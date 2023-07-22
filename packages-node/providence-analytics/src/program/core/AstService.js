@@ -1,6 +1,7 @@
 import babelParser from '@babel/parser';
 import * as parse5 from 'parse5';
 import swc from '@swc/core';
+import swcWasmNode from '@next/swc-wasm-nodejs';
 import { traverseHtml } from '../utils/traverse-html.js';
 import { LogService } from './LogService.js';
 import { guardedSwcToBabel } from '../utils/guarded-swc-to-babel.js';
@@ -11,6 +12,38 @@ import { guardedSwcToBabel } from '../utils/guarded-swc-to-babel.js';
  * @typedef {import("@babel/parser").ParserOptions} ParserOptions
  * @typedef {import('../../../types/index.js').PathFromSystemRoot} PathFromSystemRoot
  */
+
+/** @type {<T>(t:T) => void} */
+let resolveParse;
+const parseMethodPromise = new Promise(resolve => {
+  resolveParse = resolve;
+});
+const getSwcParseMethod = () => parseMethodPromise;
+
+let needsSwcWasm = true;
+/**
+ * Determine if we need @swc/wasm-web... In webcontainers, we do...
+ * https://github.com/parcel-bundler/watcher/issues/99#issuecomment-1082164928
+ */
+async function loadSwcWasmIfNeeded() {
+  // When regular swc doesn't work, we can try to use swc-wasm
+  try {
+    swc.parseSync('');
+  } catch {
+    needsSwcWasm = true;
+  }
+
+  if (needsSwcWasm) {
+    // Expect this to be loaded as peerDep
+    // const swcWasm = await import('@swc/wasm-web');
+    // await swcWasmInit();
+    // @ts-expect-error
+    resolveParse((...args) => JSON.parse(swcWasmNode.parseSync(...args)));
+  } else {
+    resolveParse(swc.parseSync);
+  }
+}
+loadSwcWasmIfNeeded();
 
 export class AstService {
   /**
@@ -58,8 +91,9 @@ export class AstService {
    * @param {ParserOptions} parserOptions
    * @returns {SwcAstModule}
    */
-  static _getSwcAst(code, parserOptions = {}) {
-    const ast = swc.parseSync(code, {
+  static async _getSwcAst(code, parserOptions = {}) {
+    const swcParse = await getSwcParseMethod();
+    let ast = swcParse(code, {
       syntax: 'typescript',
       target: 'es2022',
       ...parserOptions,
@@ -69,10 +103,17 @@ export class AstService {
 
   /**
    * Compensates for swc span bug: https://github.com/swc-project/swc/issues/1366#issuecomment-1516539812
-   * @returns {number}
+   * @returns {Promise<number>}
    */
-  static _getSwcOffset() {
-    return swc.parseSync('').span.end;
+  static async _getSwcOffset() {
+    const swcParse = await getSwcParseMethod();
+    let ast = swcParse('', {
+      syntax: 'typescript',
+      target: 'es2022',
+      ...{},
+    });
+    // The fuzzy logic behind the wasm and regular version. And swc offsets in general...
+    return ast.span.end + (needsSwcWasm ? -1 : 0);
   }
 
   /**
@@ -102,10 +143,10 @@ export class AstService {
    * @param { string } code
    * @param { 'babel'|'swc-to-babel'|'swc'} astType
    * @param { {filePath?: PathFromSystemRoot} } options
-   * @returns {File|undefined|SwcAstModule}
+   * @returns {Promise<File|undefined|SwcAstModule>}
    */
   // eslint-disable-next-line consistent-return
-  static getAst(code, astType, { filePath } = {}) {
+  static async getAst(code, astType, { filePath } = {}) {
     // eslint-disable-next-line default-case
     try {
       if (astType === 'babel') {
@@ -115,7 +156,7 @@ export class AstService {
         return this._getSwcToBabelAst(code);
       }
       if (astType === 'swc') {
-        return this._getSwcAst(code);
+        return await this._getSwcAst(code);
       }
       throw new Error(`astType "${astType}" not supported.`);
     } catch (e) {

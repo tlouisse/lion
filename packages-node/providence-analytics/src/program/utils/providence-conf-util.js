@@ -16,10 +16,8 @@ async function getConf() {
   try {
     if (fs.existsSync(`${confPathWithoutExtension}.js`)) {
       confPathFound = `${confPathWithoutExtension}.js`;
-      console.log({ confPathFound });
     } else if (fs.existsSync(`${confPathWithoutExtension}.mjs`)) {
       confPathFound = `${confPathWithoutExtension}.mjs`;
-      console.log({ confPathFound }, 'mjs');
     }
   } catch (_) {
     throw new Error(

@@ -41,9 +41,9 @@ function getPropsFromParsedJsDoc(jsdoc) {
 /**
  * @param {PathFromSystemRoot} file
  */
-function getAnalyzerOptions(file) {
+async function getAnalyzerOptions(file) {
   const code = fs.readFileSync(file, 'utf8');
-  const babelAst = AstService.getAst(code, 'swc-to-babel', { filePath: file });
+  const babelAst = await AstService.getAst(code, 'swc-to-babel', { filePath: file });
 
   let commentNode;
   traverse.default(babelAst, {
@@ -74,14 +74,17 @@ function getAnalyzerOptions(file) {
  * @param {PathFromSystemRoot} dir
  * @param {boolean} [shouldGetOptions]
  */
-function gatherAnalyzers(dir, shouldGetOptions) {
-  return InputDataService.gatherFilesFromDir(dir, { depth: 0 }).map(file => {
+async function gatherAnalyzers(dir, shouldGetOptions) {
+  const result = [];
+  const files = InputDataService.gatherFilesFromDir(dir, { depth: 0 });
+  for (const file of files) {
     const analyzerObj = { file, name: path.basename(file, '.js') };
     if (shouldGetOptions) {
-      analyzerObj.options = getAnalyzerOptions(file);
+      analyzerObj.options = await getAnalyzerOptions(file);
     }
-    return analyzerObj;
-  });
+    result.push(analyzerObj);
+  }
+  return result;
 }
 
 /**
@@ -98,7 +101,7 @@ export async function promptAnalyzerConfigMenu(
     path.resolve(getCurrentDir(import.meta.url), '../program/analyzers')
   ),
 ) {
-  const menuOptions = gatherAnalyzers(dir, true);
+  const menuOptions = await gatherAnalyzers(dir, true);
   const analyzer = menuOptions.find(o => o.name === analyzerName);
   if (!analyzer) {
     LogService.error(`[promptAnalyzerConfigMenu] analyzer "${analyzerName}" not found.`);

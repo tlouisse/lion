@@ -1,3 +1,5 @@
 {
-  "providence-analytics": "../../providence-analytics"
+  "providence-analytics": "../../providence-analytics",
+  "@lion/ui": "../../../packages/ui",
+  "providence-playground": "../"
 }

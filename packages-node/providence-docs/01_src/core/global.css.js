@@ -71,17 +71,18 @@ export default css`
   }
 
   /** css utils */
-  .--icon-wrapper {
+  .-icon-wrapper {
     height: 1em;
     width: 1em;
   }
 
-  .--icon-wrapper svg {
+  .-icon-wrapper svg {
     height: 100%;
     width: 100%;
+    fill: currentColor;
   }
 
-  .--super-text {
+  .-super-text {
     font-size: 0.4em;
     translate: 0 -100%;
     position: absolute;
@@ -89,7 +90,7 @@ export default css`
     top: 4px;
   }
 
-  .--highlight-text {
+  .-highlight-text {
     -webkit-text-fill-color: #0000;
     background-clip: text;
     -webkit-background-clip: text;
@@ -105,13 +106,27 @@ export default css`
     -webkit-text-fill-color: unset;
   }
 
-  .--flex {
+  .-l-flex {
     display: flex;
     align-items: center;
     gap: var(--size-2);
   }
 
-  .--relative {
+  .-relative {
     position: relative;
+  }
+
+  .-sr-only {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(100%);
+    clip: rect(1px, 1px, 1px, 1px);
+    white-space: nowrap;
+    border: 0;
+    margin: 0;
+    padding: 0;
   }
 `;

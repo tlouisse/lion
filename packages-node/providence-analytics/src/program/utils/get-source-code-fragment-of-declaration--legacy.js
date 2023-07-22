@@ -84,7 +84,7 @@ export async function getSourceCodeFragmentOfDeclaration({
 }) {
   const code = fs.readFileSync(filePath, 'utf8');
   // TODO: fix swc-to-babel lib to make this compatible with 'swc-to-babel' mode of getAst
-  const babelAst = AstService.getAst(code, 'babel', { filePath });
+  const babelAst = await AstService.getAst(code, 'babel', { filePath });
 
   /** @type {NodePath} */
   let finalNodePath;

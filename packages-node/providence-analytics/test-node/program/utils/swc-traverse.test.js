@@ -32,7 +32,6 @@ describe('swcTraverse', () => {
     it('traverses an swc AST based on <Node.type> visitor', async () => {
       const code = `import x from 'y';`;
       const swcAst = await AstService._getSwcAst(code);
-
       let foundImportDeclarationPath;
       const visitor = {
         ImportDeclaration(/** @type {SwcPath} */ path) {

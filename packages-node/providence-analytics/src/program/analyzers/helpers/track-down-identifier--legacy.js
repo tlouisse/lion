@@ -185,7 +185,7 @@ async function trackDownIdentifierFn(
     };
   }
   const code = fs.readFileSync(resolvedSourcePath, 'utf8');
-  const babelAst = AstService.getAst(code, 'swc-to-babel', { filePath: resolvedSourcePath });
+  const babelAst = await AstService.getAst(code, 'swc-to-babel', { filePath: resolvedSourcePath });
 
   const shouldLookForDefaultExport = identifierName === '[default]';
 

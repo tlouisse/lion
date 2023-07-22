@@ -97,6 +97,7 @@ export class EditorElement extends PgElement {
         gap: var(--size-2);
         padding: var(--size-2);
         border-bottom: 2px solid transparent;
+        cursor: pointer;
       }
 
       .tab[selected='true'] {
@@ -199,7 +200,7 @@ export class EditorElement extends PgElement {
         title="${path + '/' + name}"
       >
         <span class="tab__text">${name}</span>
-        <span class="tab__icon --icon-wrapper" title="close" @click="${() => this.removeTab(idx)}"
+        <span class="tab__icon -icon-wrapper" title="close" @click="${() => this.removeTab(idx)}"
           >${closeIcon}</span
         >
       </button>

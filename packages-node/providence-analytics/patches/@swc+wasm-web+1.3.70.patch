@@ -1,0 +1,14 @@
+diff --git a/node_modules/@swc/wasm-web/package.json b/node_modules/@swc/wasm-web/package.json
+index 87187127..f05e08a5 100644
+--- a/node_modules/@swc/wasm-web/package.json
++++ b/node_modules/@swc/wasm-web/package.json      
+@@ -15,7 +15,8 @@
+     "wasm-web.js",
+     "wasm-web.d.ts"
+   ],
+-  "module": "wasm-web.js",
++  "main": "wasm-web.js",
++  "type": "module",
+   "types": "wasm-web.d.ts",
+   "sideEffects": [
+     "./snippets/*"

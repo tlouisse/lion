@@ -87,9 +87,10 @@ export async function getSourceCodeFragmentOfDeclaration({
   const code = fs.readFileSync(filePath, 'utf8');
 
   // compensate for swc span bug: https://github.com/swc-project/swc/issues/1366#issuecomment-1516539812
-  const offset = AstService._getSwcOffset();
+  const offset = await AstService._getSwcOffset();
+
   // TODO: fix swc-to-babel lib to make this compatible with 'swc-to-babel' mode of getAst
-  const swcAst = AstService._getSwcAst(code);
+  const swcAst = await AstService._getSwcAst(code);
 
   /** @type {SwcPath} */
   let finalNodePath;

@@ -245,20 +245,27 @@ export class QueryService {
    * @param {AnalyzerAst} requiredAst
    */
   static async addAstToProjectsData(projectsData, requiredAst) {
-    return projectsData.map(projectData => {
+    const result = [];
+    for (const projectData of projectsData) {
       const cachedData = astProjectsDataCache.get(projectData.project.path);
       if (cachedData) {
-        return cachedData;
+        result.push(cachedData);
+        continue;
       }
 
-      const resultEntries = projectData.entries.map(entry => {
-        const ast = AstService.getAst(entry.context.code, requiredAst, { filePath: entry.file });
-        return { ...entry, ast };
-      });
+      const resultEntries = [];
+      for (const entry of projectData.entries) {
+        const ast = await AstService.getAst(entry.context.code, requiredAst, {
+          filePath: entry.file,
+        });
+        resultEntries.push({ ...entry, ast });
+      }
+
       const astData = { ...projectData, entries: resultEntries };
       this._addToProjectsDataCache(`${projectData.project.path}#${requiredAst}`, astData);
-      return astData;
-    });
+      result.push(astData);
+    }
+    return result;
   }
 
   /**

@@ -85,7 +85,18 @@ async function main() {
   for (const [folderName, folderRelativeLocation] of Object.entries(mountFoldersCfg)) {
     const fsDir = path.resolve(sourceFsToMountDir, folderRelativeLocation);
     const fsObj = await createVirtualFsFromRealFs({ sourcePathInRealFs: fsDir });
-    fsMountFolders[folderName] = { directory: fsObj };
+
+    const folderNameSplit = folderName.split('/');
+    const isScopedPkg = folderNameSplit.length === 2 && folderNameSplit[0].startsWith('@');
+
+    if (isScopedPkg) {
+      fsMountFolders[folderNameSplit[0]] = {
+        directory: { [folderNameSplit[1]]: { directory: fsObj } },
+        ...fsMountFolders[folderNameSplit[0]],
+      };
+    } else {
+      fsMountFolders[folderName] = { directory: fsObj };
+    }
   }
 
   writeVirtualFsFromRealFs({ ...fsMountFiles, ...fsMountFolders });

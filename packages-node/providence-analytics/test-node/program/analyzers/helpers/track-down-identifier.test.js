@@ -294,7 +294,7 @@ describe('trackDownIdentifierFromScope', () => {
 
     mockProject(projectFiles, { projectName: 'my-project', projectPath: '/my/project' });
     // const ast = AstService._getBabelAst(projectFiles['./src/declarationOfMyClass.js']);
-    const ast = AstService._getSwcAst(projectFiles['./src/declarationOfMyClass.js']);
+    const ast = await AstService._getSwcAst(projectFiles['./src/declarationOfMyClass.js']);
 
     // Let's say we want to track down 'MyClass' in the code above
     const identifierNameInScope = 'MyClass';
@@ -345,7 +345,7 @@ describe('trackDownIdentifierFromScope', () => {
 
     mockProject(projectFiles, { projectName: 'my-project', projectPath: '/my/project' });
     // const ast = AstService._getBabelAst(projectFiles['./imported.js']);
-    const ast = AstService._getSwcAst(projectFiles['./imported.js']);
+    const ast = await AstService._getSwcAst(projectFiles['./imported.js']);
 
     // Let's say we want to track down 'MyClass' in the code above
     const identifierNameInScope = 'MyClass';
@@ -393,7 +393,7 @@ describe('trackDownIdentifierFromScope', () => {
 
     mockProject(projectFiles, { projectName: 'my-project', projectPath: '/my/project' });
     // const ast = AstService._getBabelAst(projectFiles['./imported.js']);
-    const ast = AstService._getSwcAst(projectFiles['./imported.js']);
+    const ast = await AstService._getSwcAst(projectFiles['./imported.js']);
 
     // Let's say we want to track down 'MyClass' in the code above
     const identifierNameInScope = 'El1';

@@ -194,7 +194,7 @@ async function trackDownIdentifierFn(
     };
   }
   const code = fs.readFileSync(/** @type {string} */ (resolvedSourcePath), 'utf8');
-  const swcAst = AstService._getSwcAst(code);
+  const swcAst = await AstService._getSwcAst(code);
 
   const shouldLookForDefaultExport = identifierName === '[default]';
 
