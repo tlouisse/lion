@@ -36,7 +36,7 @@ export class LionTree extends MultiLevelListMixin(LitElement) {
 
   __setAriaLevelForListItems() {
     this.listItems.forEach(item => {
-      item.setAttribute('aria-level', `${this.level + 1}`);
+      item.setAttribute?.('aria-level', `${this.level + 1}`);
     });
   }
 }

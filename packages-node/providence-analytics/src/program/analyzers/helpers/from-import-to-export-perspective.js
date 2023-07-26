@@ -36,6 +36,7 @@ export async function fromImportToExportPerspective({ importee, importer, import
   }
 
   const absolutePath = await resolveImportPath(importee, importer);
+
   if (!absolutePath) {
     return null;
   }

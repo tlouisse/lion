@@ -376,12 +376,15 @@ const InteractiveListMixinImplementation = superclass =>
        * @param {HTMLElement} node
        */
       const shouldAddItem = node => {
+        // if (!(node instanceof Element)) {
+        //   return true;
+        // }
         const role = /** @type {InteractiveListItemRole|'group'} */ (node.getAttribute('role'));
         return (role && this._childrenRoles.includes(role)) || node.hasAttribute('data-item');
       };
 
       this._listItemsSlot.addEventListener('slotchange', () => {
-        const nodes = /** @type {HTMLElement[]} */ (this._listItemsSlot.assignedNodes());
+        const nodes = this._listItemsSlot.assignedNodes(); // Array.from(this._listItemsSlot.childNodes);
         /** @type {HTMLElement[]} */
         const newItems = [];
 
@@ -436,7 +439,7 @@ const InteractiveListMixinImplementation = superclass =>
     _initListItems(newItems) {
       if (this._activeMode === 'roving-tabindex') {
         // Make item focusable, but not part of tab sequence
-        newItems.forEach(item => item.setAttribute('tabindex', '-1'));
+        newItems.forEach(item => item.setAttribute?.('tabindex', '-1'));
       } else if (this._activeMode === 'activedescendant') {
         newItems.forEach(item => {
           // eslint-disable-next-line no-param-reassign

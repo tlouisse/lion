@@ -91,7 +91,7 @@ export function runInteractiveListMixinSuite(customConfig = {}) {
         expect(el.listItems[1].getAttribute('tabindex')).to.equal('0');
 
         el.activeIndex = 1;
-        expect(document.activeElement).to.equal(el.listItems[1];
+        expect(document.activeElement).to.equal(el.listItems[1]);
       });
     });
 

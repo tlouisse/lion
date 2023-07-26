@@ -2,8 +2,8 @@ import babelParser from '@babel/parser';
 import * as parse5 from 'parse5';
 import swc from '@swc/core';
 import swcWasmNode from '@next/swc-wasm-nodejs';
-import { traverseHtml } from '../utils/traverse-html.js';
 import { LogService } from './LogService.js';
+import { traverseHtml } from '../utils/traverse-html.js';
 import { guardedSwcToBabel } from '../utils/guarded-swc-to-babel.js';
 
 /**
@@ -71,13 +71,14 @@ export class AstService {
    * Compiles an array of file paths using Babel.
    * @param {string} code
    * @param {ParserOptions} parserOptions
-   * @returns {File}
+   * @returns {Promise<File>}
    */
-  static _getSwcToBabelAst(code, parserOptions = {}) {
+  static async _getSwcToBabelAst(code, parserOptions = {}) {
     if (this.fallbackToBabel) {
       return this._getBabelAst(code, parserOptions);
     }
-    const ast = swc.parseSync(code, {
+    const swcParse = await getSwcParseMethod();
+    const ast = swcParse(code, {
       syntax: 'typescript',
       // importAssertions: true,
       ...parserOptions,
@@ -89,11 +90,11 @@ export class AstService {
    * Compiles an array of file paths using swc.
    * @param {string} code
    * @param {ParserOptions} parserOptions
-   * @returns {SwcAstModule}
+   * @returns {Promise<SwcAstModule>}
    */
   static async _getSwcAst(code, parserOptions = {}) {
     const swcParse = await getSwcParseMethod();
-    let ast = swcParse(code, {
+    const ast = swcParse(code, {
       syntax: 'typescript',
       target: 'es2022',
       ...parserOptions,
@@ -153,7 +154,7 @@ export class AstService {
         return this._getBabelAst(code);
       }
       if (astType === 'swc-to-babel') {
-        return this._getSwcToBabelAst(code);
+        return await this._getSwcToBabelAst(code);
       }
       if (astType === 'swc') {
         return await this._getSwcAst(code);

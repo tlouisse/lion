@@ -123,7 +123,7 @@ const MultiLevelListMixinImplementation = superclass =>
        * </div>
        */
       const childOfInvoker =
-        item.getAttribute('role') === 'listitem' || item.hasAttribute('data-item');
+        item.getAttribute?.('role') === 'listitem' || item.hasAttribute?.('data-item');
       if (childOfInvoker) {
         return Array.from(item.children).find(child => child.isInteractiveList);
       }

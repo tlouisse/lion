@@ -98,6 +98,7 @@ async function matchImportsPostprocess(exportsAnalyzerResult, importsAnalyzerRes
        */
       const hasExportSpecifierImported =
         exportEntry.specifier === importEntry.specifier || importEntry.specifier === '[*]';
+
       if (!hasExportSpecifierImported) {
         continue;
       }
@@ -158,7 +159,7 @@ async function matchImportsPostprocess(exportsAnalyzerResult, importsAnalyzerRes
 export default class MatchImportsAnalyzer extends Analyzer {
   static analyzerName = /** @type {AnalyzerName} */ ('match-imports');
 
-  static requiredAst = /** @type {AnalyzerAst} */ ('swc');
+  static requiredAst = /** @type {AnalyzerAst} */ ('[none]');
 
   static requiresReference = true;
 
