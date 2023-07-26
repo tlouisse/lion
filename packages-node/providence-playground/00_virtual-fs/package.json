@@ -1,0 +1,22 @@
+{
+  "name": "providence-playground-virtual-pkg",
+  "type": "module",
+  "dependencies": {
+    "express": "latest",
+    "nodemon": "latest"
+  },
+  "localPublishedDependencies": {
+    "providence-analytics": "../../providence-analytics"
+  },
+  "scripts": {
+    "start": "nodemon index.js",
+    "prov-install": "cd providence-analytics && npm install",
+    "providence-cli": "cd providence-analytics && node src/cli/index.js",
+    "fake-providence-install": "cp -r _tmp/_local-publishes/providence-analytics-0.14.1 node_modules/providence-analytics",
+    "fake-providence-cli-bin": "cp -r node_modules/providence-analytics/src/cli/index.js node_modules/.bin/providence"
+  },
+  "devDependencies": {
+    "providence-analytics": "./_tmp/_local-publishes/providence-analytics-0.14.1",
+    "@lion/ui": "^0.2.1"
+  }
+}

@@ -1,0 +1,4 @@
+{
+  "@lion/ui": "../../../packages/ui",
+  "providence-playground": "../"
+}

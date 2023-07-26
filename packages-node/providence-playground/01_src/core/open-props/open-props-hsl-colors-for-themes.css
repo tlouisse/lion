@@ -1,0 +1,47 @@
+:where(html) {
+  --gray-0-hsl: 210 17% 98%;
+  --gray-1-hsl: 210 17% 95%;
+  --gray-2-hsl: 210 16% 93%;
+  --gray-3-hsl: 210 14% 89%;
+  --gray-4-hsl: 210 14% 83%;
+  --gray-5-hsl: 210 11% 71%;
+  --gray-6-hsl: 210 7% 56%;
+  --gray-7-hsl: 210 9% 31%;
+  --gray-8-hsl: 210 10% 23%;
+  --gray-9-hsl: 210 11% 15%;
+  --gray-10-hsl: 214 14% 10%;
+  --gray-11-hsl: 216 16% 6%;
+  --gray-12-hsl: 210 40% 2%;
+}
+
+:where(html) {
+  --purple-0-hsl: 280 67% 96%;
+  --purple-1-hsl: 287 77% 92%;
+  --purple-2-hsl: 288 86% 86%;
+  --purple-3-hsl: 289 85% 78%;
+  --purple-4-hsl: 288 83% 71%;
+  --purple-5-hsl: 288 75% 64%;
+  --purple-6-hsl: 288 67% 58%;
+  --purple-7-hsl: 288 56% 52%;
+  --purple-8-hsl: 288 54% 46%;
+  --purple-9-hsl: 288 54% 40%;
+  --purple-10-hsl: 288 55% 33%;
+  --purple-11-hsl: 288 56% 26%;
+  --purple-12-hsl: 288 55% 20%;
+}
+
+:where(html) {
+  --choco-0-hsl: 48 100% 93%;
+  --choco-1-hsl: 35 91% 86%;
+  --choco-2-hsl: 30 85% 79%;
+  --choco-3-hsl: 27 80% 72%;
+  --choco-4-hsl: 25 75% 65%;
+  --choco-5-hsl: 25 71% 57%;
+  --choco-6-hsl: 25 70% 49%;
+  --choco-7-hsl: 25 75% 42%;
+  --choco-8-hsl: 25 75% 37%;
+  --choco-9-hsl: 25 76% 31%;
+  --choco-10-hsl: 25 71% 26%;
+  --choco-11-hsl: 25 66% 21%;
+  --choco-12-hsl: 25 65% 15%;
+}

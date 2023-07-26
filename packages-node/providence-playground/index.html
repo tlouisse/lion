@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" color-scheme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/stackblitz-favicon-editor.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My first WebContainers app</title>
+    <link rel="stylesheet" href="01_src/core/open-props/open-props.css" />
+    <link rel="stylesheet" href="01_src/core/open-props/open-props-themes.css" />
+    <link rel="stylesheet" href="01_src/core/open-props/open-props-hsl-colors-for-themes.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      html {
+        block-size: 100%;
+        background-color: var(--surface-1);
+        color: var(--text-1);
+        accent-color: var(--brand);
+      }
+
+      body {
+        min-block-size: 100%;
+        font-family: system-ui, sans-serif;
+        padding: var(--size-6);
+        display: grid;
+        place-content: center;
+        gap: var(--size-6);
+      }
+
+      @font-face {
+        font-family: 'Consolas';
+        src: url('01_src/core/font/consola.ttf') format('ttf');
+      }
+    </style>
+  </head>
+  <body>
+    <main-element></main-element>
+
+    <script type="module" src="/01_src/index.js"></script>
+  </body>
+</html>
