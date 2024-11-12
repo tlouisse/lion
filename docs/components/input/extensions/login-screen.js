@@ -9,8 +9,17 @@ import {
   assertLabel,
 } from './shared/element-assertions.js';
 
-import { UIBaseElementMixin, uiBaseRender } from './shared/UIBaseElement.js';
+import { UIBaseElementMixin } from './shared/UIBaseElement.js';
 // import { LightRenderMixin } from './shared/LightRenderMixin.js';
+
+function padWithZeros(numberOrStr, desiredLength = 2) {
+  const str = `${numberOrStr}`;
+  const diff = desiredLength - str.length;
+  if (diff > 0) {
+    return '0'.repeat(diff) + str;
+  }
+  return str;
+}
 
 // @ts-expect-error
 export class UIInputPartDirective extends UIPartDirective {
@@ -190,7 +199,8 @@ export class LionInputPassword extends UIInput {
       }
 
       [data-part='input']::placeholder {
-        color: rgba(255, 255, 255, 0.75);
+        color: rgba(255, 255, 255, 0.25);
+        font-weight: bold;
       }
     `,
   ];
@@ -224,7 +234,8 @@ export class LoginScreen extends UIBaseElementMixin(LitElement) {
   };
 
   #formatTime(date = new Date()) {
-    return html`<span>${date.getHours()}</span><span>:</span><span>${date.getMinutes()}</span>`;
+    return html`<span>${padWithZeros(date.getHours())}</span><span>:</span
+      ><span>${padWithZeros(date.getMinutes())}</span>`;
   }
 
   #formatDate(date = new Date()) {
@@ -292,7 +303,7 @@ export class LoginScreen extends UIBaseElementMixin(LitElement) {
 
       [data-part='time'] {
         font-size: 8rem;
-        mix-blend-mode: difference;
+        /* mix-blend-mode: difference; */
       }
 
       [data-part='login'] {
@@ -307,6 +318,7 @@ export class LoginScreen extends UIBaseElementMixin(LitElement) {
         flex-direction: column;
         align-items: center;
         display: flex;
+        margin-bottom: 2rem;
       }
 
       [data-part='avatar'] {
