@@ -447,6 +447,8 @@ const FormControlMixinImplementation = superclass =>
      * </div>
      */
     render() {
+      console.debug('FormControl render');
+
       return html`
         <div class="form-field__group-one">${this._groupOneTemplate()}</div>
         <div class="form-field__group-two">${this._groupTwoTemplate()}</div>
