@@ -34,9 +34,7 @@ const styles = [
 export function getDesignForLionInputPassword() {
   return {
     styles: () => styles,
-    /**
-     * We override the icon template, as we want to use LionIcon
-     */
+
     templates: existingTemplates => ({
       ...existingTemplates,
       root(context) {

@@ -1,6 +1,44 @@
-import { html, LitElement, css } from 'lit';
+import { html, LitElement, css, nothing } from 'lit';
 
 import { UIBaseElementMixin } from '../shared/UIBaseElement.js';
+import { UIPartDirective } from '../shared/UIPartDirective.js';
+import { assertPresentation, assertRegion } from '../shared/element-assertions.js';
+
+/**
+ * @param {HTMLElement} el
+ */
+function assertLionInputPassword(el) {
+  if (!(el.tagName === 'LION-INPUT-PASSWORD')) {
+    // TODO: instanceof check
+    throw new Error('Please apply to LionInputPassword');
+  }
+}
+
+// @ts-expect-error
+export class LionLoginScreenPartDirective extends UIPartDirective {
+  allowedParts = ['root', 'background', 'layout', 'date-and-time', 'login', 'input-password'];
+
+  setupFunctions = {
+    root: ({ element }) => {
+      assertPresentation(element);
+    },
+    background: ({ element }) => {
+      assertPresentation(element);
+    },
+    layout: ({ element }) => {
+      assertPresentation(element);
+    },
+    'date-and-time': ({ element }) => {
+      assertRegion(element);
+    },
+    login: ({ element }) => {
+      assertPresentation(element);
+    },
+    'input-password': ({ element }) => {
+      assertLionInputPassword(element);
+    },
+  };
+}
 
 /**
  *
@@ -17,7 +55,6 @@ function padWithZeros(numberOrStr, desiredLength = 2) {
   return str;
 }
 
-const sonoma1080Mp4 = ''; // import.meta.resolve('./sonoma_wallpaper_1080.mp4');
 const avatarImg = ''; // import.meta.resolve('./avatar.png');
 
 export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
@@ -57,18 +94,31 @@ export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
     }, 1000 * 60);
   }
 
+  /**
+   * Compensate for the fact that [autoplay] does not work with async dom
+   */
+  #ensureVideoAutoPlay() {
+    const autoplayVideoEl = /** @type {HTMLVideoElement|null} */ (
+      this.shadowRoot?.querySelector('video[autoplay]')
+    );
+    if (!autoplayVideoEl) return;
+
+    autoplayVideoEl.muted = true;
+    autoplayVideoEl.play();
+  }
+
+  /**
+   * @param {import("lit").PropertyValueMap<any> | Map<PropertyKey, unknown>} changedProperties
+   */
+  firstUpdated(changedProperties) {
+    super.firstUpdated(changedProperties);
+
+    this.#ensureVideoAutoPlay();
+  }
+
   static styles = [
     css`
-      :host {
-        --space-1: 1.7vh;
-        --space-2: calc(var(--space-1) * 2);
-        --space-4: calc(var(--space-1) * 4);
-        --space-8: calc(var(--space-1) * 8);
-        --space-16: calc(var(--space-1) * 16);
-      }
-
       [data-part='root'] {
-        font-family: Arial, Helvetica, sans-serif;
         position: fixed;
         gap: 1rem;
         inset: 0;
@@ -77,27 +127,24 @@ export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
       [data-part='background'] {
         /* pull us out of the page flow, so that the container is painted on top */
         position: absolute;
+        inset: 0;
       }
 
-      [data-part='video'] {
+      [data-part='background-asset'] {
+        object-fit: cover;
         height: 100%;
+        width: 100%;
       }
 
       [data-part='layout'] {
         flex-direction: column;
         align-items: center;
         position: relative;
-        margin-top: var(--space-8);
         display: flex;
-        color: white;
-        gap: var(--space-1);
       }
 
       [data-part='date-and-time'] {
-        color: rgba(255, 255, 255, 0.7);
-        /* backdrop-filter: blur(1.25rem); */
         flex-direction: column;
-        margin-bottom: var(--space-16);
         align-items: center;
         font-weight: bold;
         display: flex;
@@ -108,8 +155,6 @@ export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
       }
 
       [data-part='time'] {
-        font-size: var(--space-8);
-        /* mix-blend-mode: difference; */
       }
 
       [data-part='login'] {
@@ -117,21 +162,14 @@ export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
         align-items: center;
         max-width: 50vh;
         display: flex;
-        gap: var(--space-1);
       }
 
       [data-part='disclaimer'] {
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: var(--space-2);
-        text-align: center;
         display: flex;
       }
 
       [data-part='avatar'] {
         border-radius: 50%;
-        height: var(--space-4);
-        width: var(--space-4);
       }
     `,
   ];
@@ -151,47 +189,49 @@ export class LionLoginScreen extends UIBaseElementMixin(LitElement) {
                 described in the General Code of Conduct. Users of this system consent to
                 monitoring. Evidence of criminal activity may be provided to law enforcement
                 officials.`,
+        loginName: 'Louisse, T (Thijs)',
+        loginPlaceholder: 'Enter Password',
       },
     };
   }
 
+  static _partDirective = LionLoginScreenPartDirective;
+
   static templates = {
     root(context) {
-      const { templates, data, fns, part, labels } = context;
+      const { templates, data, part, labels } = context;
 
-      return html` <div data-part="root">
-        <div data-part="background">
-          <video autoplay loop data-part="video">
-            <source src="${sonoma1080Mp4}" type="video/mp4" />
-          </video>
-        </div>
+      return html` <!-- -->
+        <div ${part('root')}>
+          <div ${part('background')}>${templates.backgroundAsset(context)}</div>
 
-        <div data-part="layout">
-            <div data-part="date-and-time">
+          <div ${part('layout')}>
+            <div ${part('date-and-time')} role="region">
               <div data-part="date">${data.formattedDate}</div>
               <div data-part="time">${data.formattedTime}</div>
             </div>
-            <div data-part="login">
-              <div data-part="disclaimer">
-                ${labels.disclaimer}
-              </div>
-              <img data-part="avatar" alt="avatar" src="${avatarImg}" />
+            <div ${part('login')}>
+              <div data-part="disclaimer">${labels.disclaimer}</div>
+
+              ${templates.avatarAsset(context)}
+
               <lion-input-password
-                placeholder="Enter Password"
-                label="Louisse, T (Thijs)"
+                ${part('input-password')}
+                placeholder="${labels.loginPlaceholder}"
+                label="${labels.loginName}"
               ></lion-input-password>
             </div>
           </div>
-        </div>
-      </div>`;
+        </div>`;
+    },
+    backgroundAsset() {
+      // This is usually a decorative background image. It can also be a video
+      return nothing;
+    },
+    avatarAsset() {
+      // This is usually a decorative background image. It can also be a video
+      return html`<img data-part="avatar" alt="avatar" src="${avatarImg}" />`;
     },
   };
-
-  // render() {
-  //   const { templates } = /** @type {typeof LogInPut } */ (this.constructor);
-  //   return templates.root({ templates });
-  // }
-
-  // render = uiBaseRender.bind(this);
 }
 customElements.define('lion-login-screen', LionLoginScreen);

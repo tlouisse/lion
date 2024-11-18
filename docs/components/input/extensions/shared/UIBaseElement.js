@@ -316,7 +316,7 @@ const UIBaseElementMixinImplementation = superclass =>
         lightStylesFromProvider.push(...provider.lightStyles(this.lightStyles));
       }
 
-      const templateContextProcessor = provider.templateContextProcessor;
+      const { templateContextProcessor } = provider;
 
       if (provider.templates) {
         templates = provider.templates(this.templates);
@@ -420,12 +420,12 @@ const UIBaseElementMixinImplementation = superclass =>
     provideDesign(provider) {
       const ctor = this.constructor;
       const {
-        stylesFromProvider,
-        lightStylesFromProvider,
-        templates,
-        scopedElements,
         templateContextProcessor,
+        lightStylesFromProvider,
+        stylesFromProvider,
+        scopedElements,
         dynamicLayouts,
+        templates,
       } = ctor._extractDataFromProvider(provider);
       // 'shadow' on instance level (render method takes care of the rest)
       this.templates = templates || this.templates;

@@ -1,9 +1,9 @@
 import { html, css } from 'lit';
 
 // @ts-expect-error
-const sonoma1080Mp4 = import.meta.resolve('./sonoma_wallpaper_1080.mp4');
+const sonoma1080Mp4 = import.meta.resolve('../assets/sonoma_wallpaper_1080.mp4');
 // @ts-expect-error
-const avatarImg = import.meta.resolve('./avatar.png');
+const avatarImg = import.meta.resolve('../assets/avatar.png');
 
 const styles = [
   css`
@@ -27,7 +27,7 @@ const styles = [
       position: absolute;
     }
 
-    [data-part='video'] {
+    [data-part='background-asset'] {
       height: 100%;
     }
 
@@ -87,39 +87,19 @@ const styles = [
 export function getDesignForLionLoginScreen() {
   return {
     styles: () => styles,
-    /**
-     * We override the icon template, as we want to use LionIcon
-     */
+
     templates: existingTemplates => ({
       ...existingTemplates,
-      root(context) {
-        const { labels, data } = context;
-
-        return html` <div data-part="root">
-          <div data-part="background">
-            <video autoplay loop data-part="video">
-              <source src="${sonoma1080Mp4}" type="video/mp4" />
-            </video>
-          </div>
-  
-          <div data-part="layout">
-              <div data-part="date-and-time">
-                <div data-part="date">${data.formattedDate}</div>
-                <div data-part="time">${data.formattedTime}</div>
-              </div>
-              <div data-part="login">
-                <div data-part="disclaimer">
-                  ${labels.disclaimer}
-                </div>
-                <img data-part="avatar" alt="avatar" src="${avatarImg}" />
-                <lion-input-password
-                  placeholder="Enter Password"
-                  label="Louisse, T (Thijs)"
-                ></lion-input-password>
-              </div>
-            </div>
-          </div>
-        </div>`;
+      backgroundAsset() {
+        // This is usually a decorative background image. It can also be a video
+        return html` <!-- -->
+          <video autoplay loop data-part="background-asset">
+            >
+            <source src="${sonoma1080Mp4}" type="video/mp4" />
+          </video>`;
+      },
+      avatarAsset() {
+        return html`<img data-part="avatar" alt="avatar" src="${avatarImg}" />`;
       },
     }),
   };

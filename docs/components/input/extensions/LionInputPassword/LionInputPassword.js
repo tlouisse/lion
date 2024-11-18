@@ -15,23 +15,17 @@ export class UIInputPartDirective extends UIPartDirective {
   allowedParts = ['root', 'label', 'input', 'feedback'];
 
   setupFunctions = {
-    root({ element }, { context, localContext }) {
+    root({ element }) {
       assertPresentation(element);
     },
-    label({ element }, { context, localContext }) {
+    label({ element }) {
       assertLabel(element);
-
-      // TODO: add a11y features (now still part of FormControlMixin)
     },
-    input({ element }, { context, localContext }) {
+    input({ element }) {
       assertTextbox(element);
-
-      // TODO: add a11y features (now still part of FormControlMixin)
     },
-    feedback({ element }, { context, localContext }) {
+    feedback({ element }) {
       assertRegion(element);
-
-      // TODO: add a11y features (now still part of FormControlMixin)
     },
   };
 }
@@ -67,71 +61,6 @@ export class UIInput extends UIBaseElementMixin(LionInput) {
     }
   }
 
-  // #templates = /** @type {typeof LionInputPassword} */ (this.constructor).templates;
-
-  // slots = [
-  //   { name: 'label', template: this.#templates.label, host: this.#templates },
-  //   { name: 'input', template: this.#templates.input, host: this.#templates },
-  //   { name: 'feedback', template: this.#templates.feedback, host: this.#templates },
-  // ];
-
-  // get templateContext() {
-  //   return {
-  //     ...super.templateContext,
-  //     labels: { l1Invoker: 'Main menu', levelBackBtn: 'Back' },
-  //     // data: {
-  //     //   label: this.label,
-  //     //   helpText: this.helpText,
-  //     // }
-  //     fns: {
-  //       /**
-  //        * It's very common that components switch layouts based on screen size.
-  //        * In this case, we want to stop current animations...
-  //        * Call this method during initialization of a new layout.
-  //        * @example
-  //        * ```js
-  //        * UIMainNav.provideDesign({
-  //        *   // ...,
-  //        *   layouts: () => ({
-  //        *     myLayout: {
-  //        *       // ...,
-  //        *       templateContext: context => {
-  //        *         const navData = {
-  //        *           ...context.data.navData,
-  //        *           // ...,
-  //        *         };
-  //        *         updateNavData(navData, { shouldReset: true });
-  //        *         context.closeMenu({ shouldPreventAnimations: true });
-  //        *         return {
-  //        *           ...context,
-  //        *           data: { ...context.data, navData },
-  //        *         };
-  //        *       },
-  //        *     // ...,
-  //        *    });
-  //        *    // ...,
-  //        * });
-  //        * ```
-  //        * @param {{shouldPreventAnimations: boolean}} options
-  //        */
-  //       closeMenu: ({ shouldPreventAnimations }) => {
-  //         if (shouldPreventAnimations) {
-  //           this.setAttribute('data-prevent-animations', '');
-  //         }
-  //         for (const ctrl of Array.from(this.__controllers || [])) {
-  //           if (ctrl instanceof VisibilityToggleCtrl) {
-  //             ctrl.hide();
-  //           }
-  //         }
-  //         if (shouldPreventAnimations) {
-  //           this.removeAttribute('data-prevent-animations');
-  //         }
-  //       },
-  //       updateNavData: updateNavData,
-  //     },
-  //   };
-  // }
-
   static _partDirective = UIInputPartDirective;
 
   static templates = {
@@ -146,18 +75,7 @@ export class UIInput extends UIBaseElementMixin(LionInput) {
         </div>
       `;
     },
-    // label() {
-    //   return html` <label data-part="label"></label> `;
-    // },
-    // input() {
-    //   return html` <input data-part="input" />`;
-    // },
-    // feedback() {
-    //   return html` <div data-part="feedback"></div>`;
-    // },
   };
-
-  // render = uiBaseRender.bind(this);
 }
 
 export class LionInputPassword extends UIInput {
