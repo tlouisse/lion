@@ -1,3 +1,5 @@
+// macos-soname LionLoginScreen
+
 import { html, css } from 'lit';
 
 // @ts-expect-error
@@ -94,7 +96,6 @@ export function getDesignForLionLoginScreen() {
         // This is usually a decorative background image. It can also be a video
         return html` <!-- -->
           <video autoplay loop data-part="background-asset">
-            >
             <source src="${sonoma1080Mp4}" type="video/mp4" />
           </video>`;
       },
