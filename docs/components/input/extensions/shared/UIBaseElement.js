@@ -472,34 +472,155 @@ const UIBaseElementMixinImplementation = superclass =>
 
       return templates.root(templateContext);
     }
+
+    #hasSetup = false;
+
+    /**
+     * The platform and live have different lifecycle methods related to setting up logic.
+     * They run in below order:
+     * - `constructor()`: runs on instance creation, before dom connection
+     * - `connectedCallback()`: runs right after dom connection, before lit render
+     * - `firstUpdated()`: runs after first render
+     *
+     * For a full overview of lit lifecycle methods, see https://lit.dev/docs/components/lifecycle/
+     *
+     * It's important that a component that is disconnected from the dom, fully cleans up after itself.
+     * When a component is connected again, it should be able to re-setup.
+     * Also see:
+     * - https://github.com/webcomponents/gold-standard/wiki/Detachment
+     * - https://github.com/webcomponents/gold-standard/wiki/Reattachment
+     *
+     * So, what would be a good candidate for setting up logic?
+     * As most setup logic is dom related, it makes sense to run it in `firstUpdated`.
+     * This for instance, makes us [better aligned with frameworks like Angular](https://github.com/ing-bank/lion/discussions/1342) as well
+     * However, firstUpdated does not run when reconnected.
+     *
+     * What we need is a callback that runson "connected + render". This is what `onSetup` does.
+     *
+     * @example
+     * ```js
+     * class MyComponent extends UIBaseElement {
+     *   static properties = {
+     *     myProp: { type: String },
+     *   };
+     *
+     *   // In constructor, we set up our initial state
+     *   constructor() {
+     *    super();
+     *    \/** myProp description *\/
+     *    this.myProp = 'foo';
+     *   }
+     *
+     *   render() {
+     *     return html`<button data-part="my-button">${this.myProp}</button>`;
+     *   }
+     *
+     *   // N.B. make sure event listeners are bound to `this`
+     *   #onButtonClick = () => {
+     *     this.myProp = 'bar';
+     *   };
+     *
+     *   // In onSetup, we can safely access the dom.
+     *   onSetup() {
+     *     this.shadowRoot.querySelector('button').addEventListener('click', () => {
+     *       this.myProp = 'bar';
+     *     });
+     *   }
+     * }
+     * ```
+     */
+    onSetup() {}
+
+    /**
+     * Runs when a component is permanently disconnected from the dom.
+     * Where `disconnectedCallback` runs when the component is moved around in the dom,
+     * `onTeardown` runs when the component is removed from the dom.
+     * See {@link onSetup}
+     *
+     * @example
+     * ```js
+     * class MyComponent extends UIBaseElement {
+     *   // ...
+     *
+     *   // N.B. make sure event listeners are bound to `this`
+     *   #onWindowBlur = () => {
+     *     // close overlay
+     *   };
+     *
+     *   onSetup() {
+     *     window.addEventListener('blur', this.#onWindowBlur);
+     *   }
+     *
+     *   // In onTeardown, we are sure we can efficiently free resources
+     *   onTeardown() {
+     *     window.removeEventListener('blur', this.#onWindowBlur);
+     *   }
+     * }
+     * ```
+     */
+    onTeardown() {}
+
+    connectedCallback() {
+      super.connectedCallback();
+
+      this.updateComplete.then(() => {
+        if (this.#hasSetup) return;
+        this.onSetup();
+        this.#hasSetup = true;
+      });
+    }
+
+    async disconnectedCallback() {
+      super.disconnectedCallback();
+
+      if (await this.#isPermanentlyDisconnected()) {
+        this.onTeardown();
+        this.#hasSetup = false;
+      }
+    }
+
+    /**
+     * When we're moving around in dom, disconnectedCallback gets called.
+     * Before we decide to teardown, let's wait to see if we were not just moving nodes around.
+     * @return {Promise<boolean>}
+     */
+    async #isPermanentlyDisconnected() {
+      await this.updateComplete;
+      return !this.isConnected;
+    }
+
+    /**
+     * As a convention, we expose
+     */
+    exposedPrivateMembers = {};
   };
 
 export const UIBaseElementMixin = dedupeMixin(UIBaseElementMixinImplementation);
 
-export function uiBaseRender() {
-  const { templates } = this;
-  let { templateContext } = this;
+// export function uiBaseRender() {
+//   const { templates } = this;
+//   let { templateContext } = this;
 
-  // When layout just changed, it could be that our templateContext is different
-  const { currentLayout } = this.dynamicLayoutCtrl;
+//   // When layout just changed, it could be that our templateContext is different
+//   const { currentLayout } = this.dynamicLayoutCtrl;
 
-  if (this.templateContextProcessor) {
-    templateContext = this.templateContextProcessor(templateContext);
-  }
+//   if (this.templateContextProcessor) {
+//     templateContext = this.templateContextProcessor(templateContext);
+//   }
 
-  if (this.constructor.dynamicLayouts?.[currentLayout]?.templateContextProcessor) {
-    templateContext = this.dynamicLayouts[currentLayout]?.templateContextProcessor(templateContext);
-  }
+//   if (this.constructor.dynamicLayouts?.[currentLayout]?.templateContextProcessor) {
+//     templateContext = this.dynamicLayouts[currentLayout]?.templateContextProcessor(templateContext);
+//   }
 
-  // Add an instance of the part directive that has access to the latest
-  // updated version of templateContext
-  const partDirective = this.constructor._partDirective;
-  if (partDirective) {
-    templateContext.part = createPartDirective(partDirective, templateContext);
-  }
-  if (!templates?.root) {
-    return new Error('[UIBaseElement] Provide a root render function');
-  }
+//   // Add an instance of the part directive that has access to the latest
+//   // updated version of templateContext
+//   const partDirective = this.constructor._partDirective;
+//   if (partDirective) {
+//     templateContext.part = createPartDirective(partDirective, templateContext);
+//   }
+//   if (!templates?.root) {
+//     return new Error('[UIBaseElement] Provide a root render function');
+//   }
 
-  return templates.root(templateContext);
-}
+//   return templates.root(templateContext);
+// }
