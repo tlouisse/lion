@@ -95,6 +95,7 @@
     "markdownlint-cli": "^0.49.1",
     "mocha": "^10.7.3",
     "patch-package": "^8.0.1",
+    "playground-elements": "^0.20.0",
     "postinstall-postinstall": "^2.1.0",
     "prettier": "^3.3.3",
     "prettier-package-json": "^2.8.0",

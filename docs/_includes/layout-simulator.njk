@@ -1,0 +1,150 @@
+<html theme="light" platform="web" lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <style type="text/css">
+      body {
+        margin: 0;
+        height: fit-content;
+      }
+      html[edge-distance] body {
+        padding: 8px;
+      }
+    </style>
+
+    <script type="module">
+      import '@webcomponents/scoped-custom-element-registry';
+
+      import 'playground-elements/playground-ide.js';
+      import { render } from '@mdjs/mdjs-story';
+      import { 
+        sanitizeIframeFromSameDomain, 
+        createScopedLitElementDemo, 
+        getMdJsStoriesFileSections,
+        extractWebComponentObject, 
+        extractImports, 
+        setupIde,
+      } from '@lion/playground';
+
+      function sanitize(input, type) {
+        return `${document.location.origin}/${input.match(/[a-zA-Z0-9\/\-_]*/)[0]}.${type}`;
+      }
+
+
+
+
+
+      async function onHashChange() {
+        const urlParts = new URLSearchParams(document.location.hash.substr(1));
+
+        if (urlParts.get('stylesheets')) {
+          for (const stylesheet of urlParts.getAll('stylesheets')) {
+            const safeStylesheetUrl = sanitize(stylesheet, 'css');
+            if (!document.querySelector(`link[rel="stylesheet"][href="${safeStylesheetUrl}"]`)) {
+              const link = document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = safeStylesheetUrl;
+              document.head.appendChild(link);
+            }
+          }
+        }
+
+        if (urlParts.get('moduleUrls')) {
+          for (const moduleUrl of urlParts.getAll('moduleUrls')) {
+            const safeModuleUrl = sanitize(moduleUrl, 'js');
+            if (!document.querySelector(`script[type=module][src="${safeModuleUrl}"]`)) {
+              const script = document.createElement('script');
+              script.type = 'module';
+              script.src = safeModuleUrl;
+              document.head.appendChild(script);
+            }
+          }
+        }
+
+        if (urlParts.get('theme')) {
+          document.documentElement.setAttribute('theme', urlParts.get('theme'));
+        }
+        if (urlParts.get('platform')) {
+          document.documentElement.setAttribute('platform', urlParts.get('platform'));
+        }
+        if (urlParts.get('language')) {
+          document.documentElement.setAttribute('lang', urlParts.get('language'));
+          document.documentElement.setAttribute('data-lang', urlParts.get('language'));
+        }
+        if (urlParts.get('story-key')) {
+          document.documentElement.setAttribute('story-key', urlParts.get('story-key'));
+        }
+        if (urlParts.get('edge-distance') === 'true') {
+          document.documentElement.setAttribute('edge-distance', '');
+        } else {
+          document.documentElement.removeAttribute('edge-distance');
+        }
+
+        const storyKey = urlParts.get('story-key');
+        const safeStoryUrl = sanitize(urlParts.get('story-file'), 'js');
+ 
+        const fileToFetch = await fetch(safeStoryUrl);
+        const mdjsStoriesFile = await fileToFetch.text();
+
+        const { script, stories, storiesSetup } = getMdJsStoriesFileSections(mdjsStoriesFile);
+        console.log({ script, stories, storiesSetup, storyKey });
+
+ 
+        // const htmlReOld = /((.|\n)*)export (const|function)\s(.*)(\(|\s*=).*(previewHtml|html)`((.|\n)*)`.*;/;
+        const htmlRe = new RegExp(`((.|\\n)*)export (const|function)\\s(${storyKey})(\\(|\\s*=).*(previewHtml|html)\`((.|\\n)*)\`.*;`);
+        const [ , jsString, , ,exportName, , , htmlString] = stories.match(htmlRe);
+
+        console.log({ jsString, exportName, htmlString });
+        console.log(mdjsStoriesFile);
+
+
+        const demoFileName = exportName.split(/\s/)[0] + '.js';
+
+        let htmlToRenderInJsContext = '';
+        const isAlreadyInLitEl = jsString.includes(' extends ScopedElementsMixin') || jsString.includes(' extends LitElement');
+        // When we are already in a demo, just pick the html part...
+        if (isAlreadyInLitEl) {
+          // N.B. we need to use a parser for more accuracy in the future...
+          const [, klassString] = jsString.match(/(class.*extends.*LitElement.*{(.|\n)*?\n})/);
+          // we pick the first html template we find ...
+          [, htmlToRenderInJsContext] = klassString.match(/html`((.|\n)*)?`;/);
+        } else {
+          // We were already in 
+          htmlToRenderInJsContext = htmlString;
+        }
+
+        // TODO: generate webComponents from "htmlToRenderInJsContext"
+        // Get the tag name from the template, then look for klass and source in ce manifest
+        // 
+        const webComponents = [{ tag:'lion-accordion', klass: 'LionAccordion', source: '@lion/ui/accordion.js' }];
+        const { jsFile, indexHtmlFile } = createScopedLitElementDemo(htmlToRenderInJsContext, { webComponents });
+
+        const ide = document.querySelector('playground-ide');
+        setupIde(ide, { demoFileName, indexHtmlFile, jsFile });
+      }
+
+
+      window.addEventListener('hashchange', onHashChange, false);
+      onHashChange();
+
+      const observer = new ResizeObserver(() => {
+        const dimensions = document.body.getBoundingClientRect();
+        const data = {
+          action: 'mdjs-viewer-resize',
+          storyKey: document.documentElement.getAttribute('story-key'),
+          width: dimensions.width,
+          height: dimensions.height,
+        };
+        parent.postMessage(JSON.stringify(data), '*');
+      });
+      observer.observe(document.body);
+    </script>
+  </head>
+  <body>
+  
+  <playground-ide editable-file-system line-numbers resizable>
+  </playground-ide>
+
+
+  </body>
+</html>
