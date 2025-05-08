@@ -38,7 +38,8 @@
     "test:browser": "web-test-runner --coverage",
     "test:node": "npm run test:node --workspaces --if-present",
     "types": "npm run types --workspaces --if-present",
-    "types-check-only": "npm run types-check-only --workspaces --if-present"
+    "types-check-only": "npm run types-check-only --workspaces --if-present",
+    "prepare-lion-playground": "node packages-node/lion-playground/src/cli/generateAssets.js --package packages/ui --destination docs/_assets/lion-playground --deps '@lion/ui|lit'"
   },
   "workspaces": [
     "packages/*",
