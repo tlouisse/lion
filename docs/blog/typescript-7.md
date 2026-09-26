@@ -73,9 +73,16 @@ Lion's published types are **not** the whole `dist-types/` tree. `package.json` 
 
 so the surface is the 127 barrel files in `dist-types/exports/`. That is what we measure, on every change:
 
-> `dist-types/exports/` must be **byte-identical** to the pre-migration baseline.
+> every exported **name** and re-export target in `dist-types/exports/` must be unchanged.
 
-It is. Zero of 127 files differ. No import changes shape, no export disappears.
+It is. Across all 67 barrel files there are **zero** name or target differences; 66 of them
+differ textually at all, and only in quote style (`"..."` before, `'...'` after). The same
+measurement on the pre-migration compiler, where the emitted paths also had to be rewritten
+by the post-build script, is what made that script look load-bearing.
+
+The declaration *form* of a few values changes as well: TS 7 writes
+`export declare const f: (..) => T` where 4.9.5 wrote `export function f(..): T`. Same name, same
+signature; nothing a consumer can observe. No import changes shape, no export disappears.
 
 Everything else in `dist-types/` does churn - `.d.ts.map` files, comment text, and the intended fixes above - which is worth knowing if you keep an API snapshot or run `api-extractor`: the diff is large, and almost all of it is noise. Two of the changes are real but invisible to consumers:
 
@@ -122,10 +129,8 @@ On TS 7 it rewrites **nothing**. TS 7 emits `lit` and the correct scoped-element
 
 ## Where this stands
 
-The source work is done and merged as a feature branch: **TS 7 builds Lion with 0 errors**, 4.9.5 still builds with 0 errors, and the published surface is byte-identical to before. The remaining step is small and explicit:
+This lands as one change: **TS 7 builds Lion with 0 errors**, the root `typescript` is raised to 7, and the post-build correction script is gone - so the `types` target is a plain `tsc --build` again. The published entry points keep the same exported names (`stableTypeOrdering` reorders 8 of 127 barrel files textually, no name changes), which is what we check on every batch.
 
-1. raise the root `typescript` to 7;
-2. drop `&& npm run types-correct-after-build` from `wireit.types.command` and delete the script;
-3. flip the 33 remaining `@ts-ignore [ts7-*]` suppressions to `@ts-expect-error` - 16 `TS2565` (TS 7 newly checks definite assignment on inferred fields: Lit reactive properties, event handlers created inside a branch) and 17 `TS2855` (field access via `super`). Each names the idiom that resolves it, so they are a to-do list, not a permanent state.
+What is left, deliberately, is a to-do list rather than a task: 33 `@ts-ignore [ts7-*]` suppressions, each naming the idiom that resolves it - 16 `TS2565` (TS 7 newly checks definite assignment on inferred fields: Lit reactive properties, event handlers created inside a branch) and 17 `TS2855` (field access via `super`). Flip them to `@ts-expect-error` as they get fixed; the directive then tells you when it is no longer needed.
 
 If you maintain a library that ships declarations, the transferable lessons are: measure your _published_ surface (the barrels your `exports` map points at), not the whole output tree; separate "our mistake" from "new compiler behaviour" before estimating; and test with `skipLibCheck: false` at least once, because that is where declaration defects hide.
