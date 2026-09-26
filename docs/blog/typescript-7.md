@@ -80,7 +80,7 @@ differ textually at all, and only in quote style (`"..."` before, `'...'` after)
 measurement on the pre-migration compiler, where the emitted paths also had to be rewritten
 by the post-build script, is what made that script look load-bearing.
 
-The declaration *form* of a few values changes as well: TS 7 writes
+The declaration _form_ of a few values changes as well: TS 7 writes
 `export declare const f: (..) => T` where 4.9.5 wrote `export function f(..): T`. Same name, same
 signature; nothing a consumer can observe. No import changes shape, no export disappears.
 
