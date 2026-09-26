@@ -75,6 +75,8 @@ packages/ui/test-exports/
 
 portal/src/content/docs
 portal/src/pages/**/_demos/
+## Generated playground assets (see `prepare-lion-playground`)
+portal/public/lion-playground/
 
 ## Rocket ignore files (need to be the full relative path to the folders)
 docs/_merged_data/

@@ -11,19 +11,16 @@
     "url": "https://github.com/ing-bank/lion.git",
     "directory": "packages-node/lion-playground"
   },
-  "main": "index.js",
+  "main": "src/browser/index.js",
   "files": [
-    "*.js",
-    "docs",
-    "src",
-    "test"
+    "src"
   ],
   "scripts": {
     "prepublishOnly": "npm run publish-docs",
     "publish-docs": "node ../../packages-node/publish-docs/src/cli.js --github-url https://github.com/ing-bank/lion/ --git-root-dir ../../",
     "test": "npm run test:node",
     "test:node": "mocha src/node/**/*.test.js",
-    "test:watch": "mocha test-node --watch"
+    "test:watch": "mocha src/node/**/*.test.js --watch"
   },
   "publishConfig": {
     "access": "public"

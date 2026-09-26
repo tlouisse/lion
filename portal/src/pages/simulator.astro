@@ -1,9 +1,22 @@
 ---
 import ThemeInit from '../components/ThemeInit.astro';
 ---
-<html theme="light" platform="web" lang="en"><head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta charset="utf-8">
+// Playground simulator page — Astro port of `docs/_includes/layout-simulator.njk`.
+//
+// It reads the mdjs `script` / `stories` / `stories setup` sections of a demo file and loads an
+// editable LitElement demo into <playground-ide>.
+//
+// Host differences vs Rocket:
+//  - Rocket serves the monorepo root via `/__wds-outside-root__/1`; the Vite dev server serves
+//    repo files (`packages/ui/**`, `node_modules/**`) root-absolute, so we pass `window.location.origin`.
+//  - Rocket serves an mdjs story at `/<section>/<story>.js`; in Astro the generated story lives at
+//    `src/pages/<section>/_demos/<story>.js`, which we read with Vite's `?raw` suffix.
+//  - Generated assets live in `portal/public/lion-playground/` (see the root `prepare-lion-playground` script).
+
+<html theme="light" platform="web" lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8" />
     <meta name="color-scheme" content="light dark" />
     <ThemeInit />
     <style type="text/css">
@@ -17,8 +30,33 @@ import ThemeInit from '../components/ThemeInit.astro';
     </style>
 
     <script>
-      import { render } from '@mdjs/mdjs-story';
       import '@webcomponents/scoped-custom-element-registry';
+      import 'playground-elements/playground-ide.js';
+      import {
+        sanitizeIframeFromSameDomain,
+        createScopedLitElementDemo,
+        getMdJsStoriesFileSections,
+        extractWebComponentObject,
+        extractExtraSetupCode,
+        setupIde,
+      } from '@lion/playground/src/browser/index.js';
+
+      // Astro sets this to the `base` config value, which has no trailing slash ('/next').
+      const _base = import.meta.env.BASE_URL;
+      const baseUrl = _base.endsWith('/') ? _base : `${_base}/`; // '/next/'
+
+      // Generated into `public/lion-playground/` so they stay out of the client bundle.
+      let assetsPromise;
+      function loadAssets() {
+        assetsPromise ??= Promise.all([
+          import(/* @vite-ignore */ `${baseUrl}lion-playground/importMapPerPackage.js`),
+          import(/* @vite-ignore */ `${baseUrl}lion-playground/ceManifestObject.js`),
+        ]).then(([importMapModule, ceManifestModule]) => ({
+          importMapPerPackage: importMapModule.default,
+          ceManifestObject: ceManifestModule.default,
+        }));
+        return assetsPromise;
+      }
 
       function sanitize(input, type) {
         return `${document.location.origin}/${input.match(/[a-zA-Z0-9\/\-_]*/)[0]}.${type}`;
@@ -45,7 +83,6 @@ import ThemeInit from '../components/ThemeInit.astro';
             if (!document.querySelector(`script[type=module][src="${safeModuleUrl}"]`)) {
               const script = document.createElement('script');
               script.type = 'module';
-              debugger;
               script.src = safeModuleUrl;
               document.head.appendChild(script);
             }
@@ -71,9 +108,70 @@ import ThemeInit from '../components/ThemeInit.astro';
           document.documentElement.removeAttribute('edge-distance');
         }
 
+        const storyKey = urlParts.get('story-key');
+        const { importMapPerPackage, ceManifestObject } = await loadAssets();
+
         const [page, storyUrl] = urlParts.get('story-file').split('/');
-        const mod = await import(`./${page}/_demos/${storyUrl}.js`);
-        render(mod[urlParts.get('story-key')]({ shadowRoot: document }), document.body);
+        // Vite's `?raw` gives the exact source text of the generated mdjs stories file, which is what
+        // `getMdJsStoriesFileSections` parses. It resolves to a module whose default export is the text.
+        const storyModule = await import(
+          /* @vite-ignore */ `${baseUrl}src/pages/${page}/_demos/${storyUrl}.js?raw`
+        );
+        const mdjsStoriesFile = storyModule.default;
+
+        const { script, stories, storiesSetup } = getMdJsStoriesFileSections(mdjsStoriesFile);
+
+        const htmlRe = new RegExp(
+          `((.|\\n)*)export (const|function)\\s(${storyKey})(\\(|\\s*=)(.|\\n)*(previewHtml|html)\`((.|\\n)*)\`.*;`,
+        );
+        let jsString, exportName, htmlString;
+        for (const story of stories) {
+          if (!story.includes(storyKey)) continue;
+          const match = story.match(htmlRe);
+          if (match) {
+            [, jsString, , , exportName, , , , htmlString] = match;
+            break;
+          }
+        }
+
+        const demoFileName = exportName.split(/\s/)[0] + '.js';
+
+        let htmlToRenderInJsContext = '';
+        const isAlreadyInLitEl =
+          jsString.includes(' extends ScopedElementsMixin') ||
+          jsString.includes(' extends LitElement');
+        // When we are already in a demo, just pick the html part...
+        if (isAlreadyInLitEl) {
+          // N.B. we need to use a parser for more accuracy in the future...
+          const [, klassString] = jsString.match(/(class.*extends.*LitElement.*{(.|\n)*?\n})/);
+          // we pick the first html template we find ...
+          [, htmlToRenderInJsContext] = klassString.match(/html`((.|\n)*)?`;/);
+        } else {
+          htmlToRenderInJsContext = htmlString;
+        }
+
+        const webComponents = extractWebComponentObject(htmlToRenderInJsContext, {
+          ceManifestObject,
+          importMapPerPackage,
+        });
+        const extraSetupCode = extractExtraSetupCode(script, { webComponents });
+        const { jsFile, indexHtmlFile } = await createScopedLitElementDemo(
+          htmlToRenderInJsContext,
+          { webComponents, extraSetupCode },
+        );
+
+        const ide = document.querySelector('playground-ide');
+        setupIde(ide, {
+          demoFileName,
+          indexHtmlFile,
+          jsFile,
+          importMapPerPackage,
+          // The Vite dev server serves repo files root-absolute (no `/__wds-outside-root__/1`).
+          assetsBaseUrl: window.location.origin,
+          // `playground-elements` needs its service worker + proxy served from a folder it can fetch;
+          // they are copied there by `prepare-lion-playground` (Astro 404s `.html` from node_modules).
+          sandboxBaseUrl: `${window.location.origin}${baseUrl}lion-playground/playground-elements`,
+        });
       }
 
       window.addEventListener('hashchange', onHashChange, false);
@@ -92,5 +190,7 @@ import ThemeInit from '../components/ThemeInit.astro';
       observer.observe(document.body);
     </script>
   </head>
-  <body></body>
+  <body>
+    <playground-ide editable-file-system line-numbers resizable></playground-ide>
+  </body>
 </html>

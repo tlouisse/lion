@@ -29,15 +29,6 @@ export function sanitizeIframeFromSameDomain(fileString) {
   return resultWithoutEvalAndWithoutParentCalls;
 }
 
-// function sanitizeIframeFromSameDomain(fileString) {
-//   // For security, we make sure the iframe can never call its parent
-//   // This needs to be cheap and simple (no in-browser ast parsing), but solid =>
-//   // `content.replace(/(document\.defaultView\.|window\.|\n|\r|\s)(parent|top)/g, '$1$$2');`.
-//   // All calls to `parent` or `window.parent` for instance, will become `$parent` and `window.$parent`
-
-//   return fileString.replace(/(document\.defaultView\.|window\.|\n|\r|\s)(parent|top)/g, '$1$$2');
-// }
-
 // TODO: run through Prettier
 
 /**
@@ -146,7 +137,6 @@ function isMdjsImport(source) {
  * @param {string} script the setup globally available on the mdjs page
  */
 export function extractExtraSetupCode(script) {
-  extractImports(script);
   const { imports, remainingCode } = extractImports(script);
   const relevantImports = [];
   for (const { importParts, source } of imports) {
@@ -183,12 +173,27 @@ function normalizeLocalPath(localPathWithDotSlashOrSlash) {
 
 /**
  * Configures ide to run a demo app
+ *
+ * `assetsBaseUrl` is the root url under which the files referenced by the generated import map
+ * (repo files such as `packages/ui/exports/*.js` and `node_modules/**`) are served. It differs
+ * per host: Rocket serves the monorepo root one level above its own root, Astro/Vite serves it
+ * directly at the origin.
  * @param {HTMLElement} ide
- * @param {{demoFileName: string; indexHtmlFile: string; jsFile: string; importMapPerPackage: {[pkgName:string]: {[exposedRelative:string]: string}} }} opts
+ * @param {{
+ *   demoFileName: string;
+ *   indexHtmlFile: string;
+ *   jsFile: string;
+ *   importMapPerPackage: {[pkgName:string]: {[exposedRelative:string]: string}};
+ *   assetsBaseUrl?: string;
+ *   sandboxBaseUrl?: string;
+ * }} opts
  */
-export function setupIde(ide, { demoFileName, indexHtmlFile, jsFile, importMapPerPackage }) {
+export function setupIde(
+  ide,
+  { demoFileName, indexHtmlFile, jsFile, importMapPerPackage, assetsBaseUrl, sandboxBaseUrl },
+) {
   // N.B. We need below string concatenation to prevent path rewrites from Rocket
-  const basePath = `${window.location.origin}/__wds-outside-root__/1`;
+  const basePath = assetsBaseUrl || `${window.location.origin}/__wds-outside-root__/1`;
 
   // rewrite import map, so that all keys (pakcage names) are joined with their internal paths
   // e.g. '@lion/ui/button.js': 'packages/ui/exports/button.js'
@@ -203,7 +208,7 @@ export function setupIde(ide, { demoFileName, indexHtmlFile, jsFile, importMapPe
 
   // console.debug(importMapEntriesWithInternalPaths);
 
-  ide.sandboxBaseUrl = `${basePath}/node_modules/playground-elements`;
+  ide.sandboxBaseUrl = sandboxBaseUrl || `${basePath}/node_modules/playground-elements`;
   ide.config = {
     importMap: {
       // imports: {
