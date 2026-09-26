@@ -43,11 +43,11 @@ include:["src"], outDir:"dist", no rootDir  ->  TS5011, emits dist/src/index.d.t
 
 To answer "does this break apps that depend on libraries built on Lion?", we built the fixture rather than reasoning about it: **`my-ui`**, a small fictional library that extends Lion components, adds validators, uses `localize` and exposes Lion types in its own public API - plus an app on top of `my-ui`. Then we swapped only the `@lion/ui` underneath.
 
-| scenario                                            | `@lion/ui` 4.9.5 | `@lion/ui` TS 7 |
-| --------------------------------------------------- | ---------------- | --------------- |
-| `my-ui` build, TS 4.7.4, `skipLibCheck: true`       | 0 errors         | **0 errors**    |
-| `my-ui`'s own emitted `dist/index.d.ts`             | -                | **unchanged**   |
-| app on `my-ui`, `skipLibCheck: true`                | 0 errors         | **0 errors**    |
+| scenario                                      | `@lion/ui` 4.9.5 | `@lion/ui` TS 7 |
+| --------------------------------------------- | ---------------- | --------------- |
+| `my-ui` build, TS 4.7.4, `skipLibCheck: true` | 0 errors         | **0 errors**    |
+| `my-ui`'s own emitted `dist/index.d.ts`       | -                | **unchanged**   |
+| app on `my-ui`, `skipLibCheck: true`          | 0 errors         | **0 errors**    |
 
 The second row is the one that matters: `my-ui`'s own published declarations come out of the build unchanged, so its consumers see nothing at all - no `skipLibCheck` question, no new diagnostics. That is the layer furthest from us, and the one we were most worried about.
 
