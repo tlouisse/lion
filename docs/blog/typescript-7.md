@@ -48,8 +48,9 @@ To answer "does this break apps that depend on libraries built on Lion?", we bui
 | `my-ui` build, TS 4.7.4, `skipLibCheck: true` | 0 errors         | **0 errors**    |
 | `my-ui`'s own emitted `dist/index.d.ts`       | -                | **unchanged**   |
 | app on `my-ui`, `skipLibCheck: true`          | 0 errors         | **0 errors**    |
+| app on `my-ui`, `skipLibCheck: false`         | 3 errors         | 4 errors        |
 
-The second row is the one that matters: `my-ui`'s own published declarations come out of the build unchanged, so its consumers see nothing at all - no `skipLibCheck` question, no new diagnostics. That is the layer furthest from us, and the one we were most worried about.
+The second row is the one that matters: `my-ui`'s own published declarations are byte-identical (`sha256`-equal) across the two arms, so anything consuming `my-ui`'s types sees no change from `my-ui` at all. With `skipLibCheck: true` every layer is at 0 errors either way. Turn that flag off and the compiler reads our declarations directly at each layer, which is the one place a difference still shows up - a single diagnostic in the app's own build.
 
 ## Where this stands
 
