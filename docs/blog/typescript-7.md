@@ -48,9 +48,9 @@ To answer "does this break apps that depend on libraries built on Lion?", we bui
 | `my-ui` build, TS 4.7.4, `skipLibCheck: true` | 0 errors         | **0 errors**    |
 | `my-ui`'s own emitted `dist/index.d.ts`       | -                | **unchanged**   |
 | app on `my-ui`, `skipLibCheck: true`          | 0 errors         | **0 errors**    |
-| app on `my-ui`, `skipLibCheck: false`         | 3 errors         | 4 errors        |
+| app on `my-ui`, `skipLibCheck: false`         | 3 errors         | 3 errors        |
 
-The second row is the one that matters: `my-ui`'s own published declarations are byte-identical (`sha256`-equal) across the two arms, so anything consuming `my-ui`'s types sees no change from `my-ui` at all. With `skipLibCheck: true` every layer is at 0 errors either way. Turn that flag off and the compiler reads our declarations directly at each layer, which is the one place a difference still shows up - a single diagnostic in the app's own build.
+The second row is the one that matters: `my-ui`'s own published declarations are byte-identical (`sha256`-equal) across the two arms, so anything consuming `my-ui`'s types sees no change from `my-ui` at all. With `skipLibCheck: true` every layer is at 0 errors either way. Turn that flag off and the compiler reads our declarations directly at each layer: the counts hold (3 errors at TS 4.7.4, 1 at 5.9.3), and only the individual diagnostics shift - a `readonly`-on-getter defect in the old output is gone, and a member that loses its `private` modifier takes its place.
 
 ## Where this stands
 
