@@ -31,7 +31,9 @@ With `skipLibCheck: true` - the default in most setups - and on compilers from 4
 
 Two things worth configuring:
 
-- **Keep `skipLibCheck: true`** unless you have a reason not to. It is where declaration defects surface from any library, so test with it off once if you are moving a compiler: that is how we found two genuinely invalid declarations in our own output (an `export { undefined as X }`, and dropped `private` modifiers) and fixed them at the source.
+- **Keep `skipLibCheck: true`** unless you have a reason not to. This is the flag that decides whether the migration is invisible or not, and we measured both sides of it:
+  - With the flag **on**: 0 errors, before and after, at every layer (below).
+  - With the flag **off**, the library that compiles our declarations directly sees more than before: **3 -> 21** errors at TS 4.7.4 and **1 -> 18** at TS 5.9.3. 18 of those are new and are dominated by private class members whose `private` modifier is dropped in the new output (`TS7008` x17, plus one `TS2416` and one `TS2611`); one old defect, `TS1024` `readonly`-on-getter, is fixed. It was never clean before either - but it is measurably noisier now, and it is the first thing we would fix next.
 - **If you _emit_ declarations on TS 7, set `rootDir`.** Without it, TS 7 raises `TS5011` and writes `dist/src/index.d.ts` where 4.7/5.9 wrote `dist/index.d.ts`, silently moving your layout for your own consumers. It is your own config, not your dependencies: an identical tsconfig with no Lion dependency raises it too, and a `noEmit` project never does.
 
 ```
