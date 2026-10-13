@@ -2,18 +2,32 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lion portal — dark/light theme (PR #2878)</title>
+<title>Lion portal — dark/light theme demo</title>
 <style>
   :root { color-scheme: light dark; --fg: light-dark(#111,#f5f5f5); --bg: light-dark(#fff,#0a0a0a); --muted: light-dark(#5a5a5a,#9a9a9a); }
   body { margin:0; padding:24px; background:var(--bg); color:var(--fg);
          font:16px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
-  h1 { font-size:1.05rem; margin:0 0 4px; }
-  p  { color:var(--muted); margin:0 0 16px; font-size:.85rem; }
-  video { width:100%; max-width:1280px; border:1px solid var(--muted); border-radius:10px; display:block; }
+  h1 { font-size:1.15rem; margin:0 0 4px; }
+  h2 { font-size:.95rem; margin:28px 0 8px; }
+  p  { color:var(--muted); margin:0 0 14px; font-size:.85rem; }
+  video, img { width:100%; max-width:1280px; border:1px solid var(--muted); border-radius:10px; display:block; }
   a { color:inherit; }
 </style>
 <h1>Lion portal — CSS-only dark/light theme</h1>
-<p>Demo clip for <a href="https://github.com/ing-bank/lion/pull/2878">ing-bank/lion#2878</a>.
-Light &rarr; pinned dark &rarr; pinned light &rarr; Auto (system) &rarr; system dark &rarr; pinned light &rarr; pinned dark.</p>
+<p>Demo assets for <a href="https://github.com/ing-bank/lion/pull/2878">ing-bank/lion#2878</a> (merged)
+and its follow-up <a href="https://github.com/ing-bank/lion/pull/2909">#2909</a>.</p>
+
+<h2>Theme switch — Auto is a real option, the selection is always visible</h2>
+<p>Rows = on load / click sun / click moon / click Auto. Columns = OS light | OS dark.
+All three options are always on screen and exactly one is always selected; Auto follows the OS,
+an explicit choice overrides it.</p>
+<img src="./demo/switch-states.png" alt="theme switch in every state">
+
+<h2>Walkthrough clip</h2>
+<p>Auto (OS light) &rarr; light &rarr; dark &rarr; Auto &rarr; OS flips to dark (Auto follows) &rarr; pinned light while the OS is dark &rarr; Auto again.</p>
+<video src="./demo/theme-switch-3-options.mp4" controls playsinline preload="metadata"></video>
+
+<h2>Light-mode fixes (on top of the portal recording)</h2>
+<p>Page title gradient, the search box and the blog tag now follow the theme.</p>
 <video src="./demo/portal-dark-light-toggle.mp4" controls playsinline preload="metadata"></video>
 </html>
