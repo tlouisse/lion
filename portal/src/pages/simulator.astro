@@ -11,7 +11,7 @@ import ThemeInit from '../components/ThemeInit.astro';
 //    repo files (`packages/ui/**`, `node_modules/**`) root-absolute, so we pass `window.location.origin`.
 //  - Rocket serves an mdjs story at `/<section>/<story>.js`; in Astro the generated story lives at
 //    `src/pages/<section>/_demos/<story>.js`, which we read with Vite's `?raw` suffix.
-//  - Generated assets live in `portal/public/lion-playground/` (see the root `prepare-lion-playground` script).
+//  - Generated assets live in `portal/public/lion-playground/` (see the portal's `playground` script).
 
 <html theme="light" platform="web" lang="en">
   <head>
@@ -168,8 +168,12 @@ import ThemeInit from '../components/ThemeInit.astro';
           importMapPerPackage,
           // The Vite dev server serves repo files root-absolute (no `/__wds-outside-root__/1`).
           assetsBaseUrl: window.location.origin,
+          // The portal is not the repo root: its own install links `packages/ui` as
+          // `node_modules/@lion/ui`, so repo relative import-map paths have to be translated.
+          mapAssetPath: repoRelativePath =>
+            `${window.location.origin}/${repoRelativePath.replace(/^packages\//, 'node_modules/@lion/')}`,
           // `playground-elements` needs its service worker + proxy served from a folder it can fetch;
-          // they are copied there by `prepare-lion-playground` (Astro 404s `.html` from node_modules).
+          // they are copied there by the portal's `playground` script (Astro 404s `.html` from node_modules).
           sandboxBaseUrl: `${window.location.origin}${baseUrl}lion-playground/playground-elements`,
         });
       }

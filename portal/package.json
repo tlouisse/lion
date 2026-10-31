@@ -8,7 +8,10 @@
   "scripts": {
     "build": "astro build --force && node ./src/utils/rewrite-links.mjs",
     "dev": "astro dev --force",
+    "playground": "npm --prefix .. run prepare-lion-playground:astro",
     "postinstall": "patch-package --patch-dir ../patches",
+    "prebuild": "npm run playground",
+    "predev": "npm run playground",
     "links": "node ./src/utils/rewrite-links.mjs",
     "preview": "node ./scripts/deploy-portal-preview.mjs",
     "sync": "astro sync"
@@ -16,6 +19,7 @@
   "devDependencies": {
     "@bundled-es-modules/message-format": "^6.2.4",
     "@lion/astro-lit": "file:../packages-node/astro-lit",
+    "@lion/playground": "file:../packages-node/lion-playground",
     "@lion/ui": "file:../packages/ui",
     "@lit-labs/ssr": "^4.1.0",
     "@lit/reactive-element": "^2.1.2",
@@ -39,6 +43,7 @@
     "lit-html": "^3.3.3",
     "parse5": "^8.0.0",
     "patch-package": "^8.0.1",
+    "playground-elements": "^0.20.0",
     "postinstall-postinstall": "^2.1.0",
     "providence-analytics": "file:../packages-node/providence-analytics",
     "singleton-manager": "file:../packages/singleton-manager",

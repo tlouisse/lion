@@ -178,6 +178,10 @@ function normalizeLocalPath(localPathWithDotSlashOrSlash) {
  * (repo files such as `packages/ui/exports/*.js` and `node_modules/**`) are served. It differs
  * per host: Rocket serves the monorepo root one level above its own root, Astro/Vite serves it
  * directly at the origin.
+ * `mapAssetPath` translates a repo relative path (as written by `generateAssets`) into a url the
+ * host can serve. It defaults to `${assetsBaseUrl}/${repoRelativePath}`. A host whose document root
+ * is not the repo root has to override it: the portal serves `packages/ui` as `node_modules/@lion/ui`,
+ * because that is where its own install links the workspace package.
  * @param {HTMLElement} ide
  * @param {{
  *   demoFileName: string;
@@ -186,14 +190,24 @@ function normalizeLocalPath(localPathWithDotSlashOrSlash) {
  *   importMapPerPackage: {[pkgName:string]: {[exposedRelative:string]: string}};
  *   assetsBaseUrl?: string;
  *   sandboxBaseUrl?: string;
+ *   mapAssetPath?: (repoRelativePath: string) => string;
  * }} opts
  */
 export function setupIde(
   ide,
-  { demoFileName, indexHtmlFile, jsFile, importMapPerPackage, assetsBaseUrl, sandboxBaseUrl },
+  {
+    demoFileName,
+    indexHtmlFile,
+    jsFile,
+    importMapPerPackage,
+    assetsBaseUrl,
+    sandboxBaseUrl,
+    mapAssetPath,
+  },
 ) {
   // N.B. We need below string concatenation to prevent path rewrites from Rocket
   const basePath = assetsBaseUrl || `${window.location.origin}/__wds-outside-root__/1`;
+  const toAssetUrl = mapAssetPath || (repoRelativePath => `${basePath}/${repoRelativePath}`);
 
   // rewrite import map, so that all keys (pakcage names) are joined with their internal paths
   // e.g. '@lion/ui/button.js': 'packages/ui/exports/button.js'
@@ -202,7 +216,7 @@ export function setupIde(
     for (const [entry, internalPath] of Object.entries(entries)) {
       importMapEntriesWithInternalPaths[
         `${packageName}/${entry.replace(/^\.\/?/, '')}`.replace(/\/$/, '')
-      ] = `${basePath}/${internalPath}`;
+      ] = toAssetUrl(internalPath);
     }
   }
 
@@ -229,7 +243,7 @@ export function setupIde(
 <head>
 <!-- playground-hide-end -->
 <script type="module">
-  import '${basePath}/node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js';
+  import '${toAssetUrl('node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js')}';
   import ` +
           `'./${demoFileName}';
 <` +

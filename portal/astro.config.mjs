@@ -36,6 +36,15 @@ export default defineConfig({
   // in the repository root, where the root deploy and the preview script expect it.
   outDir: '../_site',
   integrations: [lit(), pagefind()],
+  vite: {
+    optimizeDeps: {
+      // `playground-elements` creates its typescript worker with
+      // `new Worker(new URL('./playground-typescript-worker.js', import.meta.url))`. Pre-bundling
+      // rewrites that url into `.vite/deps/playground-typescript-worker.js`, where no such file
+      // exists (404), so the package is served as source instead.
+      exclude: ['playground-elements'],
+    },
+  },
   markdown: {
     // ing-web
     remarkPlugins: [
