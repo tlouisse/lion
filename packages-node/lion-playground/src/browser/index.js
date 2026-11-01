@@ -172,6 +172,34 @@ function normalizeLocalPath(localPathWithDotSlashOrSlash) {
 }
 
 /**
+ * Content Security Policy for the sandbox document — the one place untrusted demo code executes.
+ *
+ * The sandbox is served same-origin (see the portal page for why), so the same-origin policy cannot
+ * contain it. A CSP can still limit what it reaches, and this is the only document we can attach one
+ * to: service-worker generated responses do not inherit the origin's own CSP headers, but a `<meta>`
+ * policy travels inside the document we build here.
+ *
+ * `default-src 'none'` with explicit grants is deliberate — anything not listed (frames, media,
+ * objects) is denied. `form-action 'none'` and `base-uri 'none'` close the navigation-based routes to
+ * turning the page into a phishing surface, and `connect-src 'self'` keeps a demo from posting data
+ * to a third party. Scripts stay permissive because the whole point is to run editable code.
+ *
+ * N.B. `frame-ancestors` is ignored in a `<meta>` policy, so it is not listed here.
+ */
+const SANDBOX_CONTENT_SECURITY_POLICY = [
+  "default-src 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "base-uri 'none'",
+  "object-src 'none'",
+  "form-action 'none'",
+].join('; ');
+
+/**
  * Configures ide to run a demo app
  *
  * `assetsBaseUrl` is the root url under which the files referenced by the generated import map
@@ -241,6 +269,7 @@ export function setupIde(
           `<!-- playground-hide -->
 <!doctype html>
 <head>
+<meta http-equiv="Content-Security-Policy" content="${SANDBOX_CONTENT_SECURITY_POLICY}">
 <!-- playground-hide-end -->
 <script type="module">
   import '${toAssetUrl('node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js')}';
