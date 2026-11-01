@@ -1,5 +1,13 @@
 ---
 import ThemeInit from '../components/ThemeInit.astro';
+
+// playground-elements defaults `sandboxBaseUrl` to a CDN (`https://unpkg.com/playground-elements@<version>/`).
+// Setting it as an attribute on the element means that default is never used — otherwise the element
+// starts a second sandbox session against unpkg.com before `setupIde()` can override it.
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const sandboxBaseUrl = `${base}lion-playground/playground-elements`;
 ---
 // Playground simulator page — Astro port of `docs/_includes/layout-simulator.njk`.
 //
@@ -195,6 +203,11 @@ import ThemeInit from '../components/ThemeInit.astro';
     </script>
   </head>
   <body>
-    <playground-ide editable-file-system line-numbers resizable></playground-ide>
+    <playground-ide
+      editable-file-system
+      line-numbers
+      resizable
+      sandbox-base-url={sandboxBaseUrl}
+    ></playground-ide>
   </body>
 </html>
