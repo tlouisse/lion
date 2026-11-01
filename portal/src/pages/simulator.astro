@@ -1,18 +1,10 @@
 ---
 import ThemeInit from '../components/ThemeInit.astro';
 
-// playground-elements defaults `sandboxBaseUrl` to a CDN (`https://unpkg.com/playground-elements@<version>/`).
-// Setting it as an attribute on the element means that default is never used — otherwise the element
-// starts a second sandbox session against unpkg.com before `setupIde()` can override it.
-const base = import.meta.env.BASE_URL.endsWith('/')
-  ? import.meta.env.BASE_URL
-  : `${import.meta.env.BASE_URL}/`;
-const sandboxBaseUrl = `${base}lion-playground/playground-elements`;
----
 // Playground simulator page — Astro port of `docs/_includes/layout-simulator.njk`.
 //
 // It reads the mdjs `script` / `stories` / `stories setup` sections of a demo file and loads an
-// editable LitElement demo into <playground-ide>.
+// editable LitElement demo into the playground element.
 //
 // Host differences vs Rocket:
 //  - Rocket serves the monorepo root via `/__wds-outside-root__/1`; the Vite dev server serves
@@ -20,6 +12,33 @@ const sandboxBaseUrl = `${base}lion-playground/playground-elements`;
 //  - Rocket serves an mdjs story at `/<section>/<story>.js`; in Astro the generated story lives at
 //    `src/pages/<section>/_demos/<story>.js`, which we read with Vite's `?raw` suffix.
 //  - Generated assets live in `portal/public/lion-playground/` (see the portal's `playground` script).
+//
+// NOTE: keep every comment in this frontmatter block. Text placed between the closing `---` and the
+// first element is parsed as markup by Astro, so a tag-like string in it (for example the
+// `<section>` / `<story>` above) silently corrupts the whole document.
+
+// playground-elements defaults `sandboxBaseUrl` to a CDN (`https://unpkg.com/playground-elements@<version>/`).
+// Setting it as an attribute on the element means that default is never used — otherwise the element
+// starts a second sandbox session against unpkg.com before `setupIde()` can override it.
+//
+// Accepted risk (decision, not an oversight): this serves the sandbox from the portal's *own* origin,
+// which is the one configuration playground-elements explicitly warns about (see its README
+// § "Sandbox security", requirements 1 and 2). Untrusted demo code therefore runs same-origin and can
+// reach `window.parent` and the origin's cookies/storage. We accept it because the portal cannot use a
+// cross-origin origin for this, and we mitigate around it instead:
+//   - keep this origin free of credentials, cookies, storage and non-static APIs;
+//   - keep the playground off sensitive pages (it only ever frames the bare /simulator page);
+//   - do NOT treat `sanitizeIframeFromSameDomain()` as a security boundary — it is regex based
+//     defence-in-depth, not a control.
+// `PLAYGROUND_SANDBOX_BASE_URL` exists so an environment that *does* have a second origin (for example
+// http://127.0.0.1:4321 during local development, or a separate deploy target) can restore the
+// upstream guarantee without touching this file.
+const base = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const sandboxBaseUrl =
+  process.env.PLAYGROUND_SANDBOX_BASE_URL || `${base}lion-playground/playground-elements`;
+---
 
 <html theme="light" platform="web" lang="en">
   <head>
@@ -182,7 +201,12 @@ const sandboxBaseUrl = `${base}lion-playground/playground-elements`;
             `${window.location.origin}/${repoRelativePath.replace(/^packages\//, 'node_modules/@lion/')}`,
           // `playground-elements` needs its service worker + proxy served from a folder it can fetch;
           // they are copied there by the portal's `playground` script (Astro 404s `.html` from node_modules).
-          sandboxBaseUrl: `${window.location.origin}${baseUrl}lion-playground/playground-elements`,
+          // Taken from the element's attribute (set in the markup, overridable per environment) so the
+          // attribute and this call cannot drift apart.
+          sandboxBaseUrl: new URL(
+            ide.getAttribute('sandbox-base-url') || `${baseUrl}lion-playground/playground-elements`,
+            document.baseURI,
+          ).href,
         });
       }
 
