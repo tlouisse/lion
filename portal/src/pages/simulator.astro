@@ -139,12 +139,21 @@ const sandboxBaseUrl =
         const { importMapPerPackage, ceManifestObject } = await loadAssets();
 
         const [page, storyUrl] = urlParts.get('story-file').split('/');
-        // Vite's `?raw` gives the exact source text of the generated mdjs stories file, which is what
-        // `getMdJsStoriesFileSections` parses. It resolves to a module whose default export is the text.
-        const storyModule = await import(
-          /* @vite-ignore */ `${baseUrl}src/pages/${page}/_demos/${storyUrl}.js?raw`
-        );
-        const mdjsStoriesFile = storyModule.default;
+        // Vite resolves `<path>?raw` to a module whose default export is the exact source text of
+        // the generated mdjs stories file, which is what `getMdJsStoriesFileSections` parses.
+        // Globbed rather than built from a runtime path: a runtime path only resolves on a dev
+        // server (a static deploy has no `/src`), so it would 404 and render nothing, while the glob
+        // is resolved at build time.
+        const storyModules = import.meta.glob('/src/pages/**/_demos/*.js', {
+          query: '?raw',
+          import: 'default',
+        });
+        const storyPath = `/src/pages/${page}/_demos/${storyUrl}.js`;
+        const loadStoryModule = storyModules[storyPath];
+        if (!loadStoryModule) {
+          throw new Error(`No demo found at ${storyPath}`);
+        }
+        const mdjsStoriesFile = await loadStoryModule();
 
         const { script, stories, storiesSetup } = getMdJsStoriesFileSections(mdjsStoriesFile);
 
