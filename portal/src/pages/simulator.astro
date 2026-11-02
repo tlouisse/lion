@@ -67,10 +67,20 @@ const sandboxBaseUrl =
         extractExtraSetupCode,
         setupIde,
       } from '@lion/playground/src/browser/index.js';
+      import {
+        decodeSharedDemo,
+        encodeSharedDemo,
+        renderSharedDemo,
+      } from '@lion/playground/src/browser/shareDemo.js';
 
       // Astro sets this to the `base` config value, which has no trailing slash ('/next').
       const _base = import.meta.env.BASE_URL;
       const baseUrl = _base.endsWith('/') ? _base : `${_base}/`; // '/next/'
+
+      // The portal serves repo packages as `node_modules/@lion/...` (its own install links the
+      // workspace packages there), and a deploy has them vendored at that same path.
+      const toAssetUrl = repoRelativePath =>
+        `${window.location.origin}/${repoRelativePath.replace(/^packages\//, 'node_modules/@lion/')}`;
 
       // Generated into `public/lion-playground/` so they stay out of the client bundle.
       let assetsPromise;
@@ -91,6 +101,25 @@ const sandboxBaseUrl =
 
       async function onHashChange() {
         const urlParts = new URLSearchParams(document.location.hash.substr(1));
+
+        // A share link carries somebody else's code. Render it in a fenced sandbox instead of the
+        // ide, which runs demos same-origin with this page.
+        const shared = urlParts.get('share');
+        if (shared) {
+          const container = document.getElementById('shared-demo');
+          // `hidden` does not hide a custom element that sets its own display in a stylesheet.
+          document.querySelector('playground-ide').style.display = 'none';
+          container.hidden = false;
+          container.replaceChildren();
+          try {
+            const demo = await decodeSharedDemo(shared);
+            const { importMapPerPackage } = await loadAssets();
+            renderSharedDemo(container, demo, { importMapPerPackage, toAssetUrl });
+          } catch (error) {
+            container.textContent = `This share link could not be read: ${error.message}`;
+          }
+          return;
+        }
 
         if (urlParts.get('stylesheets')) {
           for (const stylesheet of urlParts.getAll('stylesheets')) {
@@ -222,6 +251,36 @@ const sandboxBaseUrl =
       window.addEventListener('hashchange', onHashChange, false);
       onHashChange();
 
+      // Sharing is a behaviour of the standalone simulator page, not of an embedded demo.
+      const shareButton = document.getElementById('share-demo');
+      shareButton.hidden = window.parent !== window;
+      shareButton.addEventListener('click', async () => {
+        const ide = document.querySelector('playground-ide');
+        const files = ide && ide.config && ide.config.files;
+        if (!files) return;
+        const names = Object.keys(files);
+        const payload = await encodeSharedDemo({
+          // The demo file is the one the ide marks selected; index.html comes along as the markup.
+          entry: names.find(name => files[name].selected) || names.find(name => name.endsWith('.js')),
+          htmlFile: names.find(name => name.endsWith('.html')),
+          files: Object.fromEntries(
+            names.map(name => [
+              name,
+              { content: files[name].content, contentType: files[name].contentType },
+            ]),
+          ),
+        });
+        const shareUrl = new URL(document.location.href);
+        shareUrl.hash = `?share=${payload}`;
+        window.history.replaceState(null, '', shareUrl.href);
+        try {
+          await navigator.clipboard.writeText(shareUrl.href);
+          shareButton.textContent = 'Share link copied';
+        } catch (_) {
+          shareButton.textContent = 'Share link is in the address bar';
+        }
+      });
+
       const observer = new ResizeObserver(() => {
         const dimensions = document.body.getBoundingClientRect();
         const data = {
@@ -236,6 +295,8 @@ const sandboxBaseUrl =
     </script>
   </head>
   <body>
+    <button id="share-demo" type="button" hidden>Copy share link</button>
+    <div id="shared-demo" hidden></div>
     <playground-ide
       editable-file-system
       line-numbers

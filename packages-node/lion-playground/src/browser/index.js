@@ -1,6 +1,8 @@
 // import * as prettier from 'prettier/standalone.js';
 // import * as prettier from 'https://unpkg.com/prettier@3.5.3/standalone.mjs';
 
+import { flattenImportMapPerPackage } from './shareDemo.js';
+
 /**
  * @typedef {import('custom-elements-manifest/schema.js').Package} CustomElementsManifestSchema;
  */
@@ -237,16 +239,12 @@ export function setupIde(
   const basePath = assetsBaseUrl || `${window.location.origin}/__wds-outside-root__/1`;
   const toAssetUrl = mapAssetPath || (repoRelativePath => `${basePath}/${repoRelativePath}`);
 
-  // rewrite import map, so that all keys (pakcage names) are joined with their internal paths
-  // e.g. '@lion/ui/button.js': 'packages/ui/exports/button.js'
-  const importMapEntriesWithInternalPaths = {};
-  for (const [packageName, entries] of Object.entries(importMapPerPackage)) {
-    for (const [entry, internalPath] of Object.entries(entries)) {
-      importMapEntriesWithInternalPaths[
-        `${packageName}/${entry.replace(/^\.\/?/, '')}`.replace(/\/$/, '')
-      ] = toAssetUrl(internalPath);
-    }
-  }
+  // Flattened by the helper the fenced preview uses, so a demo in the ide and a shared link resolve
+  // their specifiers identically. e.g. '@lion/ui/button.js': 'packages/ui/exports/button.js'
+  const importMapEntriesWithInternalPaths = flattenImportMapPerPackage(
+    importMapPerPackage,
+    toAssetUrl,
+  ).imports;
 
   // console.debug(importMapEntriesWithInternalPaths);
 
