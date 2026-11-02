@@ -1,5 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 
 /**
  * Copies every file the generated import map points at into the host's static build output.
@@ -89,6 +90,47 @@ async function readImportMapPerPackage(importMapDir) {
 }
 
 /**
+ * The TypeScript worker is emitted by the host's bundler as an *asset*: playground-elements creates
+ * it with `new URL('playground-typescript-worker.js', import.meta.url)`, so its own static import of
+ * `./internal/typescript.js` (the 9MB compiler) is never resolved. Without that sibling the worker
+ * 404s and no TypeScript demo can compile. Its location is dictated by that relative import, so it
+ * has to sit next to the emitted worker chunk, wherever the host put it.
+ *
+ * N.B. the compiler is requested on every playground visit, because playground-elements creates the
+ * worker eagerly. That matches what the playground did before (the same file, served from the
+ * repository), so shipping it keeps the feature; leaving it out is what would be a regression.
+ *
+ * @param {string} destination
+ * @returns {Promise<{workers: number; bytes: number}>}
+ */
+async function vendorTypescriptCompiler(destination) {
+  const require = createRequire(import.meta.url);
+  const playgroundElementsDir = path.dirname(require.resolve('playground-elements'));
+  const compiler = path.join(playgroundElementsDir, 'internal', 'typescript.js');
+
+  /** @type {string[]} */
+  const workers = [];
+  const walk = async dir => {
+    for (const entry of await fs.promises.readdir(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (/^playground-typescript-worker.*\.js$/.test(entry.name)) {
+        workers.push(full);
+      }
+    }
+  };
+  await walk(destination);
+
+  for (const worker of workers) {
+    const siblingDir = path.join(path.dirname(worker), 'internal');
+    await fs.promises.mkdir(siblingDir, { recursive: true });
+    await fs.promises.copyFile(compiler, path.join(siblingDir, 'typescript.js'));
+  }
+  return { workers: workers.length, bytes: (await fs.promises.stat(compiler)).size };
+}
+
+/**
  * @param {string} dir
  * @returns {Promise<{files: number; bytes: number}>}
  */
@@ -141,11 +183,13 @@ async function vendorImportMapTargets() {
     await fs.promises.cp(from, to, { recursive: true, filter: makeFilter(from) });
   }
 
+  const compiler = await vendorTypescriptCompiler(destination);
   const { files, bytes } = await measure(path.join(destination, 'node_modules'));
   // eslint-disable-next-line no-console
   console.log(
     `Vendored ${entryCount} import map entries from ${folders.size} package folders into ` +
-      `${destination} (${files} files, ${(bytes / 1024 / 1024).toFixed(1)} MB)`,
+      `${destination} (${files} files, ${(bytes / 1024 / 1024).toFixed(1)} MB); TypeScript compiler ` +
+      `next to ${compiler.workers} worker chunk(s) (${(compiler.bytes / 1024 / 1024).toFixed(1)} MB)`,
   );
 }
 
