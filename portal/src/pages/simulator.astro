@@ -282,9 +282,14 @@ const sandboxBaseUrl =
               name,
               {
                 // playground-elements rewrites a demo's bare specifiers to absolute urls of *this*
-                // origin while it serves them. A share link must not bake that in: strip the origin
-                // so the link is portable (the paths stay root-relative).
-                content: files[name].content.split(window.location.origin).join(''),
+                // origin while it serves them, so a link must not bake that origin in: store the
+                // paths root-relative and they get rewritten on the receiving side.
+                // The sandbox document's own import map (~98KB) is dropped too; `toIdeConfig`
+                // rebuilds it on the receiving side, which keeps links ~10x shorter.
+                content: files[name].content
+                  .split(window.location.origin)
+                  .join('')
+                  .replace(/<script type="importmap">[\s\S]*?<\/script>/, ''),
                 contentType: files[name].contentType,
               },
             ]),
