@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "astro build --force && node ./src/utils/rewrite-links.mjs",
+    "build": "astro build --force && node ./src/utils/rewrite-links.mjs && npm --prefix .. run prepare-lion-playground:vendor",
     "dev": "astro dev --force",
     "playground": "npm --prefix .. run prepare-lion-playground:astro",
     "postinstall": "patch-package --patch-dir ../patches",

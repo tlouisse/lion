@@ -41,7 +41,8 @@
     "types-check-only": "npm run types-check-only --workspaces --if-present",
     "prepare-lion-playground": "npm run prepare-lion-playground:rocket && npm run prepare-lion-playground:astro",
     "prepare-lion-playground:rocket": "node packages-node/lion-playground/src/cli/generateAssets.js --package packages/ui --destination docs/_assets/lion-playground --deps '@lion/ui|lit'",
-    "prepare-lion-playground:astro": "node packages-node/lion-playground/src/cli/generateAssets.js --package packages/ui --destination portal/public/lion-playground --deps '@lion/ui|lit' && node packages-node/lion-playground/src/cli/generateSandboxAssets.js --destination portal/public/lion-playground/playground-elements"
+    "prepare-lion-playground:astro": "node packages-node/lion-playground/src/cli/generateAssets.js --package packages/ui --destination portal/public/lion-playground --deps '@lion/ui|lit' && node packages-node/lion-playground/src/cli/generateSandboxAssets.js --destination portal/public/lion-playground/playground-elements",
+    "prepare-lion-playground:vendor": "node packages-node/lion-playground/src/cli/vendorImportMapTargets.js --import-map portal/public/lion-playground --destination _site"
   },
   "workspaces": [
     "packages/*",
