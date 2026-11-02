@@ -230,6 +230,40 @@ await import(blobUrlFor(${toEmbeddedJson(demo.entry)}));
 }
 
 /**
+ * The same demo as a `playground-ide` config, so a shared demo can be opened in the editor.
+ *
+ * N.B. this is where a shared demo leaves the fence: the ide's preview runs demos same-origin with
+ * the host page (playground-elements creates that iframe without a `sandbox` attribute), so the code
+ * then has the origin's privileges. It is therefore an explicit action by the recipient — the same
+ * thing as pasting the code in — and the reason the fenced render is the default view.
+ * @param {SharedDemo} demo
+ * @param {{importMapPerPackage: {[packageName: string]: {[exposedPath: string]: string}}; toAssetUrl: (repoRelativePath: string) => string}} opts
+ * @returns {object} an `ide.config` value
+ */
+export function toIdeConfig(demo, { importMapPerPackage, toAssetUrl }) {
+  const importMap = flattenImportMapPerPackage(importMapPerPackage, toAssetUrl);
+  // The import map has to be *in the document*, not only in the project config: the config drives
+  // playground-elements' own rewriting of project files, while the packages those files import keep
+  // their bare specifiers and need the document's map. Share links drop it from the payload to stay
+  // short, so it is rebuilt here.
+  const importMapScript = `<script type="importmap">${JSON.stringify(importMap).replace(/</g, '\\u003c')}</script>`;
+  const files = Object.fromEntries(
+    Object.entries(demo.files).map(([name, file]) => [
+      name,
+      {
+        filename: name,
+        contentType: file.contentType || 'sample/js',
+        content:
+          file.content.includes('type="importmap"') || !file.content.includes('<script type="module">')
+            ? file.content
+            : file.content.replace('<script type="module">', `${importMapScript}\n<script type="module">`),
+      },
+    ]),
+  );
+  return { importMap, files };
+}
+
+/**
  * Renders a shared demo inside an opaque-origin sandbox. The containment comes from the iframe's
  * `sandbox` attribute (no `allow-same-origin`), not from the host page or the deploy.
  * @param {HTMLElement} container

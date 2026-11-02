@@ -71,6 +71,7 @@ const sandboxBaseUrl =
         decodeSharedDemo,
         encodeSharedDemo,
         renderSharedDemo,
+        toIdeConfig,
       } from '@lion/playground/src/browser/shareDemo.js';
 
       // Astro sets this to the `base` config value, which has no trailing slash ('/next').
@@ -115,6 +116,19 @@ const sandboxBaseUrl =
             const demo = await decodeSharedDemo(shared);
             const { importMapPerPackage } = await loadAssets();
             renderSharedDemo(container, demo, { importMapPerPackage, toAssetUrl });
+
+            // The editor's preview runs a demo same-origin, so opening a shared demo in it is an
+            // explicit choice by the recipient, not something the link does by itself.
+            const openButton = document.getElementById('open-shared-demo');
+            openButton.hidden = false;
+            openButton.onclick = () => {
+              const ide = document.querySelector('playground-ide');
+              ide.config = toIdeConfig(demo, { importMapPerPackage, toAssetUrl });
+              ide.style.display = '';
+              openButton.hidden = true;
+              container.hidden = true;
+              container.replaceChildren();
+            };
           } catch (error) {
             container.textContent = `This share link could not be read: ${error.message}`;
           }
@@ -266,7 +280,13 @@ const sandboxBaseUrl =
           files: Object.fromEntries(
             names.map(name => [
               name,
-              { content: files[name].content, contentType: files[name].contentType },
+              {
+                // playground-elements rewrites a demo's bare specifiers to absolute urls of *this*
+                // origin while it serves them. A share link must not bake that in: strip the origin
+                // so the link is portable (the paths stay root-relative).
+                content: files[name].content.split(window.location.origin).join(''),
+                contentType: files[name].contentType,
+              },
             ]),
           ),
         });
@@ -296,6 +316,9 @@ const sandboxBaseUrl =
   </head>
   <body>
     <button id="share-demo" type="button" hidden>Copy share link</button>
+    <button id="open-shared-demo" type="button" hidden>
+      Open this demo in the playground (its code then runs in this page)
+    </button>
     <div id="shared-demo" hidden></div>
     <playground-ide
       editable-file-system
