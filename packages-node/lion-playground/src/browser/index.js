@@ -269,6 +269,7 @@ export function setupIde(
 <head>
 <meta http-equiv="Content-Security-Policy" content="${SANDBOX_CONTENT_SECURITY_POLICY}">
 <!-- playground-hide-end -->
+<script type="importmap">${JSON.stringify({ imports: importMapEntriesWithInternalPaths }).replace(/</g, '\\u003c')}</script>
 <script type="module">
   import '${toAssetUrl('node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js')}';
   import ` +
