@@ -190,16 +190,50 @@ function normalizeLocalPath(localPathWithDotSlashOrSlash) {
  */
 const SANDBOX_CONTENT_SECURITY_POLICY = [
   "default-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "connect-src 'self'",
   "worker-src 'self' blob:",
   "base-uri 'none'",
   "object-src 'none'",
+  "frame-src 'none'",
   "form-action 'none'",
 ].join('; ');
+
+/**
+ * Guard rails against reading origin state, injected into the sandbox document before any demo code.
+ *
+ * N.B. this is NOT a boundary. The demo shares this realm and can undo any of it — the own-property
+ * shims below are bypassable (e.g. `Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')`
+ * still yields the real getter). It catches accidents and casual attempts; the guarantee that a read
+ * cannot be acted on comes from the host environment, which must not let anything leave the domain.
+ * `eval` and `new Function` are genuinely blocked, but by the CSP above (no `'unsafe-eval'`), not by
+ * this code.
+ */
+const SANDBOX_GUARD_SOURCE = `
+(() => {
+  const blocked = name => {
+    throw new Error('Blocked in the playground sandbox: ' + name);
+  };
+  for (const name of ['localStorage', 'sessionStorage', 'indexedDB', 'caches']) {
+    try {
+      Object.defineProperty(window, name, {
+        get() { blocked(name); },
+        configurable: false,
+      });
+    } catch (_) { /* already non-configurable */ }
+  }
+  try {
+    Object.defineProperty(document, 'cookie', {
+      get() { blocked('document.cookie'); },
+      set() { blocked('document.cookie'); },
+      configurable: false,
+    });
+  } catch (_) { /* ignore */ }
+})();
+`;
 
 /**
  * Configures ide to run a demo app
@@ -268,6 +302,7 @@ export function setupIde(
 <!doctype html>
 <head>
 <meta http-equiv="Content-Security-Policy" content="${SANDBOX_CONTENT_SECURITY_POLICY}">
+<script>${SANDBOX_GUARD_SOURCE}</script>
 <!-- playground-hide-end -->
 <script type="importmap">${JSON.stringify({ imports: importMapEntriesWithInternalPaths }).replace(/</g, '\\u003c')}</script>
 <script type="module">
