@@ -73,6 +73,7 @@ const sandboxBaseUrl =
         renderSharedDemo,
         toIdeConfig,
       } from '@lion/playground/src/browser/shareDemo.js';
+      import { verifySandboxSecurity } from '@lion/playground/src/browser/verifySandboxSecurity.js';
 
       // Astro sets this to the `base` config value, which has no trailing slash ('/next').
       const _base = import.meta.env.BASE_URL;
@@ -264,6 +265,10 @@ const sandboxBaseUrl =
 
       window.addEventListener('hashchange', onHashChange, false);
       onHashChange();
+
+      // Reports what the sandbox actually enforces. See verifySandboxSecurity: this cannot be measured
+      // from outside the page, because dev tooling evaluates through CDP and bypasses CSP.
+      verifySandboxSecurity({ ide: document.querySelector('playground-ide') });
 
       // Sharing is a behaviour of the standalone simulator page, not of an embedded demo.
       const shareButton = document.getElementById('share-demo');

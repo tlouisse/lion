@@ -232,6 +232,44 @@ const SANDBOX_GUARD_SOURCE = `
       configurable: false,
     });
   } catch (_) { /* ignore */ }
+
+  /**
+   * Report to the host page what this document actually enforces.
+   *
+   * This is the only place a policy can be observed: dev tooling evaluates through CDP, which
+   * bypasses CSP the way DevTools does, so measuring from outside cannot tell whether eval is
+   * blocked. A demo shares this realm and could therefore forge this report — it detects drift and
+   * accidental failure, not a hostile document.
+   */
+  const probe = (name, fn) => {
+    try {
+      return { name, enforced: false, detail: 'allowed: ' + String(fn()) };
+    } catch (error) {
+      return { name, enforced: true, detail: error.name + ': ' + error.message };
+    }
+  };
+  const report = () => {
+    parent.postMessage(
+      {
+        source: 'lion-playground-security',
+        origin: location.origin,
+        checks: [
+          probe('eval', () => eval('1 + 1')),
+          probe('new Function', () => new Function('return 1')()),
+          probe('document.cookie', () => document.cookie),
+          probe('localStorage', () => localStorage.getItem('probe')),
+          probe('sessionStorage', () => sessionStorage.getItem('probe')),
+        ],
+      },
+      '*',
+    );
+  };
+  // Deferred, so the demo's own startup cannot be mistaken for this report.
+  setTimeout(report, 0);
+  // The host cannot know when this document loads, so it may ask again instead of racing this report.
+  window.addEventListener('message', event => {
+    if (event.data && event.data.source === 'lion-playground-security-request') report();
+  });
 })();
 `;
 
