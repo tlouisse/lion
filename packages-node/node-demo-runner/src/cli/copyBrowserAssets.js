@@ -32,9 +32,25 @@ await fs.promises.rm(destination, { recursive: true, force: true });
 await fs.promises.mkdir(destination, { recursive: true });
 await fs.promises.cp(source, destination, { recursive: true });
 
+// The browser mode of a demo is the share fence's document builder: extract the body markup, turn the demo's
+// files into blob urls *inside* the sandbox and rewrite their relative imports, import the registry and the
+// entry. Copying that one source keeps those rules in one place instead of growing a second, subtly different
+// implementation here.
+const shareDemoSource = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+  'lion-playground',
+  'src',
+  'browser',
+  'shareDemo.js',
+);
+await fs.promises.copyFile(shareDemoSource, path.join(destination, 'shareDemo.js'));
+
 const count = listFiles(destination).length;
 // eslint-disable-next-line no-console
-console.log(`Copied ${count} browser files to ${destination}`);
+console.log(`Copied ${count} browser files to ${destination} (incl. the share fence's document builder)`);
 
 /** @param {string} dir @returns {string[]} */
 function listFiles(dir) {
