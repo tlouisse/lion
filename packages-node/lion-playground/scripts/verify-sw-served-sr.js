@@ -38,6 +38,8 @@ const readerFile = 'lib/esm/index.browser.js';
 
 const portArg = process.argv.indexOf('--port');
 const port = portArg === -1 ? 8234 : Number(process.argv[portArg + 1]);
+const screenshotArg = process.argv.indexOf('--screenshot');
+const screenshotPath = screenshotArg === -1 ? null : process.argv[screenshotArg + 1];
 
 function fail(message) {
   // eslint-disable-next-line no-console
@@ -231,6 +233,12 @@ try {
     sr: window.__sr ?? null,
     isTheDemoFile: document.documentElement.innerHTML.includes('virtual screen reader check'),
   }));
+  // With --screenshot the check also leaves a picture of the served document, which is what a demo of this
+  // capability needs and what a reviewer asks for.
+  if (screenshotPath) {
+    await servedPage.setViewportSize({ width: 900, height: 320 });
+    await servedPage.screenshot({ path: screenshotPath, fullPage: true });
+  }
   await servedPage.close();
 
   // The worker sets Origin-Agent-Cluster itself; without it this was the static server answering, not the worker.
