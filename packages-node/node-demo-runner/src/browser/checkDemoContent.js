@@ -94,4 +94,37 @@ export function describeContentReport(report) {
   return `content check: ${report.checked} file(s), ${parts.join(', ')}`;
 }
 
-export default { CONTENT_RULES, checkDemoContent, describeContentReport };
+/**
+ * Whether a run may proceed, given the posture.
+ *
+ * With the sandbox on its own origin (the upstream design, `PLAYGROUND_SANDBOX_BASE_URL`) the browser is the
+ * boundary, so the content check is information for a reviewer rather than a gate. With the sandbox on this
+ * origin — an explicit opt-in, for a deployment where a second host is impossible — nothing but the policy the
+ * worker sets and this review stands between a demo and this origin's cookies and storage, so there the
+ * findings block. The posture is *configured*, never inferred from a url: inferring it is how a deployment ends
+ * up insecure by accident.
+ * @param {{report: ContentReport, sameOriginSandbox: boolean}} options
+ * @returns {{allow: boolean, reason: string}}
+ */
+export function decideRun({ report, sameOriginSandbox }) {
+  if (!sameOriginSandbox) {
+    return {
+      allow: true,
+      reason: report.ok
+        ? 'sandbox on its own origin: the browser is the boundary, content check found nothing'
+        : `sandbox on its own origin: the browser is the boundary; ${report.findings.length} finding(s) for review`,
+    };
+  }
+  if (report.ok) {
+    return { allow: true, reason: 'same-origin opt-in: content check found nothing to review' };
+  }
+  const summary = report.findings
+    .map(finding => `${finding.file}:${finding.line} ${finding.rule}`)
+    .join(', ');
+  return {
+    allow: false,
+    reason: `same-origin opt-in: content check flagged ${report.findings.length} thing(s) — ${summary}`,
+  };
+}
+
+export default { CONTENT_RULES, checkDemoContent, describeContentReport, decideRun };

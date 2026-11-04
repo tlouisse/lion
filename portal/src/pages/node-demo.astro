@@ -78,6 +78,13 @@ const assetsBase = `${base}lion-playground-node-demo`;
       // engine's own directory so that the engine and a demo reach the *same* shim module.
       const engineUrl = new URL(`${assetsBase}engine.js`, location.href).href;
 
+      // The posture of the sandbox: configured, never inferred. `false` means the sandbox has its own origin
+      // (the browser is the boundary). `true` is the explicit opt-in for a deployment without a second host —
+      // the extension case — where the content check has to stand in for the missing boundary, and where the
+      // worker additionally sets a policy on the documents it serves. Inferring this from a hostname is how a
+      // deployment ends up insecure by accident, so it is a flag an operator sets on purpose.
+      const sameOriginSandbox = import.meta.env.PUBLIC_SAME_ORIGIN_SANDBOX === 'true';
+
       const editor = document.querySelector('#demo');
       const editorTypeFor = name =>
         name.endsWith('.html') ? 'html' : name.endsWith('.css') ? 'css' : name.endsWith('.json') ? 'json' : 'js';
@@ -244,18 +251,24 @@ lion-input, lion-button {
 
         try {
           const { importMapPerPackage, packageMains, host, shareDemo } = await loadAssets();
-          const { checkDemoContent, describeContentReport } = await load(`${assetsBase}checkDemoContent.js`);
+          const { checkDemoContent, describeContentReport, decideRun } = await load(`${assetsBase}checkDemoContent.js`);
 
           // What the content does, before it runs. In the fenced postures this is information; in a
           // same-origin deployment (no second host available) it is the mitigation, because there nothing but
           // the worker's policy and this review stands between a demo and this origin's cookies and storage.
           const contentReport = checkDemoContent(filesOf(mode));
-          contentCheck.textContent = describeContentReport(contentReport);
+          const decision = decideRun({ report: contentReport, sameOriginSandbox });
+          contentCheck.textContent = `${describeContentReport(contentReport)} — ${decision.reason}`;
           findingsList.textContent = '';
           for (const finding of contentReport.findings) {
             const item = document.createElement('li');
             item.textContent = `${finding.file}:${finding.line} ${finding.rule} (${finding.severity})`;
             findingsList.appendChild(item);
+          }
+          // With the sandbox on its own origin the findings are information; on this origin they are the gate.
+          if (!decision.allow) {
+            status.textContent = decision.reason;
+            return;
           }
           if (!packagesList.childElementCount) {
             for (const name of Object.keys(importMapPerPackage)) {
