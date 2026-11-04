@@ -66,10 +66,18 @@ export function toVendoredUrl(repoRelativePath, packageName, assetsOrigin) {
 /**
  * @param {{importMapPerPackage: {[packageName: string]: {[exposed: string]: string}}, packageMains?: {[packageName: string]: string}}} packageMap
  * @param {string} assetsOrigin
+ * @param {string} [shimBaseUrl] directory the shim files are served from. It must be the directory the
+ *   engine's own `./shims/*.js` imports resolve to: a shim reached by a second url is a second module
+ *   instance with its own empty filesystem, which is how a demo ends up with `ENOENT` on a file that is
+ *   demonstrably there. Defaults to the assets origin, which is where a static build puts them.
  * @returns {{imports: {[specifier: string]: string}}} the map the fence document needs: the package's
  *   own modules plus a shim for every builtin the runner answers
  */
-export function buildFenceImportMap({ importMapPerPackage, packageMains = {} }, assetsOrigin) {
+export function buildFenceImportMap(
+  { importMapPerPackage, packageMains = {} },
+  assetsOrigin,
+  shimBaseUrl = assetsOrigin,
+) {
   const imports = {};
   for (const [packageName, entries] of Object.entries(importMapPerPackage)) {
     for (const [exposed, repoRelativePath] of Object.entries(entries)) {
@@ -89,7 +97,7 @@ export function buildFenceImportMap({ importMapPerPackage, packageMains = {} }, 
   }
   // The shims win over anything the package map claims for a builtin: a package must not be able to
   // shadow `fs` with a CDN-published module of the same name.
-  Object.assign(imports, getShimImportMapEntries(assetsOrigin));
+  Object.assign(imports, getShimImportMapEntries(shimBaseUrl));
   return { imports };
 }
 
@@ -131,7 +139,14 @@ export function runDemoInFence({
   iframe.setAttribute('title', 'Node package demo');
   iframe.style.cssText = 'width:100%;height:100%;border:0;background:transparent';
   iframe.srcdoc = buildFenceDocument({
-    importMap: buildFenceImportMap({ importMapPerPackage, packageMains }, assetsOrigin),
+    // The shims are reached through the engine's own directory, so the demo's `import 'fs'` and the
+    // engine's `./shims/fs.js` are the same module: two urls would mean two module instances, each with
+    // its own filesystem.
+    importMap: buildFenceImportMap(
+      { importMapPerPackage, packageMains },
+      assetsOrigin,
+      new URL('./shims', engineUrl).href,
+    ),
     engineUrl,
     payload,
     assetsOrigin,

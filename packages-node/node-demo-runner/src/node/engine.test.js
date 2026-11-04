@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { runDemo } from '../browser/engine.js';
+import { resolveEntry, runDemo } from '../browser/engine.js';
 import * as fs from '../browser/shims/fs.js';
 import * as processShim from '../browser/shims/process.js';
 
@@ -62,6 +62,34 @@ describe('engine: runDemo', () => {
     });
     assert.equal(report.exitCode, 1);
     assert.deepEqual(report.log, [{ stream: 'stderr', text: 'demo exploded\n' }]);
+  });
+
+  it('imports a demo file from the virtual filesystem as a blob url in this document', async () => {
+    const seen = [];
+    const report = await runDemo({
+      payload: { entry: '/demo.js', files: { '/demo.js': 'export default 1;' } },
+      importEntry: async specifier => {
+        seen.push(specifier);
+      },
+    });
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].startsWith('blob:'), true);
+    assert.equal(report.exitCode, 0);
+  });
+
+  it('treats an entry that names no file as a specifier', async () => {
+    const seen = [];
+    await runDemo({
+      payload: { entry: '@lion/nodejs-helpers', files: {} },
+      importEntry: async specifier => {
+        seen.push(specifier);
+      },
+    });
+    assert.deepEqual(seen, ['@lion/nodejs-helpers']);
+  });
+
+  it('resolveEntry reports the entry as a specifier when there is no such file', () => {
+    assert.equal(resolveEntry({ entry: 'not-installed', files: {} }, globalThis), 'not-installed');
   });
 
   it('starts every run from a clean filesystem', async () => {

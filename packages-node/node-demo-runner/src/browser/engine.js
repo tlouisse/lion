@@ -10,7 +10,8 @@
  * importing this module, and gets a report back with the output, the exit code and the resulting
  * file tree — so the host keeps the user interface and this keeps execution.
  */
-import { __reset, __seed, __snapshot } from './shims/fs.js';
+import { __reset, __seed, __snapshot, readFileSync } from './shims/fs.js';
+import * as nodeProcess from './shims/process.js';
 import { ExitError, __setStdio } from './shims/process.js';
 
 export const REPORT_SOURCE = 'lion-node-demo-runner';
@@ -35,10 +36,40 @@ function toSeed(payload) {
 }
 
 /**
+ * What to import for the entry.
+ *
+ * A demo is a file we hand the runner, so the entry usually names a file in the virtual filesystem
+ * rather than an installed package: `/demo.js`, `demo.js`. Such a file cannot be imported by name —
+ * there is no specifier for it and the import map only covers vendored packages — so its content
+ * becomes a blob url *in this document*, which is what makes the demo's own imports resolve through the
+ * import map. Anything else is treated as a specifier, e.g. `@lion/nodejs-helpers`.
+ *
+ * N.B. relative imports between demo files do not work through this route: a blob module has no
+ * siblings. A multi-file demo needs its specifiers rewritten to blob urls as well.
+ * @param {DemoPayload} payload
+ * @param {typeof globalThis} target
+ * @returns {string}
+ */
+export function resolveEntry(payload, target) {
+  const pathname = payload.entry.startsWith('/') ? payload.entry : `/${payload.entry}`;
+  let content;
+  try {
+    content = readFileSync(pathname, 'utf8');
+  } catch {
+    return payload.entry; // not a file in the demo, so it is a specifier
+  }
+  return target.URL.createObjectURL(new target.Blob([content], { type: 'text/javascript' }));
+}
+
+/**
  * @param {{payload: DemoPayload, importEntry?: (specifier: string) => Promise<unknown>}} options
  * @returns {Promise<DemoReport>}
  */
-export async function runDemo({ payload, importEntry = specifier => import(specifier) }) {
+export async function runDemo({
+  payload,
+  target = globalThis,
+  importEntry = specifier => import(specifier),
+}) {
   /** @type {{stream: string, text: string}[]} */
   const log = [];
 
@@ -48,9 +79,16 @@ export async function runDemo({ payload, importEntry = specifier => import(speci
   __setStdio('stdout', chunk => log.push({ stream: 'stdout', text: String(chunk) }));
   __setStdio('stderr', chunk => log.push({ stream: 'stderr', text: String(chunk) }));
 
+  // Node exposes `process` as a global, and code relies on that without importing it (`process.env`,
+  // `process.argv`, `process.exit`). The shim is a module, so it is installed as a global for the run —
+  // only when the environment does not already have one, so this cannot shadow Node's own.
+  if (!('process' in target)) {
+    /** @type {any} */ (target).process = nodeProcess;
+  }
+
   let exitCode = 0;
   try {
-    await importEntry(payload.entry);
+    await importEntry(resolveEntry(payload, target));
   } catch (error) {
     if (error instanceof ExitError) {
       exitCode = Number(error.code) || 0;
@@ -99,4 +137,4 @@ if (
   startInFence(/** @type {any} */ (window));
 }
 
-export default { runDemo, startInFence, REPORT_SOURCE };
+export default { runDemo, startInFence, resolveEntry, REPORT_SOURCE };
