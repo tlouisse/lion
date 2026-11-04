@@ -46,6 +46,9 @@ const assetsBase = `${base}lion-playground-node-demo`;
           <div id="fence" class="preview"></div>
           <button id="run" type="button">Run</button>
           <p id="status" class="status" role="status">Not run yet.</p>
+          <h3>content check</h3>
+          <p id="content-check" class="status"></p>
+          <ul id="findings" aria-label="Content check findings"></ul>
           <div id="node-panes">
             <h3>output</h3>
             <pre id="output" aria-label="Program output"></pre>
@@ -82,6 +85,8 @@ const assetsBase = `${base}lion-playground-node-demo`;
       const tabs = document.querySelector('#tabs');
       const runButton = document.querySelector('#run');
       const status = document.querySelector('#status');
+      const contentCheck = document.querySelector('#content-check');
+      const findingsList = document.querySelector('#findings');
       const output = document.querySelector('#output');
       const nodePanes = document.querySelector('#node-panes');
       const filesList = document.querySelector('#files');
@@ -239,6 +244,19 @@ lion-input, lion-button {
 
         try {
           const { importMapPerPackage, packageMains, host, shareDemo } = await loadAssets();
+          const { checkDemoContent, describeContentReport } = await load(`${assetsBase}checkDemoContent.js`);
+
+          // What the content does, before it runs. In the fenced postures this is information; in a
+          // same-origin deployment (no second host available) it is the mitigation, because there nothing but
+          // the worker's policy and this review stands between a demo and this origin's cookies and storage.
+          const contentReport = checkDemoContent(filesOf(mode));
+          contentCheck.textContent = describeContentReport(contentReport);
+          findingsList.textContent = '';
+          for (const finding of contentReport.findings) {
+            const item = document.createElement('li');
+            item.textContent = `${finding.file}:${finding.line} ${finding.rule} (${finding.severity})`;
+            findingsList.appendChild(item);
+          }
           if (!packagesList.childElementCount) {
             for (const name of Object.keys(importMapPerPackage)) {
               const item = document.createElement('li');
