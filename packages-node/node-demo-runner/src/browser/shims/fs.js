@@ -328,6 +328,19 @@ export function __snapshot() {
   );
 }
 
+/**
+ * Test and host seam: empty the filesystem and reset the working directory.
+ *
+ * The runner re-runs a demo on request, and without this the previous run's output files would still
+ * be there — which would make a demo that asserts on its own output pass for the wrong reason.
+ */
+export function __reset() {
+  files.clear();
+  directories.clear();
+  directories.add('/');
+  currentDir = '/';
+}
+
 export default {
   ...syncApi,
   promises,
