@@ -86,6 +86,19 @@ export async function runDemo({
     /** @type {any} */ (target).process = nodeProcess;
   }
 
+  // In Node, `console` writes to stdout/stderr, so a demo's `console.log` belongs in the reported
+  // output rather than in the frame's own console where nobody sees it. Installed for the same reason
+  // as `process`: it is a global in Node, not an import.
+  const write = stream => (...args) =>
+    nodeProcess[stream].write(`${args.map(argument => String(argument)).join(' ')}\n`);
+  /** @type {any} */ (target).console = {
+    log: write('stdout'),
+    info: write('stdout'),
+    debug: write('stdout'),
+    warn: write('stderr'),
+    error: write('stderr'),
+  };
+
   let exitCode = 0;
   try {
     await importEntry(resolveEntry(payload, target));

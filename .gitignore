@@ -77,6 +77,7 @@ portal/src/content/docs
 portal/src/pages/**/_demos/
 ## Generated playground assets (see the portal's `playground` script)
 portal/public/lion-playground/
+portal/public/lion-playground-node-demo/
 
 ## Rocket ignore files (need to be the full relative path to the folders)
 docs/_merged_data/

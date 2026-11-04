@@ -151,6 +151,27 @@ async function measure(dir) {
   return { files, bytes };
 }
 
+/**
+ * The package folder for a repo path the primary rule does not cover.
+ *
+ * The first parent holding a package.json is the package root, and its own `name` is what the vendored
+ * url layout is keyed by — which is why this reads the filesystem instead of guessing from the path.
+ * @param {string} repoRelativePath
+ * @returns {{urlDir: string, sourceDir: string} | undefined}
+ */
+function resolveFromFilesystem(repoRelativePath) {
+  const segments = repoRelativePath.split('/');
+  for (let index = 1; index < segments.length; index += 1) {
+    const candidate = segments.slice(0, index + 1).join('/');
+    if (candidate === 'packages') continue; // the primary rule owns that layout
+    const pkgJsonPath = path.join(candidate, 'package.json');
+    if (!fs.existsSync(pkgJsonPath)) continue;
+    const name = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).name;
+    return name ? { urlDir: `node_modules/${name}`, sourceDir: candidate } : undefined;
+  }
+  return undefined;
+}
+
 async function vendorImportMapTargets() {
   const importMapDir = getArg('import-map');
   const destination = getArg('destination');
@@ -162,7 +183,14 @@ async function vendorImportMapTargets() {
   for (const entries of Object.values(importMapPerPackage)) {
     for (const repoRelativePath of Object.values(entries)) {
       entryCount += 1;
-      const resolved = toPackageFolders(toUrlPath(repoRelativePath));
+      let resolved = toPackageFolders(toUrlPath(repoRelativePath));
+      if (!resolved) {
+        // N.B. the rule above is written for the `packages/<x>` layout. A package that lives elsewhere —
+        // `packages-node/<x>`, which is what the node demo runner vendors — has no such mapping, so its
+        // folder is derived from the filesystem instead: the first parent holding a package.json is the
+        // package root, and its own `name` is what the url layout is keyed by.
+        resolved = resolveFromFilesystem(toUrlPath(repoRelativePath));
+      }
       if (!resolved) {
         throw new Error(`Cannot derive a package folder from import map value ${repoRelativePath}`);
       }

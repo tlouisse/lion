@@ -6,12 +6,12 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "astro build --force && node ./src/utils/rewrite-links.mjs && npm --prefix .. run prepare-lion-playground:vendor",
+    "build": "astro build --force && node ./src/utils/rewrite-links.mjs && npm --prefix .. run prepare-lion-playground:vendor && npm --prefix .. run prepare-node-demo:vendor",
     "dev": "astro dev --force",
     "playground": "npm --prefix .. run prepare-lion-playground:astro",
     "postinstall": "patch-package --patch-dir ../patches",
-    "prebuild": "npm run playground",
-    "predev": "npm run playground",
+    "prebuild": "npm run playground && npm --prefix .. run prepare-node-demo",
+    "predev": "npm run playground && npm --prefix .. run prepare-node-demo",
     "links": "node ./src/utils/rewrite-links.mjs",
     "preview": "node ./scripts/deploy-portal-preview.mjs",
     "sync": "astro sync"

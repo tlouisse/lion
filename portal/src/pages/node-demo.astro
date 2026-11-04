@@ -1,0 +1,164 @@
+---
+// Runs a demo file against the Node shim layer, inside an opaque-origin fence.
+//
+// The engine, the shims and the import map are shipped as static files (see the portal's `predev` and
+// `prebuild`), because they have to be served as real urls: the fence imports the engine by url, and the
+// engine's own shim imports must be the same urls the import map uses. Nothing executes in this page —
+// the demo runs in a `sandbox="allow-scripts"` frame with no access to this origin's cookies, storage,
+// parent dom or service workers.
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const assetsBase = `${base}lion-playground-node-demo`;
+
+const defaultDemo = `import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { basename, join } from 'path';
+
+writeFileSync('/out.txt', readFileSync('/input.txt', 'utf8').toUpperCase());
+console.log('wrote', basename('/out.txt'), '->', readFileSync('/out.txt', 'utf8'));
+console.log('files here:', readdirSync('/').join(', '));
+`;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Node package demo — Lion</title>
+  </head>
+  <body>
+    <main>
+      <h1>Node package demo</h1>
+      <p class="lede">
+        This runs a file through a dependency-free Node layer — <code>fs</code>, <code>path</code>,
+        <code>process</code>, <code>os</code>, <code>util</code>, <code>events</code>, <code>url</code> —
+        and can import the packages we vendor for it. The code never runs in this page: it runs in a
+        sandboxed frame that holds no privileges of this origin.
+      </p>
+
+      <div class="panes">
+        <section>
+          <h2>demo.js</h2>
+          <textarea id="demo" spellcheck="false" aria-label="Demo source"></textarea>
+        </section>
+        <section>
+          <h2>run</h2>
+          <button id="run" type="button">Run</button>
+          <p id="status" class="status" role="status">Not run yet.</p>
+          <h3>output</h3>
+          <pre id="output" aria-label="Program output"></pre>
+          <h3>files</h3>
+          <ul id="files" aria-label="Resulting files"></ul>
+          <h3>packages you can import</h3>
+          <ul id="packages" aria-label="Importable packages"></ul>
+          <p class="note">
+            A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
+            <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the
+            honest boundary, not a bug: those need a real runtime.
+          </p>
+        </section>
+      </div>
+      <div id="fence"></div>
+    </main>
+
+    <script>
+      const _base = import.meta.env.BASE_URL;
+      const base = _base.endsWith('/') ? _base : `${_base}/`;
+      // The runner's files are shipped as static assets (see the portal's predev/prebuild), next to the
+      // generated import map, so they are addressed as files and not through the client bundle.
+      const assetsBase = `${base}lion-playground-node-demo/`;
+      const textarea = document.querySelector('#demo');
+      const runButton = document.querySelector('#run');
+      const status = document.querySelector('#status');
+      const output = document.querySelector('#output');
+      const filesList = document.querySelector('#files');
+      const packagesList = document.querySelector('#packages');
+      const fence = document.querySelector('#fence');
+      textarea.value = `import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { basename } from 'path';
+
+writeFileSync('/out.txt', readFileSync('/input.txt', 'utf8').toUpperCase());
+console.log('wrote', basename('/out.txt'), '->', readFileSync('/out.txt', 'utf8'));
+console.log('files here:', readdirSync('/').join(', '));
+`;
+
+      const load = specifier => import(/* @vite-ignore */ specifier);
+
+      runButton.addEventListener('click', async () => {
+        runButton.disabled = true;
+        status.textContent = 'Running…';
+        output.textContent = '';
+        filesList.textContent = '';
+        // A fresh fence per run: the engine resets its own filesystem, but the frame is one document per
+        // run anyway, which keeps a failed run from leaving anything behind.
+        fence.innerHTML = '';
+
+        try {
+          const [importMapPerPackage, packageMains, { runDemoInFence }] = await Promise.all([
+            load(`${assetsBase}importMapPerPackage.js`).then(module => module.default),
+            load(`${assetsBase}packageMains.js`).then(module => module.default),
+            load(`${assetsBase}host.js`),
+          ]);
+
+          packagesList.textContent = '';
+          for (const name of Object.keys(importMapPerPackage)) {
+            const item = document.createElement('li');
+            item.textContent = name;
+            packagesList.appendChild(item);
+          }
+
+          const report = await runDemoInFence({
+            container: fence,
+            payload: { entry: '/demo.js', files: { '/demo.js': textarea.value, '/input.txt': 'hello from the demo' } },
+            importMapPerPackage,
+            packageMains,
+            assetsOrigin: location.origin,
+            engineUrl: `${assetsBase}engine.js`,
+          });
+
+          for (const entry of report.log) {
+            output.textContent += entry.stream === 'stderr' ? `! ${entry.text}` : entry.text;
+          }
+          filesList.textContent = '';
+          for (const [pathname, content] of Object.entries(report.files)) {
+            const item = document.createElement('li');
+            item.textContent = `${pathname} (${content.length} chars)`;
+            filesList.appendChild(item);
+          }
+          status.textContent = `Finished with exit code ${report.exitCode}.`;
+        } catch (error) {
+          status.textContent = `Could not run: ${error && error.message ? error.message : error}`;
+        } finally {
+          runButton.disabled = false;
+        }
+      });
+    </script>
+
+    <style>
+      main {
+        margin: 0 auto;
+        max-width: 68rem;
+        padding: 2rem 1.25rem 4rem;
+        font-family: system-ui, sans-serif;
+        line-height: 1.5;
+      }
+      h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
+      .lede { color: #444; max-width: 60ch; }
+      .panes { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; align-items: start; }
+      @media (max-width: 52rem) { .panes { grid-template-columns: 1fr; } }
+      h2 { font-size: 1rem; margin: 0 0 0.4rem; }
+      h3 { font-size: 0.9rem; margin: 1rem 0 0.3rem; }
+      textarea {
+        width: 100%; min-height: 18rem; box-sizing: border-box;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem;
+        padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px;
+      }
+      pre, ul { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; }
+      pre { margin: 0; min-height: 3rem; white-space: pre-wrap; }
+      ul { margin: 0; padding-left: 1.1rem; }
+      button { font: inherit; padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid #888; background: #fff; cursor: pointer; }
+      button[disabled] { opacity: 0.6; cursor: progress; }
+      .status { margin: 0.6rem 0 0; font-size: 0.9rem; }
+      .note { color: #555; font-size: 0.85rem; max-width: 60ch; }
+      #fence { height: 0; overflow: hidden; }
+    </style>
+  </body>
+</html>

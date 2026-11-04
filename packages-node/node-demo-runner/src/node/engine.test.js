@@ -92,6 +92,22 @@ describe('engine: runDemo', () => {
     assert.equal(resolveEntry({ entry: 'not-installed', files: {} }, globalThis), 'not-installed');
   });
 
+  it('routes a demo’s console.log to the reported output, the way Node writes it to stdout', async () => {
+    const target = /** @type {any} */ ({});
+    const report = await runDemo({
+      payload: { entry: 'demo.js', files: {} },
+      target,
+      importEntry: async () => {
+        target.console.log('to stdout');
+        target.console.error('to stderr');
+      },
+    });
+    assert.deepEqual(report.log, [
+      { stream: 'stdout', text: 'to stdout\n' },
+      { stream: 'stderr', text: 'to stderr\n' },
+    ]);
+  });
+
   it('starts every run from a clean filesystem', async () => {
     const first = await runDemo({
       payload: { entry: 'demo.js', files: {} },

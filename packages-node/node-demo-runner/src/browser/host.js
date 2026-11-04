@@ -141,11 +141,12 @@ export function runDemoInFence({
   iframe.srcdoc = buildFenceDocument({
     // The shims are reached through the engine's own directory, so the demo's `import 'fs'` and the
     // engine's `./shims/fs.js` are the same module: two urls would mean two module instances, each with
-    // its own filesystem.
+    // its own filesystem. The engine url is resolved against the document first, because `new URL` needs
+    // an absolute base and a page may well pass a root-relative one.
     importMap: buildFenceImportMap(
       { importMapPerPackage, packageMains },
       assetsOrigin,
-      new URL('./shims', engineUrl).href,
+      new URL('./shims', new URL(engineUrl, document.baseURI)).href,
     ),
     engineUrl,
     payload,
