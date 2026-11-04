@@ -224,6 +224,9 @@ try {
   const servedBy = {
     status: response?.status() ?? null,
     originAgentCluster: response?.headers()['origin-agent-cluster'] ?? null,
+    // The worker sets this itself, and only when the sandbox is configured on the same origin — the posture
+    // that has no browser boundary. Absent here means the sandbox has its own origin.
+    contentSecurityPolicy: response?.headers()['content-security-policy'] ?? null,
     controlled: await servedPage.evaluate(() => Boolean(navigator.serviceWorker.controller)),
   };
   await servedPage
