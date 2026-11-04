@@ -1,0 +1,14 @@
+{
+  "name": "@lion/node-demo-runner",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Runs a Node package in the browser against a virtual filesystem, so its behaviour can be demoed inside the docs playground.",
+  "main": "src/browser/index.js",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "mocha src/node/**/*.test.js"
+  }
+}
