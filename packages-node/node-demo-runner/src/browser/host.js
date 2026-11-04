@@ -107,20 +107,28 @@ export function buildFenceImportMap(
 }
 
 /**
- * @param {{importMap: {imports: {[specifier: string]: string}}, engineUrl: string, payload: unknown, assetsOrigin: string}} options
+ * @param {{importMap: {imports: {[specifier: string]: string}}, engineUrl: string, payload: unknown, assetsOrigin: string, styles?: string}} options
  * @returns {string} the srcdoc for the fence iframe
  */
-export function buildFenceDocument({ importMap, engineUrl, payload, assetsOrigin }) {
+export function buildFenceDocument({ importMap, engineUrl, payload, assetsOrigin, styles = '' }) {
+  // A demo's own css must not be able to close the style element it is embedded in.
+  const safeStyles = styles.replace(/<\/style/gi, '<\\/style');
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="${getFencePolicy(assetsOrigin)}">
 <script type="importmap">${toEmbeddedJson(importMap)}</script>
+<style>${safeStyles}</style>
 </head>
 <body>
 <script>window.__nodeDemoRunnerPayload = ${toEmbeddedJson(payload)};</script>
-<script type="module">import ${JSON.stringify(engineUrl)};</script>
+<script type="module">
+// Lion needs the scoped custom element registry when it runs in an opaque origin: the native one is not
+// available there, and without the polyfill a component never upgrades.
+import '${assetsOrigin}/node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js';
+import ${JSON.stringify(engineUrl)};
+</script>
 </body>
 </html>`;
 }
@@ -137,6 +145,7 @@ export function runDemoInFence({
   packageMains = {},
   assetsOrigin,
   engineUrl,
+  styles = '',
   timeoutMs = 30000,
 }) {
   const iframe = document.createElement('iframe');
@@ -156,6 +165,7 @@ export function runDemoInFence({
     engineUrl,
     payload,
     assetsOrigin,
+    styles,
   });
   container.appendChild(iframe);
 

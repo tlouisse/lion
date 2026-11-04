@@ -140,11 +140,22 @@ async function main() {
 
   // A package's barrel usually pulls in heavy dependencies: our own @lion/nodejs-helpers re-exports its
   // Babel and Prettier helpers from index.js, so a demo that wants one small function ends up loading the
-  // whole toolchain. With this flag the map also exposes each source file of the target package, so a
-  // demo can import the module the function actually lives in.
-  if (process.argv.includes('--expose-subpaths')) {
+  // whole toolchain. This exposes each source file of the packages named after the flag — or of every target
+  // when it is given bare — so a demo can import the module the function actually lives in.
+  const exposeArg = process.argv.indexOf('--expose-subpaths');
+  const exposeNames =
+    exposeArg === -1
+      ? null
+      : (process.argv[exposeArg + 1] && !process.argv[exposeArg + 1].startsWith('--')
+          ? process.argv[exposeArg + 1]
+          : ''
+        )
+          .split(/[,\s]+/)
+          .filter(Boolean);
+  if (exposeArg !== -1) {
     for (const pkgRootPath of packages) {
       const pkgJson = JSON.parse(fs.readFileSync(path.join(pkgRootPath, 'package.json'), 'utf8'));
+      if (exposeNames && exposeNames.length > 0 && !exposeNames.includes(pkgJson.name)) continue;
       const entries = importMapPerPackage[pkgJson.name] || {};
       for (const file of listJsFiles(pkgRootPath)) {
         const repoRelative = `${pkgRootPath}/${path.relative(pkgRootPath, file)}`;
@@ -158,6 +169,16 @@ async function main() {
   }
 
   const file = path.join(destination, 'importMapPerPackage.js');
+  // `--merge` adds to what is already there, so two runs with their own targets and their own dependency
+  // tracing (see --deps) end up as one map. Without it the file is written fresh.
+  if (process.argv.includes('--merge') && fs.existsSync(file)) {
+    const current = JSON.parse(
+      fs.readFileSync(file, 'utf8').replace(/^export default\s*/, '').replace(/;\s*$/, ''),
+    );
+    for (const [packageName, entries] of Object.entries(current)) {
+      importMapPerPackage[packageName] = { ...entries, ...importMapPerPackage[packageName] };
+    }
+  }
   await fs.promises.writeFile(
     file,
     `export default ${JSON.stringify(importMapPerPackage, null, 2)};\n`,
@@ -167,14 +188,23 @@ async function main() {
   /** @type {Record<string, string>} */
   const packageMains = {};
   for (const [packageName, entries] of Object.entries(importMapPerPackage)) {
-    const main = findPackageMain(Object.values(entries)[0], packageName);
+    // A package can end up with no entries at all (its export map resolved to nothing usable), and then there
+    // is no path to read a main from — skip it instead of crashing on the undefined value.
+    const firstPath = Object.values(entries)[0];
+    if (!firstPath) continue;
+    const main = findPackageMain(firstPath, packageName);
     if (main) packageMains[packageName] = main;
   }
   const mainsFile = path.join(destination, 'packageMains.js');
-  await fs.promises.writeFile(
-    mainsFile,
-    `export default ${JSON.stringify(packageMains, null, 2)};\n`,
-  );
+  /** @type {Record<string, string>} */
+  let allMains = packageMains;
+  if (process.argv.includes('--merge') && fs.existsSync(mainsFile)) {
+    const current = JSON.parse(
+      fs.readFileSync(mainsFile, 'utf8').replace(/^export default\s*/, '').replace(/;\s*$/, ''),
+    );
+    allMains = { ...current, ...packageMains };
+  }
+  await fs.promises.writeFile(mainsFile, `export default ${JSON.stringify(allMains, null, 2)};\n`);
 
   const total = Object.values(importMapPerPackage).reduce(
     (sum, entries) => sum + Object.keys(entries).length,

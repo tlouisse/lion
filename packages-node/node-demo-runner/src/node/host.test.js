@@ -120,7 +120,28 @@ describe('host: fence document', () => {
     assert.match(document, /http-equiv="Content-Security-Policy"/);
     assert.match(document, /<script type="importmap">/);
     assert.match(document, /window\.__nodeDemoRunnerPayload = /);
-    assert.match(document, /<script type="module">import "https:\/\/lion\.js\.org\/engine\.js";/);
+    assert.match(document, /import "\/engine\.js"|import "https:\/\/lion\.js\.org\/engine\.js"/);
+  });
+
+  it('imports the scoped custom element registry before the engine, for Lion in an opaque origin', () => {
+    assert.match(
+      document,
+      /import 'https:\/\/lion\.js\.org\/node_modules\/@webcomponents\/scoped-custom-element-registry\/scoped-custom-element-registry\.min\.js';/,
+    );
+    assert.ok(document.indexOf('scoped-custom-element-registry') < document.indexOf('engine.js'));
+  });
+
+  it('embeds demo styles, without letting them close the style element', () => {
+    const withStyles = buildFenceDocument({
+      importMap: { imports: {} },
+      engineUrl: `${assetsOrigin}/engine.js`,
+      payload: {},
+      assetsOrigin,
+      styles: 'lion-button { color: red; } /* </style><script>bad()</script> */',
+    });
+    assert.match(withStyles, /lion-button \{ color: red; \}/);
+    assert.equal(withStyles.includes('</style><script>bad()'), false);
+    assert.match(withStyles, /<\\\/style>/);
   });
 
   it('escapes the payload so a demo file cannot close the script tag', () => {
