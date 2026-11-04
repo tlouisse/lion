@@ -19,7 +19,8 @@
   "scripts": {
     "test": "npm run test:node",
     "test:node": "mocha src/node/**/*.test.js",
-    "test:watch": "mocha src/node/**/*.test.js --watch"
+    "test:watch": "mocha src/node/**/*.test.js --watch",
+    "verify:sw-served-sr": "node scripts/verify-sw-served-sr.js"
   },
   "dependencies": {
     "globby": "^14.1.0",
