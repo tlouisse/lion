@@ -12,16 +12,21 @@ export const REPORT_SOURCE = 'lion-node-demo-runner';
 
 /**
  * Content Security Policy for the fence. The same shape as the share fence: named by origin without a
- * path (a path without a trailing slash matches that exact path only), `connect-src blob:` so a demo
- * can read data it produced itself and nothing else, and no `unsafe-eval` — which is what actually
- * blocks `eval` and `new Function` in there.
+ * path (a path without a trailing slash matches that exact path only) and `connect-src blob:` so a demo
+ * can read data it produced itself and nothing else.
+ *
+ * `script-src` carries `'wasm-unsafe-eval'` and deliberately not `'unsafe-eval'`: WebAssembly compilation
+ * is gated behind eval, and packages in our own tree use it (`es-module-lexer`, reached through
+ * @lion/nodejs-helpers' util module), but JS eval itself stays blocked. Measured: without the wasm
+ * directive a demo that touches such a module reports "Compiling or instantiating WebAssembly module
+ * violates the following Content Security policy directive".
  * @param {string} assetsOrigin
  * @returns {string}
  */
 export function getFencePolicy(assetsOrigin) {
   return [
     "default-src 'none'",
-    `script-src 'unsafe-inline' blob: ${assetsOrigin}`,
+    `script-src 'unsafe-inline' 'wasm-unsafe-eval' blob: ${assetsOrigin}`,
     `style-src 'unsafe-inline' blob: ${assetsOrigin}`,
     `img-src blob: data: ${assetsOrigin}`,
     `font-src blob: data: ${assetsOrigin}`,

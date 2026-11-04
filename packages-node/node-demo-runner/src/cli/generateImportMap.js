@@ -87,6 +87,25 @@ function findPackageMain(repoRelativePath, packageName) {
   return path.join(root, entry).replace(/^\.\//, '');
 }
 
+/**
+ * @param {string} root
+ * @returns {string[]} every .js file in a package, minus what nobody would import
+ */
+function listJsFiles(root) {
+  const out = [];
+  /** @param {string} dir */
+  const walk = dir => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === 'node_modules' || entry.name === 'test' || entry.name === 'tests') continue;
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.js')) out.push(full);
+    }
+  };
+  walk(root);
+  return out.sort();
+}
+
 async function main() {
   const packages = getAll('package');
   const destination = getOne('destination');
@@ -118,6 +137,26 @@ async function main() {
   }
 
   await fs.promises.mkdir(destination, { recursive: true });
+
+  // A package's barrel usually pulls in heavy dependencies: our own @lion/nodejs-helpers re-exports its
+  // Babel and Prettier helpers from index.js, so a demo that wants one small function ends up loading the
+  // whole toolchain. With this flag the map also exposes each source file of the target package, so a
+  // demo can import the module the function actually lives in.
+  if (process.argv.includes('--expose-subpaths')) {
+    for (const pkgRootPath of packages) {
+      const pkgJson = JSON.parse(fs.readFileSync(path.join(pkgRootPath, 'package.json'), 'utf8'));
+      const entries = importMapPerPackage[pkgJson.name] || {};
+      for (const file of listJsFiles(pkgRootPath)) {
+        const repoRelative = `${pkgRootPath}/${path.relative(pkgRootPath, file)}`;
+        const exposed = `./${path.relative(pkgRootPath, file)}`;
+        if (!entries[exposed]) entries[exposed] = repoRelative;
+      }
+      importMapPerPackage[pkgJson.name] = entries;
+      // eslint-disable-next-line no-console
+      console.log(`${pkgJson.name}: exposed ${Object.keys(entries).length} subpaths`);
+    }
+  }
+
   const file = path.join(destination, 'importMapPerPackage.js');
   await fs.promises.writeFile(
     file,

@@ -40,12 +40,17 @@ describe('host: vendored urls', () => {
 });
 
 describe('host: fence policy', () => {
-  it('names the origin without a path and keeps unsafe-eval out', () => {
+  it('names the origin without a path, allows wasm but not js eval', () => {
     const policy = getFencePolicy(assetsOrigin);
-    assert.match(policy, /script-src 'unsafe-inline' blob: https:\/\/lion\.js\.org/);
-    assert.equal(policy.includes('unsafe-eval'), false);
+    assert.match(policy, /script-src 'unsafe-inline' 'wasm-unsafe-eval' blob: https:\/\/lion\.js\.org/);
     assert.match(policy, /connect-src blob:/);
     assert.match(policy, /default-src 'none'/);
+    // `'wasm-unsafe-eval'` contains the substring, so the check is on the tokens.
+    const scriptTokens = policy
+      .split(';')
+      .find(part => part.trim().startsWith('script-src'))
+      .split(/\s+/);
+    assert.equal(scriptTokens.includes("'unsafe-eval'"), false);
   });
 });
 
