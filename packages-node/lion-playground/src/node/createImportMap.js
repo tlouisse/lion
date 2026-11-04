@@ -142,29 +142,36 @@ export async function resolveExportMap(
 }
 
 /**
- * @type {string}
+ * Memoised per starting path, not in a single module-level slot.
+ *
+ * A single slot made the second call in a process reuse the first call's root, which is wrong as soon
+ * as one process generates maps for more than one package — the runner does exactly that — and it
+ * surfaced as `Package root path / is outside of the current working directory` from
+ * `getRelativePathFromCwd`.
+ * @type {Map<string, string>}
  */
-let _monoRootPath;
+const _monoRootPathsByStart = new Map();
 
 /**
  * @param {string} pkgRootPath
  * @returns {string}
  */
 function findMonoRootPath(pkgRootPath) {
-  if (typeof _monoRootPath === 'string') return _monoRootPath;
+  const cached = _monoRootPathsByStart.get(pkgRootPath);
+  if (typeof cached === 'string') return cached;
 
   let currentPath = pkgRootPath;
   // Are we in a monorepo? If so, find the closest parent with package.json / node_modules
-  while (!_monoRootPath && currentPath !== '/') {
+  while (currentPath !== '/') {
     currentPath = path.resolve(currentPath, '..');
     const potentialPackagePath = path.join(currentPath, 'package.json');
     if (fs.existsSync(potentialPackagePath)) {
-      _monoRootPath = currentPath;
-      return _monoRootPath;
+      _monoRootPathsByStart.set(pkgRootPath, currentPath);
+      return currentPath;
     }
   }
-  _monoRootPath = '';
-  return _monoRootPath;
+  _monoRootPathsByStart.set(pkgRootPath, '');
+  return '';
 }
 
 /**
