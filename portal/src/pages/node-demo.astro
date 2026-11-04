@@ -1,20 +1,19 @@
 ---
-// Two ways to run a demo, both inside an opaque-origin fence.
+// One mechanism: the playground's service worker. This page hosts `playground-ide`, so the editor, the file
+// tabs, the preview and the worker are all the playground's own — and the sandbox url is the deployment's, not
+// this page's: `PLAYGROUND_SANDBOX_BASE_URL` points it at a second origin where one exists (the upstream
+// design, and the boundary), and only a deployment that explicitly opts in runs it on this origin
+// (`PUBLIC_SAME_ORIGIN_SANDBOX`), where the worker sets a policy on the documents it serves and the content
+// check below is the mitigation.
 //
-// `browser` mode is the playground's own model: `index.html` *is* the document, `main.js` is its module, and
-// nothing else is involved — no shims, no virtual filesystem, no engine. Its document builder is the share
-// fence's, shipped next to this page (see the portal's predev/prebuild), so the rules for extracting the body
-// markup, rewriting a demo's relative imports to in-sandbox blob urls and importing the registry stay in one
-// place.
-//
-// `node` mode runs a file through the dependency-free Node layer: the engine seeds the shims' filesystem,
-// imports the entry and reports output, exit code and the resulting files.
-//
-// In both modes the code runs in a `sandbox="allow-scripts"` frame with no access to this origin's cookies,
-// storage, parent dom or service workers — and in both the frame is shown, so a component demo renders in the
-// preview rather than in this page.
+// Two modes, both served by that worker:
+//  - `browser`: index.html is the document, main.js its module — the playground's own model.
+//  - `node`: index.html boots `boot.js`, which reads the project's own files and hands them to the
+//    dependency-free Node layer (fs, path, process, os, util, events, url). Reading the files from the served
+//    filesystem is what makes an edit in the editor re-run with the new content.
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
-const assetsBase = `${base}lion-playground-node-demo`;
+const sandboxBaseUrl =
+  process.env.PLAYGROUND_SANDBOX_BASE_URL || `${base}lion-playground/playground-elements`;
 ---
 
 <html lang="en">
@@ -28,23 +27,20 @@ const assetsBase = `${base}lion-playground-node-demo`;
     <main>
       <h1>Demo</h1>
       <p class="lede">
-        Two modes, one fence. <strong>browser</strong> renders <code>index.html</code> as the document with
-        <code>main.js</code> as its module — the playground's own model. <strong>node</strong> runs a file
-        through a dependency-free Node layer (<code>fs</code>, <code>path</code>, <code>process</code>,
-        <code>os</code>, <code>util</code>, <code>events</code>, <code>url</code>) and can import the packages
-        we vendor, our components included. Nothing runs in this page.
+        The playground's own editor and preview, two modes. <strong>browser</strong> renders
+        <code>index.html</code> as the document with <code>main.js</code> as its module.
+        <strong>node</strong> runs the project's files through a dependency-free Node layer
+        (<code>fs</code>, <code>path</code>, <code>process</code>, <code>os</code>, <code>util</code>,
+        <code>events</code>, <code>url</code>) and can import the packages we vendor, our components included.
       </p>
 
+      <div id="modes" role="tablist" aria-label="Mode"></div>
+
+      <playground-ide id="ide" sandbox-base-url={sandboxBaseUrl}></playground-ide>
+
       <div class="panes">
-        <section class="editor-pane">
-          <div id="modes" role="tablist" aria-label="Mode"></div>
-          <div id="tabs" role="tablist" aria-label="Demo files"></div>
-          <playground-code-editor id="demo" line-numbers aria-label="Selected demo file"></playground-code-editor>
-        </section>
-        <section class="run-pane">
-          <h2>preview</h2>
-          <div id="fence" class="preview"></div>
-          <button id="run" type="button">Run</button>
+        <section>
+          <h2>run</h2>
           <p id="status" class="status" role="status">Not run yet.</p>
           <h3>content check</h3>
           <p id="content-check" class="status"></p>
@@ -55,42 +51,35 @@ const assetsBase = `${base}lion-playground-node-demo`;
             <h3>files</h3>
             <ul id="files" aria-label="Resulting files"></ul>
           </div>
+          <p class="note" id="mode-note"></p>
+        </section>
+        <section>
           <h3>packages you can import</h3>
           <ul id="packages" aria-label="Importable packages"></ul>
-          <p class="note" id="mode-note"></p>
+          <p class="note">
+            A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
+            <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
+            boundary, not a bug: those need a real runtime.
+          </p>
         </section>
       </div>
     </main>
 
     <script>
-      // The same editor the playground uses, on its own: the element imports Lit and CodeMirror and nothing
-      // else, so it works here — the *preview* of playground-elements cannot, because it is a
-      // PlaygroundConnectedElement that draws a project's service-worker-backed filesystem, and an opaque
-      // origin has the service worker api disabled.
-      import 'playground-elements/playground-code-editor.js';
+      import 'playground-elements/playground-ide.js';
 
       const _base = import.meta.env.BASE_URL;
       const base = _base.endsWith('/') ? _base : `${_base}/`;
-      // The runner's files are shipped as static assets (see the portal's predev/prebuild), next to the
-      // generated import map, so they are addressed as files and not through the client bundle.
       const assetsBase = `${base}lion-playground-node-demo/`;
-      // Absolute, because `new URL(relative, base)` needs an absolute base: the shim urls are derived from the
-      // engine's own directory so that the engine and a demo reach the *same* shim module.
+      // Absolute: the shim urls are derived from the engine's own directory, so that the engine and a demo
+      // reach the *same* shim module. A shim reached by two urls is two module instances with two filesystems.
       const engineUrl = new URL(`${assetsBase}engine.js`, location.href).href;
-
-      // The posture of the sandbox: configured, never inferred. `false` means the sandbox has its own origin
-      // (the browser is the boundary). `true` is the explicit opt-in for a deployment without a second host —
-      // the extension case — where the content check has to stand in for the missing boundary, and where the
-      // worker additionally sets a policy on the documents it serves. Inferring this from a hostname is how a
-      // deployment ends up insecure by accident, so it is a flag an operator sets on purpose.
+      // The posture is configured, never inferred: false means the sandbox has its own origin (the browser is
+      // the boundary), true is the explicit opt-in that makes the worker set a policy and the check a gate.
       const sameOriginSandbox = import.meta.env.PUBLIC_SAME_ORIGIN_SANDBOX === 'true';
 
-      const editor = document.querySelector('#demo');
-      const editorTypeFor = name =>
-        name.endsWith('.html') ? 'html' : name.endsWith('.css') ? 'css' : name.endsWith('.json') ? 'json' : 'js';
+      const ide = document.querySelector('#ide');
       const modeTabs = document.querySelector('#modes');
-      const tabs = document.querySelector('#tabs');
-      const runButton = document.querySelector('#run');
       const status = document.querySelector('#status');
       const contentCheck = document.querySelector('#content-check');
       const findingsList = document.querySelector('#findings');
@@ -99,16 +88,41 @@ const assetsBase = `${base}lion-playground-node-demo`;
       const filesList = document.querySelector('#files');
       const packagesList = document.querySelector('#packages');
       const modeNote = document.querySelector('#mode-note');
-      const fence = document.querySelector('#fence');
+
+      // Booted by the project's own index.html. It reads the project's files from the served filesystem — that
+      // is the mechanism, and it is what makes an edit in the editor re-run with the new content instead of
+      // re-running a payload baked into the document.
+      const bootSource = `const names = ['demo.js', 'styles.css', 'data.json'];
+const files = {};
+let styles = '';
+for (const name of names) {
+  const response = await fetch(name);
+  const content = await response.text();
+  if (name.endsWith('.css')) styles = content;
+  else files['/' + name] = { content };
+}
+if (styles) {
+  const style = document.createElement('style');
+  style.textContent = styles;
+  document.head.appendChild(style);
+}
+window.__nodeDemoRunnerPayload = { entry: '/demo.js', files };
+await import(${JSON.stringify(engineUrl)});
+`;
 
       const modes = {
         browser: {
           note: 'Browser mode: index.html is the document and main.js is its module. There is no filesystem to write to — the demo is the page.',
           files: {
-            'index.html': `<h1>A Lion component, in browser mode</h1>
-<lion-input label="Your name"></lion-input>
-<lion-button>Save</lion-button>
-`,
+            'index.html': [
+              '<h1>A Lion component, in browser mode</h1>',
+              '<lion-input label="Your name"></lion-input>',
+              '<lion-button>Save</lion-button>',
+              // A literal script end tag in this string would end the inline script that contains it, so the
+              // slash is escaped — the browser sees the tag, the HTML parser does not see the end of mine.
+              '<script type="module" src="./main.js"><\/script>',
+              '',
+            ].join('\n'),
             'main.js': `import '@lion/ui/define/lion-input.js';
 import '@lion/ui/define/lion-button.js';
 
@@ -120,8 +134,10 @@ button.addEventListener('click', () => {
           },
         },
         node: {
-          note: 'Node mode: the entry runs against the shim layer, so it reads and writes files and reports output. A builtin the layer does not answer — module, child_process, http — fails with “Failed to resolve module specifier”.',
+          note: 'Node mode: the entry runs against the shim layer, reading the project’s own files, so it reads and writes files and reports output. A builtin the layer does not answer — module, child_process, http — fails with “Failed to resolve module specifier”.',
           files: {
+            'index.html': '<script type="module" src="./boot.js"><\/script>\n',
+            'boot.js': bootSource,
             'demo.js': `import '@lion/ui/define/lion-button.js';
 import '@lion/ui/define/lion-input.js';
 import { readFileSync, writeFileSync, readdirSync } from 'fs';
@@ -144,6 +160,12 @@ console.log('components registered:', ['lion-button', 'lion-input'].every(t => c
 console.log('wrote', basename('/out.txt'), '->', readFileSync('/out.txt', 'utf8'));
 console.log('files here:', readdirSync('/').join(', '));
 `,
+            'data.json': `{
+  "title": "A Lion component, run by the Node layer",
+  "field": "Your name",
+  "action": "Save"
+}
+`,
             'styles.css': `body {
   font-family: system-ui, sans-serif;
   padding: 1rem;
@@ -157,61 +179,128 @@ lion-input, lion-button {
   margin-bottom: 0.5rem;
 }
 `,
-            'data.json': `{
-  "title": "A Lion component, rendered inside the fence",
-  "field": "Your name",
-  "action": "Save"
-}
-`,
           },
         },
       };
 
+      const contentTypeFor = name =>
+        name.endsWith('.html')
+          ? 'text/html'
+          : name.endsWith('.css')
+            ? 'text/css'
+            : name.endsWith('.json')
+              ? 'application/json'
+              : 'sample/js';
+
       let mode = 'browser';
-      let activeFile = null;
-      const filesOf = name => modes[name].files;
+      let assets = null;
+      const load = specifier => import(/* @vite-ignore */ specifier);
+      const loadAssets = async () => {
+        if (!assets) {
+          const [importMapPerPackage, packageMains, host] = await Promise.all([
+            load(`${assetsBase}importMapPerPackage.js`).then(module => module.default),
+            load(`${assetsBase}packageMains.js`).then(module => module.default),
+            load(`${assetsBase}host.js`),
+            load(`${assetsBase}checkDemoContent.js`).then(module => (assets = { ...assets, ...module })).catch(() => {}),
+          ]);
+          assets = { ...assets, importMapPerPackage, packageMains, host };
+        }
+        return assets;
+      };
 
-      const renderTabs = () => {
-        tabs.textContent = '';
-        for (const name of Object.keys(filesOf(mode))) {
-          const tab = document.createElement('button');
-          tab.type = 'button';
-          tab.setAttribute('role', 'tab');
-          tab.dataset.file = name;
-          tab.textContent = name;
-          tab.setAttribute('aria-selected', String(name === activeFile));
-          tab.addEventListener('click', () => selectFile(name));
-          tabs.appendChild(tab);
+      const report = { log: [], exitCode: null, files: {} };
+      const showReport = () => {
+        output.textContent = '';
+        for (const entry of report.log) {
+          output.textContent += entry.stream === 'stderr' ? `! ${entry.text}` : entry.text;
+        }
+        filesList.textContent = '';
+        for (const [pathname, content] of Object.entries(report.files || {})) {
+          const item = document.createElement('li');
+          item.textContent = `${pathname} (${content.length} chars)`;
+          filesList.appendChild(item);
         }
       };
 
-      const selectFile = name => {
-        // Only save what was actually being edited: on the first selection there is nothing to save, and
-        // writing the empty editor back would erase the file that was preloaded.
-        if (activeFile) filesOf(mode)[activeFile] = editor.value;
-        activeFile = name;
-        editor.type = editorTypeFor(name);
-        editor.value = filesOf(mode)[name];
-        for (const tab of tabs.querySelectorAll('[role="tab"]')) {
-          tab.setAttribute('aria-selected', String(tab.dataset.file === name));
-        }
-      };
+      // The report arrives from the served document, whose parent is this page. The marker is what identifies it:
+      // an identity check on one frame would reject the engine now that the worker serves it in a nested frame.
+      window.addEventListener('message', event => {
+        const data = event.data;
+        if (!data || data.source !== 'lion-node-demo-runner') return;
+        report.log = data.log || [];
+        report.exitCode = data.exitCode;
+        report.files = data.files || {};
+        showReport();
+        status.textContent = `Finished with exit code ${report.exitCode}.`;
+      });
 
-      const selectMode = name => {
-        if (activeFile) filesOf(mode)[activeFile] = editor.value;
+      const applyMode = async name => {
         mode = name;
-        activeFile = null;
         for (const tab of modeTabs.querySelectorAll('[role="tab"]')) {
           tab.setAttribute('aria-selected', String(tab.dataset.mode === name));
         }
         modeNote.textContent = modes[name].note;
-        // Node mode reports output and a file tree; browser mode is the document itself, so those panes have
-        // nothing to show and would only be misleading.
         nodePanes.hidden = name !== 'node';
         status.textContent = 'Not run yet.';
-        fence.textContent = '';
-        renderTabs();
-        selectFile(Object.keys(filesOf(mode))[0]);
+        report.log = [];
+        report.files = {};
+        output.textContent = '';
+        filesList.textContent = '';
+
+        const { importMapPerPackage, packageMains, host, checkDemoContent, describeContentReport, decideRun } =
+          await loadAssets();
+
+        if (!packagesList.childElementCount) {
+          for (const packageName of Object.keys(importMapPerPackage)) {
+            const item = document.createElement('li');
+            item.textContent = packageName;
+            packagesList.appendChild(item);
+          }
+        }
+
+        // What the content does, before the preview runs it. With the sandbox on its own origin this is
+        // information for a reviewer; on this origin it is the gate, because there nothing but the worker's
+        // policy and this review stands between a demo and this origin's cookies and storage.
+        const contentReport = checkDemoContent(modes[name].files);
+        const decision = decideRun({ report: contentReport, sameOriginSandbox });
+        contentCheck.textContent = `${describeContentReport(contentReport)} — ${decision.reason}`;
+        findingsList.textContent = '';
+        for (const finding of contentReport.findings) {
+          const item = document.createElement('li');
+          item.textContent = `${finding.file}:${finding.line} ${finding.rule} (${finding.severity})`;
+          findingsList.appendChild(item);
+        }
+        if (!decision.allow) {
+          ide.config = { importMap: { imports: {} }, files: {} };
+          status.textContent = decision.reason;
+          return;
+        }
+
+        const importMap = host.buildFenceImportMap(
+          { importMapPerPackage, packageMains },
+          location.origin,
+          new URL('./shims', engineUrl).href,
+        );
+        // The map has to be *in the document*, not only in the project config: the config drives
+        // playground-elements' own rewriting, while the packages a demo imports keep their bare specifiers and
+        // need the document's map. Written with an escaped slash, so the HTML parser does not read it as the end
+        // of the script that contains this string.
+        const importMapScript = `<script type="importmap">${JSON.stringify(importMap).replace(/</g, '\\u003c')}<\/script>`;
+
+        ide.config = {
+          importMap,
+          files: Object.fromEntries(
+            Object.entries(modes[name].files).map(([fileName, content]) => [
+              fileName,
+              {
+                filename: fileName,
+                contentType: contentTypeFor(fileName),
+                content: fileName.endsWith('.html') ? `${importMapScript}\n${content}` : content,
+              },
+            ]),
+          ),
+        };
+        status.textContent = 'Served by the worker; the preview runs it.';
       };
 
       for (const name of Object.keys(modes)) {
@@ -220,173 +309,39 @@ lion-input, lion-button {
         tab.setAttribute('role', 'tab');
         tab.dataset.mode = name;
         tab.textContent = name === 'browser' ? 'browser (html + js)' : 'node (modules + fs)';
-        tab.addEventListener('click', () => selectMode(name));
+        tab.addEventListener('click', () => applyMode(name));
         modeTabs.appendChild(tab);
       }
 
-      const load = specifier => import(/* @vite-ignore */ specifier);
-      let assets = null;
-      const loadAssets = async () => {
-        if (!assets) {
-          const [importMapPerPackage, packageMains, host, shareDemo] = await Promise.all([
-            load(`${assetsBase}importMapPerPackage.js`).then(module => module.default),
-            load(`${assetsBase}packageMains.js`).then(module => module.default),
-            load(`${assetsBase}host.js`),
-            load(`${assetsBase}shareDemo.js`),
-          ]);
-          assets = { importMapPerPackage, packageMains, host, shareDemo };
-        }
-        return assets;
-      };
-
-      runButton.addEventListener('click', async () => {
-        runButton.disabled = true;
-        status.textContent = 'Running…';
-        output.textContent = '';
-        filesList.textContent = '';
-        // A fresh fence per run: in node mode the engine resets its own filesystem, and the frame is one
-        // document per run anyway, which keeps a failed run from leaving anything behind.
-        fence.textContent = '';
-        if (activeFile) filesOf(mode)[activeFile] = editor.value;
-
-        try {
-          const { importMapPerPackage, packageMains, host, shareDemo } = await loadAssets();
-          const { checkDemoContent, describeContentReport, decideRun } = await load(`${assetsBase}checkDemoContent.js`);
-
-          // What the content does, before it runs. In the fenced postures this is information; in a
-          // same-origin deployment (no second host available) it is the mitigation, because there nothing but
-          // the worker's policy and this review stands between a demo and this origin's cookies and storage.
-          const contentReport = checkDemoContent(filesOf(mode));
-          const decision = decideRun({ report: contentReport, sameOriginSandbox });
-          contentCheck.textContent = `${describeContentReport(contentReport)} — ${decision.reason}`;
-          findingsList.textContent = '';
-          for (const finding of contentReport.findings) {
-            const item = document.createElement('li');
-            item.textContent = `${finding.file}:${finding.line} ${finding.rule} (${finding.severity})`;
-            findingsList.appendChild(item);
-          }
-          // With the sandbox on its own origin the findings are information; on this origin they are the gate.
-          if (!decision.allow) {
-            status.textContent = decision.reason;
-            return;
-          }
-          if (!packagesList.childElementCount) {
-            for (const name of Object.keys(importMapPerPackage)) {
-              const item = document.createElement('li');
-              item.textContent = name;
-              packagesList.appendChild(item);
-            }
-          }
-
-          if (mode === 'browser') {
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('sandbox', 'allow-scripts');
-            iframe.setAttribute('title', 'Demo preview');
-            iframe.srcdoc = shareDemo.buildFencedDocument(
-              {
-                entry: 'main.js',
-                htmlFile: 'index.html',
-                files: Object.fromEntries(
-                  Object.entries(filesOf('browser')).map(([name, content]) => [
-                    name,
-                    { content, contentType: name.endsWith('.html') ? 'text/html' : 'text/javascript' },
-                  ]),
-                ),
-              },
-              {
-                importMap: host.buildFenceImportMap(
-                  { importMapPerPackage, packageMains },
-                  location.origin,
-                  new URL('./shims', engineUrl).href,
-                ),
-                assetsOrigin: location.origin,
-              },
-            );
-            fence.appendChild(iframe);
-            status.textContent = 'Rendered as the document.';
-          } else {
-            const report = await host.runDemoInFence({
-              container: fence,
-              payload: {
-                entry: '/demo.js',
-                files: {
-                  ...Object.fromEntries(
-                    Object.entries(filesOf('node')).map(([name, content]) => [`/${name}`, { content }]),
-                  ),
-                  '/input.txt': { content: 'hello from the demo' },
-                },
-              },
-              importMapPerPackage,
-              packageMains,
-              assetsOrigin: location.origin,
-              engineUrl,
-              styles: filesOf('node')['styles.css'],
-            });
-
-            for (const entry of report.log) {
-              output.textContent += entry.stream === 'stderr' ? `! ${entry.text}` : entry.text;
-            }
-            for (const [pathname, content] of Object.entries(report.files)) {
-              const item = document.createElement('li');
-              item.textContent = `${pathname} (${content.length} chars)`;
-              filesList.appendChild(item);
-            }
-            status.textContent = `Finished with exit code ${report.exitCode}.`;
-          }
-        } catch (error) {
-          status.textContent = `Could not run: ${error && error.message ? error.message : error}`;
-        } finally {
-          runButton.disabled = false;
-        }
-      });
-
-      selectMode('browser');
+      applyMode('browser');
     </script>
 
     <style>
       main {
         margin: 0 auto;
-        max-width: 68rem;
+        max-width: 72rem;
         padding: 2rem 1.25rem 4rem;
         font-family: system-ui, sans-serif;
         line-height: 1.5;
       }
       h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
-      .lede { color: #444; max-width: 64ch; }
-      .panes { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; align-items: start; }
-      @media (max-width: 52rem) { .panes { grid-template-columns: 1fr; } }
       h2 { font-size: 1rem; margin: 0 0 0.4rem; }
       h3 { font-size: 0.9rem; margin: 1rem 0 0.3rem; }
-      #modes { display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+      .lede { color: #444; max-width: 70ch; }
+      #modes { display: flex; gap: 0.25rem; flex-wrap: wrap; margin: 0 0 0.75rem; }
       #modes [role='tab'] {
         font: inherit; font-size: 0.9rem; padding: 0.35rem 0.9rem; cursor: pointer;
         border: 1px solid #888; border-radius: 999px; background: #fff;
       }
       #modes [role='tab'][aria-selected='true'] { background: #2f2e41; color: #fff; border-color: #2f2e41; }
-      /* The file tabs, the way a playground presents a demo's files. */
-      #tabs { display: flex; gap: 0.25rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-      #tabs [role='tab'] {
-        font: inherit; font-size: 0.85rem; padding: 0.25rem 0.7rem; cursor: pointer;
-        border: 1px solid #ccc; border-bottom: none; border-radius: 6px 6px 0 0; background: #f4f4f4;
-      }
-      #tabs [role='tab'][aria-selected='true'] { background: #fff; border-color: #888; font-weight: 600; }
-      /* The editor is playground-elements' own code editor: CodeMirror with syntax highlighting and line
-         numbers, the same one the playground uses. */
-      #demo {
-        display: block; min-height: 22rem; border: 1px solid #888; border-radius: 0 6px 6px 6px; overflow: hidden;
-      }
-      /* The frame itself: a demo renders inside it, so this is the preview. */
-      .preview {
-        height: 14rem; border: 1px solid #ccc; border-radius: 6px; background: #fff; overflow: hidden;
-      }
-      .preview iframe { display: block; width: 100%; height: 100%; border: 0; }
+      /* The IDE brings its own editor, file tabs and preview; this only gives it room to be the playground. */
+      #ide { display: block; height: 30rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+      .panes { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; align-items: start; margin-top: 1.5rem; }
+      @media (max-width: 52rem) { .panes { grid-template-columns: 1fr; } }
       pre, ul { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; }
       pre { margin: 0; min-height: 3rem; white-space: pre-wrap; }
       ul { margin: 0; padding-left: 1.1rem; }
-      button { font: inherit; padding: 0.4rem 1rem; border-radius: 6px; border: 1px solid #888; background: #fff; cursor: pointer; }
-      #run { margin-top: 0.75rem; }
-      button[disabled] { opacity: 0.6; cursor: progress; }
-      .status { margin: 0.6rem 0 0; font-size: 0.9rem; }
+      .status { margin: 0; font-size: 0.9rem; }
       .note { color: #555; font-size: 0.85rem; max-width: 64ch; }
       [hidden] { display: none !important; }
     </style>
