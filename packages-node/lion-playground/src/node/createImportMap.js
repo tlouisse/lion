@@ -138,7 +138,25 @@ export async function resolveExportMap(
     );
   }
 
-  return exportMapPaths;
+  // An export-map value is supposed to be package relative. A wildcard entry can expand into an
+  // absolute path — seen in `unist-util-visit`, whose map yields exposed "1" -> "/" — and one such
+  // entry used to fail the whole map, because `path.resolve(root, '/')` collapses to the filesystem
+  // root and the caller then rejects it. Those entries are dropped and reported instead: they point
+  // outside the package, so there is nothing to map for them, while the rest of the map is fine.
+  const insidePackage = entry => {
+    const relative = path.relative(packageRootPath, path.resolve(packageRootPath, entry.internal));
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+  };
+  const usableExportMapPaths = exportMapPaths.filter(insidePackage);
+  for (const entry of exportMapPaths.filter(candidate => !insidePackage(candidate))) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `Skipping export map entry ${JSON.stringify(entry.exposed)} -> ` +
+        `${JSON.stringify(entry.internal)}: it resolves outside ${packageRootPath}`,
+    );
+  }
+
+  return usableExportMapPaths;
 }
 
 /**
