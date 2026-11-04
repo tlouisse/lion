@@ -64,18 +64,27 @@ export function toVendoredUrl(repoRelativePath, packageName, assetsOrigin) {
 }
 
 /**
- * @param {{importMapPerPackage: {[packageName: string]: {[exposed: string]: string}}}} packageMap
+ * @param {{importMapPerPackage: {[packageName: string]: {[exposed: string]: string}}, packageMains?: {[packageName: string]: string}}} packageMap
  * @param {string} assetsOrigin
  * @returns {{imports: {[specifier: string]: string}}} the map the fence document needs: the package's
  *   own modules plus a shim for every builtin the runner answers
  */
-export function buildFenceImportMap({ importMapPerPackage }, assetsOrigin) {
+export function buildFenceImportMap({ importMapPerPackage, packageMains = {} }, assetsOrigin) {
   const imports = {};
   for (const [packageName, entries] of Object.entries(importMapPerPackage)) {
     for (const [exposed, repoRelativePath] of Object.entries(entries)) {
       const subpath = exposed.replace(/^\.\/?/, '');
       const specifier = subpath ? `${packageName}/${subpath}` : packageName;
       imports[specifier] = toVendoredUrl(repoRelativePath, packageName, assetsOrigin);
+    }
+  }
+  // A package that declares its entry with `main`/`module` instead of `exports[".""]` — `unified`,
+  // `@babel/*` — has no entry for its own name above, and in a browser there is no Node resolution to
+  // fall back on, so `import "<name>"` fails outright. The CLI reads that entry from package.json,
+  // because the map cannot carry it. An existing entry is kept: it came from the export map.
+  for (const [packageName, repoRelativePath] of Object.entries(packageMains)) {
+    if (!imports[packageName]) {
+      imports[packageName] = toVendoredUrl(repoRelativePath, packageName, assetsOrigin);
     }
   }
   // The shims win over anything the package map claims for a builtin: a package must not be able to
@@ -105,13 +114,14 @@ export function buildFenceDocument({ importMap, engineUrl, payload, assetsOrigin
 
 /**
  * Mounts the fence and resolves with the engine's first report.
- * @param {{container: HTMLElement, payload: unknown, importMapPerPackage: {[packageName: string]: {[exposed: string]: string}}, assetsOrigin: string, engineUrl: string, timeoutMs?: number}} options
+ * @param {{container: HTMLElement, payload: unknown, importMapPerPackage: {[packageName: string]: {[exposed: string]: string}}, packageMains?: {[packageName: string]: string}, assetsOrigin: string, engineUrl: string, timeoutMs?: number}} options
  * @returns {Promise<{log: {stream: string, text: string}[], exitCode: number, files: {[pathname: string]: string}}>}
  */
 export function runDemoInFence({
   container,
   payload,
   importMapPerPackage,
+  packageMains = {},
   assetsOrigin,
   engineUrl,
   timeoutMs = 30000,
@@ -121,7 +131,7 @@ export function runDemoInFence({
   iframe.setAttribute('title', 'Node package demo');
   iframe.style.cssText = 'width:100%;height:100%;border:0;background:transparent';
   iframe.srcdoc = buildFenceDocument({
-    importMap: buildFenceImportMap({ importMapPerPackage }, assetsOrigin),
+    importMap: buildFenceImportMap({ importMapPerPackage, packageMains }, assetsOrigin),
     engineUrl,
     payload,
     assetsOrigin,

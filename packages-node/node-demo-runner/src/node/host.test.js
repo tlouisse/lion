@@ -67,6 +67,33 @@ describe('host: import map for the fence', () => {
     assert.equal(imports.path, 'https://lion.js.org/path.js');
   });
 
+  it('gives a bare specifier to a package whose export map has no "." (unified, @babel/*)', () => {
+    const { imports } = buildFenceImportMap(
+      {
+        importMapPerPackage: {
+          '@babel/parser': { './lib/index.js': 'node_modules/@babel/parser/lib/index.js' },
+        },
+        packageMains: { '@babel/parser': 'node_modules/@babel/parser/lib/index.js' },
+      },
+      assetsOrigin,
+    );
+    assert.equal(
+      imports['@babel/parser'],
+      'https://lion.js.org/node_modules/@babel/parser/lib/index.js',
+    );
+  });
+
+  it('does not let the package.json entry override one from the export map', () => {
+    const { imports } = buildFenceImportMap(
+      {
+        importMapPerPackage: { unified: { '.': 'node_modules/unified/index.js' } },
+        packageMains: { unified: 'node_modules/unified/not-this-one.js' },
+      },
+      assetsOrigin,
+    );
+    assert.equal(imports.unified, 'https://lion.js.org/node_modules/unified/index.js');
+  });
+
   it('lets the shims win over a package that claims a builtin name', () => {
     const hostile = {
       importMapPerPackage: { fs: { '.': 'node_modules/some-cdn-fs/index.js' } },
