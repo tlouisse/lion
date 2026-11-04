@@ -242,10 +242,17 @@ export async function createImportMap(
       });
       importMap[pkgJson.name] = importMap[pkgJson.name] || {};
       for (const { internal, exposed } of exportMapPaths) {
-        importMap[pkgJson.name][exposed] = getRelativePathFromCwd(
-          path.resolve(pkgRootPath, internal),
-          { cwd },
-        );
+        const resolvedInternalPath = path.resolve(pkgRootPath, internal);
+        try {
+          importMap[pkgJson.name][exposed] = getRelativePathFromCwd(resolvedInternalPath, { cwd });
+        } catch (error) {
+          // Without the specifier and the raw export-map value this is unfindable: the error used to
+          // only carry the resolved path, which says nothing about which dependency caused it.
+          throw new Error(
+            `Cannot map ${pkgJson.name} export ${JSON.stringify(exposed)} -> ${JSON.stringify(internal)} ` +
+              `(resolved to ${resolvedInternalPath}, package root ${pkgRootPath}): ${error.message}`,
+          );
+        }
       }
     } else {
       // If no exports, we assume the package is a module and add all files in the root
