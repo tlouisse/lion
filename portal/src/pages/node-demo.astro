@@ -45,6 +45,8 @@ const sandboxBaseUrl =
           <h3>content check</h3>
           <p id="content-check" class="status"></p>
           <ul id="findings" aria-label="Content check findings"></ul>
+          <h3>governance</h3>
+          <p id="governance" class="status" aria-label="Governance check"></p>
           <div id="node-panes">
             <h3>output</h3>
             <pre id="output" aria-label="Program output"></pre>
@@ -88,11 +90,14 @@ const sandboxBaseUrl =
       const filesList = document.querySelector('#files');
       const packagesList = document.querySelector('#packages');
       const modeNote = document.querySelector('#mode-note');
+      const governance = document.querySelector('#governance');
 
       // Booted by the project's own index.html. It reads the project's files from the served filesystem — that
       // is the mechanism, and it is what makes an edit in the editor re-run with the new content instead of
-      // re-running a payload baked into the document.
-      const bootSource = `const names = ['demo.js', 'styles.css', 'data.json'];
+      // re-running a payload baked into the document. Server rendering needs the same three things a browser
+      // needs and one it does not: an entry, the files that entry reads, and somewhere to write, plus a string
+      // instead of a mounted document.
+      const bootSourceFor = ({ names, entry }) => `const names = ${JSON.stringify(names)};
 const files = {};
 let styles = '';
 for (const name of names) {
@@ -106,7 +111,38 @@ if (styles) {
   style.textContent = styles;
   document.head.appendChild(style);
 }
-window.__nodeDemoRunnerPayload = { entry: '/demo.js', files };
+window.__nodeDemoRunnerPayload = { entry: ${JSON.stringify(entry)}, files };
+
+// What this document can actually do, measured *here* rather than assumed by the page. The worker's policy is
+// what stands in for a boundary in the same-origin posture, so its presence is checked instead of trusted.
+const policy = await fetch(location.href).then(
+  response => response.headers.get('content-security-policy'),
+  () => null,
+);
+let evalOutcome = 'allowed';
+try {
+  (0, eval)('1 + 1');
+} catch (error) {
+  evalOutcome = 'blocked: ' + error.name;
+}
+let crossOriginOutcome = 'reached';
+try {
+  await fetch('https://example.com/', { mode: 'no-cors' });
+} catch (error) {
+  crossOriginOutcome = 'blocked';
+}
+window.parent.postMessage(
+  {
+    source: 'lion-node-demo-runner-governance',
+    origin: location.origin,
+    controlled: Boolean(navigator.serviceWorker.controller),
+    policy,
+    eval: evalOutcome,
+    crossOrigin: crossOriginOutcome,
+  },
+  '*',
+);
+
 await import(${JSON.stringify(engineUrl)});
 `;
 
@@ -135,9 +171,10 @@ button.addEventListener('click', () => {
         },
         node: {
           note: 'Node mode: the entry runs against the shim layer, reading the project’s own files, so it reads and writes files and reports output. A builtin the layer does not answer — module, child_process, http — fails with “Failed to resolve module specifier”.',
+          names: ['demo.js', 'styles.css', 'data.json'],
+          entry: '/demo.js',
           files: {
             'index.html': '<script type="module" src="./boot.js"><\/script>\n',
-            'boot.js': bootSource,
             'demo.js': `import '@lion/ui/define/lion-button.js';
 import '@lion/ui/define/lion-input.js';
 import { readFileSync, writeFileSync, readdirSync } from 'fs';
@@ -177,6 +214,45 @@ h1 {
 lion-input, lion-button {
   display: block;
   margin-bottom: 0.5rem;
+}
+`,
+          },
+        },
+        ssr: {
+          note: 'SSR mode: the same Node layer renders a Lion component to a string with @lit-labs/ssr — no document, no mount, a string — and then the browser adopts exactly that string and lets the components hydrate in place. The string is printed below, so you can read what the server sent.',
+          names: ['server.js', 'data.json'],
+          entry: '/server.js',
+          files: {
+            'index.html': '<script type="module" src="./boot.js"><\/script>\n',
+            'server.js': `import { html } from 'lit';
+import { render, collectResult } from '@lit-labs/ssr';
+import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import { hydrate } from '@lit-labs/ssr-client';
+import '@lion/ui/define/lion-button.js';
+import '@lion/ui/define/lion-input.js';
+import { readFileSync } from 'fs';
+
+const data = JSON.parse(readFileSync('/data.json', 'utf8'));
+const template = html\`<h1>\${data.title}</h1>
+<lion-input label="\${data.field}"></lion-input>
+<lion-button>\${data.action}</lion-button>\`;
+
+// What a server does: no document, no mount — a string.
+const serverHtml = await collectResult(render(template));
+console.log('the server rendered', serverHtml.length, 'characters:');
+console.log(serverHtml);
+
+// What the browser then does with those very bytes: adopt them, and let the same components hydrate in place.
+document.body.innerHTML = serverHtml;
+await hydrate(template, document.body);
+await customElements.whenDefined('lion-button');
+await customElements.whenDefined('lion-input');
+console.log('hydrated; the button in the document is', document.querySelector('lion-button').constructor.name);
+`,
+            'data.json': `{
+  "title": "Rendered on the server, hydrated here",
+  "field": "Your name",
+  "action": "Save"
 }
 `,
           },
@@ -226,7 +302,26 @@ lion-input, lion-button {
       // an identity check on one frame would reject the engine now that the worker serves it in a nested frame.
       window.addEventListener('message', event => {
         const data = event.data;
-        if (!data || data.source !== 'lion-node-demo-runner') return;
+        if (!data) return;
+        if (data.source === 'lion-node-demo-runner-governance') {
+          // The posture is a promise the deployment makes; this is the measurement of whether it holds. In the
+          // same-origin posture the worker's policy is what stands in for the boundary, so a missing policy is a
+          // mismatch, not a detail. In the other posture there is no policy to show, and that is correct.
+          const hasPolicy = Boolean(data.policy);
+          const consistent = sameOriginSandbox ? hasPolicy : true;
+          governance.textContent = [
+            `served by the worker: ${data.controlled ? 'yes' : 'no'}`,
+            `policy: ${hasPolicy ? 'set by the worker' : 'none'}`,
+            `eval: ${data.eval}`,
+            `cross-origin fetch: ${data.crossOrigin}`,
+            sameOriginSandbox
+              ? `same-origin opt-in: ${consistent ? 'policy present, as promised' : 'NO POLICY — the promise does not hold'}`
+              : 'own-origin posture: no policy expected, the browser is the boundary',
+          ].join(' · ');
+          governance.dataset.consistent = String(consistent);
+          return;
+        }
+        if (data.source !== 'lion-node-demo-runner') return;
         report.log = data.log || [];
         report.exitCode = data.exitCode;
         report.files = data.files || {};
@@ -240,7 +335,7 @@ lion-input, lion-button {
           tab.setAttribute('aria-selected', String(tab.dataset.mode === name));
         }
         modeNote.textContent = modes[name].note;
-        nodePanes.hidden = name !== 'node';
+        nodePanes.hidden = name === 'browser';
         status.textContent = 'Not run yet.';
         report.log = [];
         report.files = {};
@@ -287,10 +382,15 @@ lion-input, lion-button {
         // of the script that contains this string.
         const importMapScript = `<script type="importmap">${JSON.stringify(importMap).replace(/</g, '\\u003c')}<\/script>`;
 
+        const projectFiles = { ...modes[name].files };
+        if (modes[name].entry) {
+          projectFiles['boot.js'] = bootSourceFor({ names: modes[name].names, entry: modes[name].entry });
+        }
+
         ide.config = {
           importMap,
           files: Object.fromEntries(
-            Object.entries(modes[name].files).map(([fileName, content]) => [
+            Object.entries(projectFiles).map(([fileName, content]) => [
               fileName,
               {
                 filename: fileName,
@@ -308,7 +408,11 @@ lion-input, lion-button {
         tab.type = 'button';
         tab.setAttribute('role', 'tab');
         tab.dataset.mode = name;
-        tab.textContent = name === 'browser' ? 'browser (html + js)' : 'node (modules + fs)';
+        tab.textContent = {
+          browser: 'browser (html + js)',
+          node: 'node (modules + fs)',
+          ssr: 'ssr (server render + hydrate)',
+        }[name];
         tab.addEventListener('click', () => applyMode(name));
         modeTabs.appendChild(tab);
       }
