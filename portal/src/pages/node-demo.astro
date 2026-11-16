@@ -46,12 +46,15 @@ const sandboxBaseUrl =
         <section class="pane">
           <h2>project</h2>
           <demo-tree id="file-tree"></demo-tree>
-          <playground-ide id="ide" sandbox-base-url={sandboxBaseUrl}></playground-ide>
+          <lion-tabs id="open-files"></lion-tabs>
+          <playground-project id="project" sandbox-base-url={sandboxBaseUrl}></playground-project>
+          <playground-file-editor id="editor"></playground-file-editor>
         </section>
 
         <section class="pane">
           <h2>run</h2>
           <p id="status" class="status" role="status">Not run yet.</p>
+          <playground-preview id="preview"></playground-preview>
           <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
           <div id="node-panes">
             <pre id="output" class="terminal" aria-label="Program output"></pre>
@@ -78,7 +81,9 @@ const sandboxBaseUrl =
     </main>
 
     <script>
-      import 'playground-elements/playground-ide.js';
+      import 'playground-elements/playground-project.js';
+      import 'playground-elements/playground-file-editor.js';
+      import 'playground-elements/playground-preview.js';
       // The file tree is Lion's own. `LionTree` was removed from the package and survives as
       // `docs/components/menu/src/DemoTree.js` — a `MultiLevelListMixin` host with `role="tree"` — which is the
       // configuration the menu system's own docs and migration guide point at.
@@ -100,7 +105,16 @@ const sandboxBaseUrl =
       // the boundary), true is the explicit opt-in that makes the worker set a policy and the check a gate.
       const sameOriginSandbox = import.meta.env.PUBLIC_SAME_ORIGIN_SANDBOX === 'true';
 
-      const ide = document.querySelector('#ide');
+      // Not `<playground-ide>`: the ide is just these three elements side by side, and composing them ourselves is
+      // what makes the editor tabs ours. The ide keeps the file editor, the preview and the tab bar in its own
+      // shadow root, and it has no public way to select a file — the tab bar sets `editor.filename` directly —
+      // whereas `project.config` is exactly the shape this page already builds.
+      const project = document.querySelector('#project');
+      const editor = document.querySelector('#editor');
+      const preview = document.querySelector('#preview');
+      editor.project = project;
+      preview.project = project;
+      preview.htmlFile = 'index.html';
       const modeTabs = document.querySelector('#modes');
       const status = document.querySelector('#status');
       const contentCheck = document.querySelector('#content-check');
@@ -142,7 +156,7 @@ const sandboxBaseUrl =
             parent.appendChild(item);
             if (child.file) {
               item.addEventListener('click', () => {
-                ide.activeFile = child.file;
+                openFile(child.file);
               });
             } else if (child.children.size) {
               const group = document.createElement('demo-tree');
@@ -155,6 +169,120 @@ const sandboxBaseUrl =
         mount.replaceWith(next);
         return next;
       };
+
+      // Editor tabs, à la StackBlitz: the open files are the user's list, not the filesystem's order — closing a tab
+      // does not delete a file, and the order is the user's to change. Lion's tabs own `role="tab"`, the roving
+      // tabindex and the aria wiring; a tab element is a plain div here so the close button can legitimately live
+      // inside it. Lion pairs every tab with a panel (it asserts equal counts), so each tab gets an empty one and the
+      // editor is the real panel — it cannot be re-parented into a Lion panel without re-initialising CodeMirror.
+      const openFilesBar = document.querySelector('#open-files');
+      let openFiles = [];
+      let activeFile = null;
+      let draggedFile = null;
+
+      const renderOpenFiles = () => {
+        openFilesBar.textContent = '';
+        openFiles.forEach(name => {
+          const tab = document.createElement('div');
+          tab.slot = 'tab';
+          tab.draggable = true;
+          tab.dataset.file = name;
+          const label = document.createElement('span');
+          label.textContent = name;
+          const close = document.createElement('button');
+          close.type = 'button';
+          close.className = 'close';
+          close.setAttribute('aria-label', `Close ${name}`);
+          close.textContent = '×';
+          close.addEventListener('click', event => {
+            event.stopPropagation();
+            closeOpenFile(name);
+          });
+          tab.append(label, close);
+          tab.addEventListener('dragstart', event => {
+            draggedFile = name;
+            tab.classList.add('dragging');
+            event.dataTransfer?.setData('text/plain', name);
+          });
+          tab.addEventListener('dragend', () => {
+            tab.classList.remove('dragging');
+            draggedFile = null;
+          });
+          tab.addEventListener('dragover', event => {
+            if (draggedFile && draggedFile !== name) event.preventDefault();
+          });
+          tab.addEventListener('drop', event => {
+            event.preventDefault();
+            moveOpenFile(draggedFile, name);
+          });
+          openFilesBar.appendChild(tab);
+          // Lion decorates its slotted tabs (`role="tab"`, `aria-controls` and the key handlers) from a
+          // `slotchange` listener, but measured it does not for tabs added after it upgraded: role stayed null and
+          // tabindex -1. So the page completes what Lion's own `setupButton` would have set rather than shipping a
+          // tablist without tab semantics — the roving tabindex is the ARIA APG one, 0 on the selected tab.
+          if (!tab.getAttribute('role')) tab.setAttribute('role', 'tab');
+          tab.setAttribute('aria-selected', String(name === activeFile));
+          tab.tabIndex = name === activeFile ? 0 : -1;
+          if (!tab.hasAttribute('aria-controls')) tab.setAttribute('aria-controls', 'editor');
+          const panel = document.createElement('div');
+          panel.slot = 'panel';
+          panel.hidden = true;
+          panel.setAttribute('aria-hidden', 'true');
+          openFilesBar.appendChild(panel);
+        });
+        openFilesBar.selectedIndex = Math.max(0, openFiles.indexOf(activeFile));
+      };
+
+      const openFile = name => {
+        if (!openFiles.includes(name)) openFiles = [...openFiles, name];
+        activeFile = name;
+        editor.filename = name;
+        renderOpenFiles();
+      };
+
+      const closeOpenFile = name => {
+        const index = openFiles.indexOf(name);
+        openFiles = openFiles.filter(file => file !== name);
+        if (activeFile === name) {
+          // Closing the active tab activates its neighbour rather than nothing, which is what an editor does.
+          activeFile = openFiles[Math.min(index, openFiles.length - 1)] ?? null;
+          if (activeFile) editor.filename = activeFile;
+        }
+        renderOpenFiles();
+      };
+
+      const moveOpenFile = (name, beforeName) => {
+        if (!name || name === beforeName) return;
+        const next = openFiles.filter(file => file !== name);
+        next.splice(next.indexOf(beforeName), 0, name);
+        openFiles = next;
+        renderOpenFiles();
+      };
+
+      const reorderOpenFile = (name, delta) => {
+        const from = openFiles.indexOf(name);
+        const to = from + delta;
+        if (to < 0 || to >= openFiles.length) return;
+        openFiles = openFiles.map((file, index) =>
+          index === from ? openFiles[to] : index === to ? openFiles[from] : file,
+        );
+        renderOpenFiles();
+      };
+
+      openFilesBar.addEventListener('click', event => {
+        const tab = event.target.closest('[slot="tab"]');
+        if (tab?.dataset.file) openFile(tab.dataset.file);
+      });
+      // Dragging is not accessible on its own, so the same move has a keyboard form. It is bound on the document
+      // because a tab div is not reliably focusable — Lion manages the roving tabindex itself — and it acts on the
+      // selected tab. Events from inside the editor are left alone: CodeMirror has its own use for Alt+arrows.
+      document.addEventListener('keydown', event => {
+        if (!event.altKey || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+        if (event.target instanceof Element && event.target.closest('#editor')) return;
+        if (!activeFile) return;
+        event.preventDefault();
+        reorderOpenFile(activeFile, event.key === 'ArrowLeft' ? -1 : 1);
+      });
 
       // One theme mechanism, not two: the portal already stores this choice and maps `data-theme` onto
       // `color-scheme` in its own stylesheet, so this switch drives that one.
@@ -480,7 +608,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         }
         fileTree = renderTree(fileTree, projectFiles);
 
-        ide.config = {
+        project.config = {
           importMap,
           files: Object.fromEntries(
             Object.entries(projectFiles).map(([fileName, content]) => [
@@ -493,6 +621,10 @@ console.log('hydrated; the button in the document is', document.querySelector('l
             ]),
           ),
         };
+        editor.filename = modes[name].entry ? modes[name].entry.replace(/^\//, '') : 'index.html';
+        openFiles = Object.keys(projectFiles);
+        activeFile = editor.filename;
+        renderOpenFiles();
         status.textContent = 'Served by the worker; the preview runs it.';
         // Browser mode posts no report — nothing but the preview runs there — so the wait ends when the config is
         // in place rather than when a message arrives, or the indicator would spin forever.
@@ -558,7 +690,30 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       #file-tree [role='treeitem']:hover { background: #e8e8e8; }
       #file-tree demo-tree { display: block; margin-left: 0.85rem; }
       html[data-theme='dark'] #file-tree [role='treeitem']:hover { background: #2a2a30; }
-      #ide { display: block; height: 28rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+      #editor { display: block; height: 28rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+      #preview { display: block; height: 16rem; margin-bottom: 0.75rem; }
+      html[data-theme='dark'] #editor { border-color: #3a3a3a; }
+
+      #open-files { display: block; position: relative; z-index: 1; }
+      #open-files [slot='tab'] {
+        display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; user-select: none;
+        font-size: 0.8rem; font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
+        padding: 0.2rem 0.35rem 0.2rem 0.6rem; margin-right: 2px; border: 1px solid #ccc;
+        border-bottom: none; border-radius: 4px 4px 0 0; background: #f4f4f4;
+      }
+      #open-files [slot='tab'][selected] { background: #fff; font-weight: 600; }
+      #open-files [slot='tab'].dragging { opacity: 0.4; }
+      #open-files [slot='tab'] .close {
+        border: none; background: transparent; cursor: pointer; padding: 0 0.15rem; line-height: 1;
+        font-size: 0.9rem; color: #666; border-radius: 3px;
+      }
+      #open-files [slot='tab'] .close:hover { background: #ddd; color: #000; }
+      /* Lion's tabs require a panel per tab; the editor is the panel here, so the empty ones take no space. */
+      #open-files [slot='panel'] { display: none !important; }
+      html[data-theme='dark'] #open-files [slot='tab'] { background: #26262c; border-color: #3a3a3a; color: #ddd; }
+      html[data-theme='dark'] #open-files [slot='tab'][selected] { background: #16161a; color: #fff; }
+      html[data-theme='dark'] #open-files [slot='tab'] .close { color: #aaa; }
+      html[data-theme='dark'] #open-files [slot='tab'] .close:hover { background: #3a3a42; color: #fff; }
 
       /* The output is a terminal, because that is what the program is writing to. */
       .terminal {
