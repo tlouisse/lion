@@ -957,11 +957,6 @@ console.log('hydrated; the button in the document is', document.querySelector('l
          of a 24px page inset with generous padding inside the panels. The greys stay this page's: #141416 behind,
          #1b1b1e for surfaces, #2a2a30 for borders. */
       main { padding: 24px; padding-top: 72px; }
-      .playground-app .toolbar,
-      .toolbar.playground-app {
-        min-height: 64px; display: flex; align-items: center; gap: 12px;
-        border-radius: 16px; padding: 0 20px; margin-bottom: 16px;
-      }
       .playground-app #modes { gap: 8px; }
       .playground-app #modes [role='tab'] {
         border: 1px solid #2a2a30; border-radius: 6px; background: transparent; color: #9aa0a6;
@@ -988,10 +983,11 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app #open-files [slot='tab'] { flex: 0 0 auto; white-space: nowrap; color: #9aa0a6; }
       .playground-app #open-files [slot='tab'][aria-selected='true'] { color: #f2f2f2; }
 
-      /* The wordmark, made slick: the accent half goes grey, and only grey. No lighter weight and no outline — the
-         component strokes this half (`paint-order: stroke fill` with a dark stroke for light chrome), which on grey
-         reads as a smudge, and a thinner "ui" reads as two typefaces rather than one mark. Page-scoped on purpose:
-         the same component is the docs site's logo, where the yellow is deliberate. */
+      /* The wordmark: both halves grey-and-plain — the accent half in grey, and *both* at weight 400 so the mark reads
+         as one word at one weight. The component sets 600 on `.wordmark-glyphs`, so the selector has to match that
+         specificity and beat it on order. Page-scoped on purpose: the same component is the docs site's logo, where
+         the yellow and the heavier weight are deliberate. */
+      .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
       .logo-text-svg text.wordmark-accent { fill: #9aa0a6; stroke: none; }
 
       /* --- second pass, from reading the render back ---------------------------------------------------------- */
@@ -1226,16 +1222,26 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       /* Breathing room, and one left edge for everything in the run pane. */
       .playground-app .pane h2 { margin-bottom: 0.6rem; padding-bottom: 0.35rem; }
       .playground-app .lede { margin-bottom: 1.25rem; }
-      .playground-app #file-tree { padding: 0.3rem 0.2rem; }
+      /* The tree's own padding goes to zero so its rows start on the same x as the tabs above them — measured 113 vs
+         116.2 with the 0.2rem it carried. The margin below it stays the 8px that separates the two. */
+      .playground-app #file-tree { padding: 0; margin-bottom: 8px; }
       .playground-app #file-tree [role='treeitem'] { padding: 0.15rem 0.35rem; }
       .playground-app #open-files { margin-bottom: 0; }
       .playground-app #files { padding-left: 1.1rem; margin-top: 0; }
 
-      /* The toolbar is the app's title bar: the controls belong to the surface they drive, not to the page around it. */
+      /* One toolbar rule, px only: two blocks were both claiming this element and rem values won by order
+         (measured paddingTop 8.8px against the panels' 20px). */
       .playground-app .toolbar,
       .toolbar.playground-app {
-        background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 6px;
-        padding: 0.55rem 0.7rem; margin-bottom: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 52px;
+        padding: 0 20px;
+        margin-bottom: 16px;
+        background: #1b1b1e;
+        border: 1px solid #2a2a30;
+        border-radius: 16px;
       }
       .playground-app #modes [role='tab'] { color: #b9b9c0; border-color: #3a3a42; }
       .playground-app #modes [role='tab'][aria-selected='true'] {
