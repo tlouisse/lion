@@ -919,6 +919,9 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         background: #141416 !important;
         backdrop-filter: none !important;
         border-bottom: 1px solid #2a2a30 !important;
+        /* The wordmark's first half is `fill="currentColor"`, so it inherits this and went near-black on the new
+           dark bar. Setting the header's own colour is what fixes it — targeting a/span/li never would. */
+        color: #f2f2f2;
       }
       html body header.site-header a,
       html body header.site-header span,
