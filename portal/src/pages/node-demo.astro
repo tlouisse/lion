@@ -1077,8 +1077,10 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         .playground.playground-app { grid-template-columns: 1fr; gap: 12px; }
         .playground-app .toolbar,
         .toolbar.playground-app { min-height: 0; padding: 10px 12px; border-radius: 12px; }
-        .playground-app #modes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-        .playground-app #modes [role='tab'] { min-height: 40px; white-space: nowrap; }
+        /* The mode buttons wrap on a phone — nothing cut off. Horizontal scrolling belongs to the file tabs, which
+           is what it was asked for; a control that is half off-screen reads as broken. */
+        .playground-app #modes { flex-wrap: wrap; overflow-x: visible; }
+        .playground-app #modes [role='tab'] { min-height: 40px; white-space: normal; }
         .playground-app .pane { border-radius: 12px; padding: 14px; }
         .playground-app #editor { height: 22rem; }
         .playground-app #preview { height: 22rem; }
