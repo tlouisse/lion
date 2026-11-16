@@ -30,6 +30,14 @@ const sandboxBaseUrl =
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
     <link rel="stylesheet" href={`${base}styles/theme.css`} />
     <link rel="stylesheet" href={`${base}styles/styles.css`} />
+    {/* CodeSandbox's interface, measured, runs on Inter and draws its UI icons from Material Symbols Outlined —
+        so this page loads the same two, and the icons are the same glyphs rather than lookalikes. */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <TopNav />
@@ -53,7 +61,7 @@ const sandboxBaseUrl =
       </div>
 
       <div class="playground playground-app">
-        <section class="pane">
+        <section class="pane" id="pane-project">
           <h2>project</h2>
           <demo-tree id="file-tree"></demo-tree>
           <div class="tab-scroller">
@@ -63,7 +71,7 @@ const sandboxBaseUrl =
           <playground-file-editor id="editor"></playground-file-editor>
         </section>
 
-        <section class="pane">
+        <section class="pane" id="pane-run">
           <h2>run</h2>
           <p id="status" class="status" role="status">Not run yet.</p>
           <playground-preview id="preview"></playground-preview>
@@ -92,6 +100,23 @@ const sandboxBaseUrl =
           <p class="note" id="mode-note"></p>
         </section>
       </div>
+
+      <!-- CodeSandbox's mobile shape: one thing at a time, switched from a fixed bar at the bottom, drawn with the
+           icons their interface actually uses (Material Symbols Outlined — measured — over Inter, also measured). -->
+      <nav class="mobile-tabs" aria-label="View">
+        <button type="button" data-view="code" class="is-active">
+          <span class="material-symbols-outlined" aria-hidden="true">folder</span>
+          <span>Project</span>
+        </button>
+        <button type="button" data-view="preview">
+          <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+          <span>Preview</span>
+        </button>
+        <button type="button" data-view="output">
+          <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+          <span>Output</span>
+        </button>
+      </nav>
     </main>
 
     <script>
@@ -149,6 +174,25 @@ const sandboxBaseUrl =
       // (measured: the element defined, `aria-level`/`aria-posinset`/`aria-setsize` never set, no `role="tree"`).
       // A fresh host with its children already in place is the condition the docs' static markup has, so that is
       // what this builds — and the items are the project's flat file list turned into that nesting.
+      // File-type icons come from the same Material Symbols set the mobile bar uses, so the tree and the tabs read
+      // at a glance the way an editor's do.
+      const iconForFile = name => {
+        if (name.endsWith('.html')) return 'html';
+        if (name.endsWith('.js') || name.endsWith('.mjs')) return 'javascript';
+        if (name.endsWith('.json')) return 'data_object';
+        if (name.endsWith('.css')) return 'css';
+        if (name.endsWith('.md')) return 'description';
+        return 'draft';
+      };
+
+      const withIcon = (element, iconName) => {
+        const icon = document.createElement('span');
+        icon.className = 'material-symbols-outlined';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = iconName;
+        element.prepend(icon);
+      };
+
       const renderTree = (mount, files) => {
         const root = { children: new Map() };
         for (const name of Object.keys(files)) {
@@ -166,7 +210,10 @@ const sandboxBaseUrl =
           for (const [part, child] of node.children) {
             const item = document.createElement('div');
             item.setAttribute('role', 'treeitem');
-            item.textContent = part;
+            const label = document.createElement('span');
+            label.textContent = part;
+            item.append(label);
+            withIcon(item, child.file ? iconForFile(part) : 'folder');
             parent.appendChild(item);
             if (child.file) {
               item.dataset.file = child.file;
@@ -214,6 +261,7 @@ const sandboxBaseUrl =
             closeOpenFile(name);
           });
           tab.append(label, close);
+          withIcon(tab, iconForFile(name));
           tab.addEventListener('dragstart', event => {
             draggedFile = name;
             tab.classList.add('dragging');
@@ -681,6 +729,21 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         modeTabs.appendChild(tab);
       }
 
+      // CodeSandbox's mobile shape: one view at a time, chosen from the fixed bar. The attribute drives the CSS, so
+      // the show/hide rules live in one place, and the bar is inert above the breakpoint it is hidden at.
+      const mobileTabs = document.querySelector('.mobile-tabs');
+      const setMobileView = view => {
+        document.body.dataset.mobileView = view;
+        for (const button of mobileTabs.querySelectorAll('button')) {
+          button.classList.toggle('is-active', button.dataset.view === view);
+        }
+      };
+      mobileTabs.addEventListener('click', event => {
+        const button = event.target.closest('button[data-view]');
+        if (button) setMobileView(button.dataset.view);
+      });
+      setMobileView('code');
+
       applyMode('browser');
     </script>
 
@@ -901,10 +964,11 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app #open-files [slot='tab'] { flex: 0 0 auto; white-space: nowrap; color: #9aa0a6; }
       .playground-app #open-files [slot='tab'][aria-selected='true'] { color: #f2f2f2; }
 
-      /* The wordmark, made slick: the accent half goes grey and lighter, so the mark reads as one word with a quieter
-         second half instead of two colours shouting at each other. Page-scoped on purpose — the same component is
-         the docs site's logo, where the yellow is deliberate. */
-      .logo-text-svg text.wordmark-accent { fill: #9aa0a6; font-weight: 400; letter-spacing: -0.01em; }
+      /* The wordmark, made slick: the accent half goes grey, and only grey. No lighter weight and no outline — the
+         component strokes this half (`paint-order: stroke fill` with a dark stroke for light chrome), which on grey
+         reads as a smudge, and a thinner "ui" reads as two typefaces rather than one mark. Page-scoped on purpose:
+         the same component is the docs site's logo, where the yellow is deliberate. */
+      .logo-text-svg text.wordmark-accent { fill: #9aa0a6; stroke: none; }
 
       /* --- second pass, from reading the render back ---------------------------------------------------------- */
 
@@ -970,6 +1034,103 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app .checks summary { list-style: none; }
       .playground-app .checks summary::after { content: '⌄'; float: right; opacity: 0.6; }
       .playground-app .checks[open] summary::after { content: '⌃'; }
+
+      /* --- CodeSandbox's mobile shape -------------------------------------------------------------------------
+         Measured on their interface: the UI runs on Inter and draws its icons from Material Symbols Outlined, so
+         both are loaded and the glyphs are the real ones. The shell is one view at a time, switched from a fixed
+         bar at the bottom, with 44px touch targets — what a phone-width editor needs and what this page did not
+         have. The view is one attribute on <body>; no show/hide logic is duplicated in script. */
+      main,
+      .playground-app,
+      .mobile-tabs { font-family: Inter, system-ui, sans-serif; }
+
+      /* Material Symbols turns ligature text into an icon: without these mechanics the words show up as words. */
+      .material-symbols-outlined {
+        font-family: 'Material Symbols Outlined', sans-serif;
+        font-weight: normal;
+        font-style: normal;
+        font-size: 20px;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        display: inline-block;
+        font-feature-settings: 'liga';
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .mobile-tabs { display: none; }
+
+      /* File-type icons in the tree and the tabs, from the same set as the bar. */
+      .playground-app #file-tree [role='treeitem'],
+      .playground-app #open-files [slot='tab'] { display: inline-flex; align-items: center; gap: 6px; }
+      .playground-app #file-tree [role='treeitem'] .material-symbols-outlined,
+      .playground-app #open-files [slot='tab'] .material-symbols-outlined { font-size: 16px; color: #8b8b95; }
+
+      @media (max-width: 48rem) {
+        main { padding: 12px 12px 84px; }
+        main > header { padding: 14px 16px; border-radius: 12px; }
+        main > header .lede { display: none; }
+        .playground-app .playground,
+        .playground.playground-app { grid-template-columns: 1fr; gap: 12px; }
+        .playground-app .toolbar,
+        .toolbar.playground-app { min-height: 0; padding: 10px 12px; border-radius: 12px; }
+        .playground-app #modes { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+        .playground-app #modes [role='tab'] { min-height: 40px; white-space: nowrap; }
+        .playground-app .pane { border-radius: 12px; padding: 14px; }
+        .playground-app #editor { height: 22rem; }
+        .playground-app #preview { height: 22rem; }
+
+        /* One view at a time. */
+        body[data-mobile-view='code'] #pane-run { display: none; }
+        body[data-mobile-view='preview'] #pane-project,
+        body[data-mobile-view='output'] #pane-project { display: none; }
+        body[data-mobile-view='preview'] #node-panes,
+        body[data-mobile-view='preview'] .checks,
+        body[data-mobile-view='preview'] #mode-note { display: none; }
+        body[data-mobile-view='output'] #preview { display: none; }
+
+        /* The bar: fixed, safe-area aware, one icon and one word per view. */
+        .mobile-tabs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          position: fixed;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          z-index: 20;
+          background: #141416;
+          border-top: 1px solid #2a2a30;
+          padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+        .mobile-tabs button {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          min-height: 56px;
+          padding: 6px 0;
+          border: none;
+          background: transparent;
+          color: #9aa0a6;
+          font: inherit;
+          font-size: 11px;
+          cursor: pointer;
+        }
+        .mobile-tabs button .material-symbols-outlined { font-size: 22px; }
+        .mobile-tabs button.is-active { color: #1389fd; }
+        .mobile-tabs button:active { background: #1b1b1e; }
+
+        /* Phone-sized hit areas, and a tree that does not eat the editor: it scrolls inside a capped height, since
+           a phone shows one view at a time and the code is what it is showing. */
+        .playground-app #file-tree { max-height: 9rem; overflow: auto; }
+        .playground-app #file-tree [role='treeitem'] { min-height: 40px; font-size: 13px; }
+        .playground-app #open-files [slot='tab'] { min-height: 40px; }
+        .playground-app #open-files [slot='tab'] .close { min-width: 28px; min-height: 28px; font-size: 16px; }
+      }
       /* Breathing room, and one left edge for everything in the run pane. */
       .playground-app .pane h2 { margin-bottom: 0.6rem; padding-bottom: 0.35rem; }
       .playground-app .lede { margin-bottom: 1.25rem; }
