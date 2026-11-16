@@ -797,7 +797,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       /* Two columns, the way the providence playground lays out: the project on the left, what it does on the right. */
       .playground {
         display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-        gap: 1.5rem; align-items: start;
+        gap: 1.5rem; align-items: stretch;
       }
       @media (max-width: 60rem) { .playground { grid-template-columns: 1fr; } }
       .pane { min-width: 0; }
