@@ -25,50 +25,65 @@ const sandboxBaseUrl =
   </head>
   <body>
     <main>
-      <h1>Demo</h1>
-      <p class="lede">
-        The playground's own editor and preview, two modes. <strong>browser</strong> renders
-        <code>index.html</code> as the document with <code>main.js</code> as its module.
-        <strong>node</strong> runs the project's files through a dependency-free Node layer
-        (<code>fs</code>, <code>path</code>, <code>process</code>, <code>os</code>, <code>util</code>,
-        <code>events</code>, <code>url</code>) and can import the packages we vendor, our components included.
-      </p>
+      <header>
+        <h1>Lion playground</h1>
+        <p class="lede">
+          Three modes, one mechanism: the playground's service worker serves this project — no WebContainer, no
+          second runtime. <strong>browser</strong> renders <code>index.html</code> with <code>main.js</code>;
+          <strong>node</strong> runs the project's own files through a dependency-free Node layer
+          (<code>fs</code>, <code>path</code>, <code>process</code>, <code>os</code>, <code>util</code>,
+          <code>events</code>, <code>url</code>); <strong>ssr</strong> renders a component to a string with
+          <code>@lit-labs/ssr</code> and then hydrates it.
+        </p>
+      </header>
 
-      <div id="modes" role="tablist" aria-label="Mode"></div>
+      <div class="toolbar">
+        <div id="modes" role="tablist" aria-label="Mode"></div>
+        <lion-switch id="theme-switch" name="theme" label="Dark mode"></lion-switch>
+      </div>
 
-      <playground-ide id="ide" sandbox-base-url={sandboxBaseUrl}></playground-ide>
+      <div class="playground">
+        <section class="pane">
+          <h2>project</h2>
+          <playground-file-system-controls id="file-tree"></playground-file-system-controls>
+          <playground-ide id="ide" sandbox-base-url={sandboxBaseUrl}></playground-ide>
+        </section>
 
-      <div class="panes">
-        <section>
+        <section class="pane">
           <h2>run</h2>
           <p id="status" class="status" role="status">Not run yet.</p>
-          <h3>content check</h3>
-          <p id="content-check" class="status"></p>
-          <ul id="findings" aria-label="Content check findings"></ul>
-          <h3>governance</h3>
-          <p id="governance" class="status" aria-label="Governance check"></p>
+          <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
           <div id="node-panes">
-            <h3>output</h3>
-            <pre id="output" aria-label="Program output"></pre>
-            <h3>files</h3>
+            <pre id="output" class="terminal" aria-label="Program output"></pre>
             <ul id="files" aria-label="Resulting files"></ul>
           </div>
+          <lion-accordion>
+            <h3 slot="invoker"><button>checks</button></h3>
+            <div slot="content">
+              <p id="content-check" class="status"></p>
+              <ul id="findings" aria-label="Content check findings"></ul>
+              <p id="governance" class="status" aria-label="Governance check"></p>
+              <h3>packages you can import</h3>
+              <ul id="packages" aria-label="Importable packages"></ul>
+              <p class="note">
+                A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
+                <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
+                boundary, not a bug: those need a real runtime.
+              </p>
+            </div>
+          </lion-accordion>
           <p class="note" id="mode-note"></p>
-        </section>
-        <section>
-          <h3>packages you can import</h3>
-          <ul id="packages" aria-label="Importable packages"></ul>
-          <p class="note">
-            A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
-            <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
-            boundary, not a bug: those need a real runtime.
-          </p>
         </section>
       </div>
     </main>
 
     <script>
       import 'playground-elements/playground-ide.js';
+      import 'playground-elements/playground-file-system-controls.js';
+      // The chrome is Lion's: the same components the providence playground's shell composes.
+      import '@lion/ui/define/lion-switch.js';
+      import '@lion/ui/define/lion-accordion.js';
+      import '@lion/ui/define/lion-progress-indicator.js';
 
       const _base = import.meta.env.BASE_URL;
       const base = _base.endsWith('/') ? _base : `${_base}/`;
@@ -91,6 +106,35 @@ const sandboxBaseUrl =
       const packagesList = document.querySelector('#packages');
       const modeNote = document.querySelector('#mode-note');
       const governance = document.querySelector('#governance');
+      const busy = document.querySelector('#busy');
+      const fileTree = document.querySelector('#file-tree');
+
+      // The file tree is a control *for a project*, so it is bound to the one the ide holds rather than owning a
+      // second copy of the files.
+      fileTree.project = ide.project;
+
+      // One theme mechanism, not two: the portal already stores this choice and maps `data-theme` onto
+      // `color-scheme` in its own stylesheet, so this switch drives that one.
+      const THEME_KEY = 'lion-portal-theme';
+      const applyTheme = choice => {
+        document.documentElement.dataset.theme = choice;
+        try {
+          localStorage.setItem(THEME_KEY, choice);
+        } catch {
+          // A comfort setting, not a requirement: private mode just forgets it.
+        }
+      };
+      try {
+        const stored = localStorage.getItem(THEME_KEY);
+        if (stored === 'dark' || stored === 'light') document.documentElement.dataset.theme = stored;
+      } catch {
+        // ignore
+      }
+      const themeSwitch = document.querySelector('#theme-switch');
+      themeSwitch.checked = document.documentElement.dataset.theme === 'dark';
+      themeSwitch.addEventListener('checked-changed', event =>
+        applyTheme(event.target.checked ? 'dark' : 'light'),
+      );
 
       // Booted by the project's own index.html. It reads the project's files from the served filesystem — that
       // is the mechanism, and it is what makes an edit in the editor re-run with the new content instead of
@@ -303,6 +347,10 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       window.addEventListener('message', event => {
         const data = event.data;
         if (!data) return;
+        // Either message means the served document is up and reporting, so the wait is over.
+        if (data.source === 'lion-node-demo-runner' || data.source === 'lion-node-demo-runner-governance') {
+          busy.hidden = true;
+        }
         if (data.source === 'lion-node-demo-runner-governance') {
           // The posture is a promise the deployment makes; this is the measurement of whether it holds. In the
           // same-origin posture the worker's policy is what stands in for the boundary, so a missing policy is a
@@ -337,6 +385,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         modeNote.textContent = modes[name].note;
         nodePanes.hidden = name === 'browser';
         status.textContent = 'Not run yet.';
+        busy.hidden = false;
         report.log = [];
         report.files = {};
         output.textContent = '';
@@ -401,6 +450,9 @@ console.log('hydrated; the button in the document is', document.querySelector('l
           ),
         };
         status.textContent = 'Served by the worker; the preview runs it.';
+        // Browser mode posts no report — nothing but the preview runs there — so the wait ends when the config is
+        // in place rather than when a message arrives, or the indicator would spin forever.
+        busy.hidden = true;
       };
 
       for (const name of Object.keys(modes)) {
@@ -423,31 +475,66 @@ console.log('hydrated; the button in the document is', document.querySelector('l
     <style>
       main {
         margin: 0 auto;
-        max-width: 72rem;
-        padding: 2rem 1.25rem 4rem;
+        max-width: 84rem;
+        padding: 1.5rem 1.25rem 4rem;
         font-family: system-ui, sans-serif;
         line-height: 1.5;
       }
-      h1 { font-size: 1.6rem; margin: 0 0 0.5rem; }
-      h2 { font-size: 1rem; margin: 0 0 0.4rem; }
-      h3 { font-size: 0.9rem; margin: 1rem 0 0.3rem; }
-      .lede { color: #444; max-width: 70ch; }
-      #modes { display: flex; gap: 0.25rem; flex-wrap: wrap; margin: 0 0 0.75rem; }
+      header { text-align: center; }
+      header h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+      .lede { color: #555; max-width: 78ch; margin: 0 auto 1rem; font-size: 0.92rem; }
+
+      .toolbar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+      }
+      #modes { display: flex; gap: 0.25rem; flex-wrap: wrap; }
       #modes [role='tab'] {
         font: inherit; font-size: 0.9rem; padding: 0.35rem 0.9rem; cursor: pointer;
-        border: 1px solid #888; border-radius: 999px; background: #fff;
+        border: 1px solid #888; border-radius: 999px; background: transparent; color: inherit;
       }
       #modes [role='tab'][aria-selected='true'] { background: #2f2e41; color: #fff; border-color: #2f2e41; }
-      /* The IDE brings its own editor, file tabs and preview; this only gives it room to be the playground. */
-      #ide { display: block; height: 30rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
-      .panes { display: grid; gap: 1.5rem; grid-template-columns: 1fr 1fr; align-items: start; margin-top: 1.5rem; }
-      @media (max-width: 52rem) { .panes { grid-template-columns: 1fr; } }
-      pre, ul { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82rem; }
-      pre { margin: 0; min-height: 3rem; white-space: pre-wrap; }
-      ul { margin: 0; padding-left: 1.1rem; }
-      .status { margin: 0; font-size: 0.9rem; }
+
+      /* Two columns, the way the providence playground lays out: the project on the left, what it does on the right. */
+      .playground {
+        display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 1.5rem; align-items: start;
+      }
+      @media (max-width: 60rem) { .playground { grid-template-columns: 1fr; } }
+      .pane { min-width: 0; }
+      .pane h2 {
+        font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #666;
+        margin: 0 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem;
+      }
+      #file-tree { display: block; margin-bottom: 0.5rem; }
+      #ide { display: block; height: 28rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+
+      /* The output is a terminal, because that is what the program is writing to. */
+      .terminal {
+        margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; min-height: 3rem; max-height: 16rem;
+        overflow: auto; white-space: pre-wrap; background: #101014; color: #eaeaea;
+        border-radius: 4px; font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
+        font-size: 0.8rem; line-height: 1.35;
+      }
+      pre, ul, code, .status { font-size: 0.8rem; }
+      ul { margin: 0 0 0.75rem; padding-left: 1.1rem; }
+      .status { margin: 0 0 0.5rem; }
       .note { color: #555; font-size: 0.85rem; max-width: 64ch; }
+      #busy { margin: 0 0 0.5rem; }
       [hidden] { display: none !important; }
+
+      /* Dark mode is the portal's own mechanism — data-theme on <html>, mapped here the way theme.css does it. */
+      html[data-theme='dark'] { color-scheme: dark; }
+      html[data-theme='dark'] main { color: #ececec; }
+      html[data-theme='dark'] .lede,
+      html[data-theme='dark'] .note,
+      html[data-theme='dark'] .pane h2 { color: #a8a8a8; }
+      html[data-theme='dark'] .pane h2 { border-bottom-color: #3a3a3a; }
+      html[data-theme='dark'] #ide { border-color: #3a3a3a; }
+      html[data-theme='dark'] #modes [role='tab'] { border-color: #6a6a6a; }
+      html[data-theme='dark'] #modes [role='tab'][aria-selected='true'] {
+        background: #ececec; color: #16161a; border-color: #ececec;
+      }
     </style>
   </body>
 </html>
