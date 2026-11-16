@@ -60,14 +60,29 @@ function stripDotSlashFromLocalPath(localPathWithDotSlash) {
  * @returns {string|null}
  */
 function getStringOrObjectValOfExportMapEntry({ valObjOrStr, nodeResolveMode }) {
-  if (typeof valObjOrStr !== 'object') {
+  if (typeof valObjOrStr === 'string') {
     return valObjOrStr;
   }
-  if (!valObjOrStr?.[nodeResolveMode]) {
-    // This is allowed: it makes sense to have an entrypoint on the root for typescript, not for others
+  if (!valObjOrStr || typeof valObjOrStr !== 'object') {
     return null;
   }
-  return valObjOrStr[nodeResolveMode];
+  // Conditions nest, and Node's own resolution descends through them. A package that declares
+  // `{ "./decode": { "import": { "types": …, "default": … } } }` — parse5's own entities@6.0.1 — had every
+  // entrypoint dropped, because the value under the condition was an object and not a string: the map carried the
+  // name with zero entrypoints and the browser failed with `Failed to resolve module specifier "entities/decode"`.
+  // Walk the requested condition first, then `import`, `default` and `require` as a last resort, and recurse into
+  // whatever each of them holds.
+  for (const condition of [nodeResolveMode, 'import', 'default', 'require']) {
+    if (!condition) continue; // eslint-disable-line no-continue
+    const value = valObjOrStr[condition];
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object') {
+      const nested = getStringOrObjectValOfExportMapEntry({ valObjOrStr: value, nodeResolveMode });
+      if (nested) return nested;
+    }
+  }
+  // This is still allowed: `types`-only entries exist to give TypeScript an entrypoint on the root, nobody else.
+  return null;
 }
 
 /**
@@ -227,6 +242,22 @@ function getRelativePathFromCwd(pkgRootPath, { cwd = process.cwd() } = {}) {
 }
 
 /**
+ * Compare two versions the way a package manager ranks them: numerically by segment, missing segments lowest.
+ * @param {string} [a]
+ * @param {string} [b]
+ * @returns {number}
+ */
+function compareVersions(a = '', b = '') {
+  const left = a.split('.').map(part => Number.parseInt(part, 10) || 0);
+  const right = b.split('.').map(part => Number.parseInt(part, 10) || 0);
+  for (let index = 0; index < Math.max(left.length, right.length); index += 1) {
+    const diff = (left[index] ?? 0) - (right[index] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+/**
  * @param {string[]} pkgRootPaths all
  * @param {{
  *  packagesToTraceDepsFor?: string[];
@@ -244,56 +275,96 @@ export async function createImportMap(
 
   /** @type {ImportMap} */
   const importMap = {};
-  for (const pkgRootPath of pkgRootPaths) {
-    // get pkg json
-    const pkgJson = await getPackageJson(pkgRootPath);
-    if (!pkgJson) {
-      throw new Error(`No package.json found in ${pkgRootPath}`);
-    }
+  /**
+   * Which copy of a name the entries above came from. A package can be reached more than once — a nested copy and
+   * a hoisted one — while a bare specifier can only point at one of them. Letting the last walk assign the name
+   * made the map depend on walk order: measured, the hoisted `entities@4.5.0` replaced parse5's own
+   * `entities@6.0.1`, which is the only copy exporting `./decode`, and every server-rendered demo failed with
+   * `Failed to resolve module specifier "entities/decode"`. The rule is the one a package manager takes: the
+   * higher version wins, then the richer entry map, then the first seen.
+   * @type {Record<string, {version?: string, entries: {[exposed: string]: string}}>}
+   */
+  const chosen = {};
 
-    // 1. Add our own resolved export map
-    if (pkgJson.exports) {
-      const exportMap = pkgJson.exports || {};
-      const exportMapPaths = await resolveExportMap(exportMap, {
-        nodeResolveMode: 'default',
-        packageRootPath: pkgRootPath,
-      });
-      importMap[pkgJson.name] = importMap[pkgJson.name] || {};
-      for (const { internal, exposed } of exportMapPaths) {
-        const resolvedInternalPath = path.resolve(pkgRootPath, internal);
-        try {
-          importMap[pkgJson.name][exposed] = getRelativePathFromCwd(resolvedInternalPath, { cwd });
-        } catch (error) {
-          // Without the specifier and the raw export-map value this is unfindable: the error used to
-          // only carry the resolved path, which says nothing about which dependency caused it.
-          throw new Error(
-            `Cannot map ${pkgJson.name} export ${JSON.stringify(exposed)} -> ${JSON.stringify(internal)} ` +
-              `(resolved to ${resolvedInternalPath}, package root ${pkgRootPath}): ${error.message}`,
+  /**
+   * @param {PackageJson} pkgJson
+   * @param {{[exposed: string]: string}} entries
+   */
+  const choose = (pkgJson, entries) => {
+    const name = pkgJson.name;
+    const current = chosen[name];
+    if (!current) {
+      chosen[name] = { version: pkgJson.version, entries };
+      importMap[name] = entries;
+      return;
+    }
+    const versionDiff = compareVersions(pkgJson.version, current.version);
+    const richer = Object.keys(entries).length > Object.keys(current.entries).length;
+    if (versionDiff > 0 || (versionDiff === 0 && richer)) {
+      chosen[name] = { version: pkgJson.version, entries };
+      importMap[name] = entries;
+    }
+  };
+
+  /** @param {string[]} rootPaths */
+  const walk = async rootPaths => {
+    for (const pkgRootPath of rootPaths) {
+      // get pkg json
+      const pkgJson = await getPackageJson(pkgRootPath);
+      if (!pkgJson) {
+        throw new Error(`No package.json found in ${pkgRootPath}`);
+      }
+
+      /** @type {{[exposed: string]: string}} */
+      const entries = {};
+
+      // 1. Add our own resolved export map
+      if (pkgJson.exports) {
+        const exportMap = pkgJson.exports || {};
+        const exportMapPaths = await resolveExportMap(exportMap, {
+          nodeResolveMode: 'default',
+          packageRootPath: pkgRootPath,
+        });
+        for (const { internal, exposed } of exportMapPaths) {
+          const resolvedInternalPath = path.resolve(pkgRootPath, internal);
+          try {
+            entries[exposed] = getRelativePathFromCwd(resolvedInternalPath, { cwd });
+          } catch (error) {
+            // Without the specifier and the raw export-map value this is unfindable: the error used to
+            // only carry the resolved path, which says nothing about which dependency caused it.
+            throw new Error(
+              `Cannot map ${pkgJson.name} export ${JSON.stringify(exposed)} -> ${JSON.stringify(internal)} ` +
+                `(resolved to ${resolvedInternalPath}, package root ${pkgRootPath}): ${error.message}`,
+            );
+          }
+        }
+      } else {
+        // If no exports, we assume the package is a module and add all files in the root
+        const files = await globby('**/*.js', { cwd: pkgRootPath, onlyFiles: true });
+        for (const file of files) {
+          entries[normalizeLocalPathWithDotSlash(file)] = getRelativePathFromCwd(
+            path.resolve(pkgRootPath, file),
+            { cwd },
           );
         }
       }
-    } else {
-      // If no exports, we assume the package is a module and add all files in the root
-      const files = await globby('**/*.js', { cwd: pkgRootPath, onlyFiles: true });
-      importMap[pkgJson.name] = importMap[pkgJson.name] || {};
-      for (const file of files) {
-        importMap[pkgJson.name][normalizeLocalPathWithDotSlash(file)] = getRelativePathFromCwd(
-          path.resolve(pkgRootPath, file),
-          { cwd },
-        );
-      }
+      choose(pkgJson, entries);
+
+      // 2. Do the same for all dependencies
+      if (!packagesToTraceDepsFor.includes(pkgJson.name)) continue; // eslint-disable-line no-continue
+
+      const deps = Object.keys(pkgJson.dependencies || {});
+      const depRootPaths = /** @type {string[]} */ (
+        deps.map(dep => resolvePackageRootFromPackageName(dep, pkgRootPath)).filter(Boolean)
+      );
+      // An empty list is normal — a leaf package has no dependencies, and a package whose dependencies are all
+      // devDependencies resolves to none — and it must not fail the walk the way the old recursive call did:
+      // passing it on hit the guard above and reported "No package root path(s) provided" for a target that had
+      // been given perfectly well.
+      if (depRootPaths.length > 0) await walk(depRootPaths);
     }
+  };
 
-    // 2. Do the same for all dependencies
-    if (!packagesToTraceDepsFor.includes(pkgJson.name)) continue; // eslint-disable-line no-continue
-
-    const deps = Object.keys(pkgJson.dependencies || {});
-    const depRootPaths = /** @type {string[]} */ (
-      deps.map(dep => resolvePackageRootFromPackageName(dep, pkgRootPath)).filter(Boolean)
-    );
-
-    const depsImportMap = await createImportMap(depRootPaths, { packagesToTraceDepsFor, cwd });
-    Object.assign(importMap, depsImportMap);
-  }
+  await walk(pkgRootPaths);
   return importMap;
 }

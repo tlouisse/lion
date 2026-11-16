@@ -62,6 +62,23 @@ function findPackageRoot(repoRelativePath, packageName) {
 }
 
 /**
+ * The path under an export-map value, descending nested conditions the way Node does. `{ "import": { "types": …,
+ * "default": "./dist/esm/index.js" } }` is a common shape (parse5's own entities), and reading only the first level
+ * yields an object rather than a path — which is how a package ends up with no bare specifier.
+ * @param {unknown} raw
+ * @returns {string | undefined}
+ */
+function pickEntryFromExports(raw) {
+  if (typeof raw === 'string') return raw;
+  if (!raw || typeof raw !== 'object') return undefined;
+  for (const condition of ['import', 'default', 'require']) {
+    const nested = pickEntryFromExports(/** @type {any} */ (raw)[condition]);
+    if (typeof nested === 'string') return nested;
+  }
+  return undefined;
+}
+
+/**
  * The entry a bare `import "<name>"` needs, read from the package's own package.json.
  *
  * A package that declares its entry with `main`/`module` instead of `exports["."]` — `unified`,
@@ -80,9 +97,7 @@ function findPackageMain(repoRelativePath, packageName) {
   if (!fs.existsSync(pkgJsonPath)) return undefined;
 
   const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
-  const raw = pkgJson.exports?.['.'] ?? pkgJson.module ?? pkgJson.main;
-  const entry =
-    typeof raw === 'string' ? raw : raw?.import ?? raw?.default ?? raw?.require;
+  const entry = pickEntryFromExports(pkgJson.exports?.['.']) ?? pkgJson.module ?? pkgJson.main;
   if (typeof entry !== 'string') return undefined;
   return path.join(root, entry).replace(/^\.\//, '');
 }

@@ -53,9 +53,19 @@ function toPackageFolders(urlPath) {
   if (parts[0] === 'packages') {
     return { sourceDir: path.join('packages', parts[1]), urlDir: `node_modules/@lion/${parts[1]}` };
   }
-  if (parts[0] === 'node_modules') {
-    const name = parts[1].startsWith('@') ? `${parts[1]}/${parts[2]}` : parts[1];
-    return { sourceDir: path.join('node_modules', name), urlDir: `node_modules/${name}` };
+  // A dependency can be nested — `node_modules/parse5/node_modules/entities` — when two versions of a name exist,
+  // and the url is by package *name* either way. Reading only the first `node_modules` segment named the wrong
+  // package (parse5, not entities) and then skipped the nested folder through this file's own filter, so the mapped
+  // url 404'd and the browser reported `Failed to fetch dynamically imported module`. The *last* segment is the one
+  // that names the package, and the folder to copy from is the one beside it.
+  const lastNodeModules = parts.lastIndexOf('node_modules');
+  if (lastNodeModules !== -1 && parts[lastNodeModules + 1]) {
+    const scoped = parts[lastNodeModules + 1].startsWith('@');
+    const name = scoped
+      ? `${parts[lastNodeModules + 1]}/${parts[lastNodeModules + 2]}`
+      : parts[lastNodeModules + 1];
+    const sourceDir = parts.slice(0, lastNodeModules + (scoped ? 3 : 2)).join('/');
+    return { sourceDir, urlDir: `node_modules/${name}` };
   }
   return undefined;
 }

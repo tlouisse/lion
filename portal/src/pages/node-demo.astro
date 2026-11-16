@@ -439,7 +439,11 @@ lion-input, lion-button {
           files: {
             'index.html': '<script type="module" src="./boot.js"><\/script>\n',
             'server.js': `import { html } from 'lit';
-import { render, collectResult } from '@lit-labs/ssr';
+import { render } from '@lit-labs/ssr';
+// \`index.js\` re-exports \`render\` and the element renderers, not the collectors: those live in
+// \`lib/render-result.js\`, and since this package has no exports map that subpath is a plain specifier the
+// import map already carries.
+import { collectResult } from '@lit-labs/ssr/lib/render-result.js';
 import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import { hydrate } from '@lit-labs/ssr-client';
 import '@lion/ui/define/lion-button.js';
