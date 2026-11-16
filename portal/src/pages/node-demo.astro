@@ -11,19 +11,28 @@
 //  - `node`: index.html boots `boot.js`, which reads the project's own files and hands them to the
 //    dependency-free Node layer (fs, path, process, os, util, events, url). Reading the files from the served
 //    filesystem is what makes an edit in the editor re-run with the new content.
+import TopNav from '../components/TopNav.astro';
+import ThemeInit from '../components/ThemeInit.astro';
+
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
 const sandboxBaseUrl =
   process.env.PLAYGROUND_SANDBOX_BASE_URL || `${base}lion-playground/playground-elements`;
 ---
 
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href={`${base}favicon.svg`} />
+    <meta name="color-scheme" content="light dark" />
+    <ThemeInit />
     <title>Demo — Lion</title>
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="stylesheet" href={`${base}styles/theme.css`} />
+    <link rel="stylesheet" href={`${base}styles/styles.css`} />
   </head>
   <body>
+    <TopNav />
     <main>
       <header>
         <h1>Lion playground</h1>
@@ -37,12 +46,13 @@ const sandboxBaseUrl =
         </p>
       </header>
 
-      <div class="toolbar">
+      <div class="toolbar playground-app">
         <div id="modes" role="tablist" aria-label="Mode"></div>
-        <lion-switch id="theme-switch" name="theme" label="Dark mode"></lion-switch>
+        <!-- Dark mode is the portal's own: the theme switch lives in the site header (TopNav) and ThemeInit keeps
+             `data-theme` on <html> and the stored choice in sync, which is what the dark rules below follow. -->
       </div>
 
-      <div class="playground">
+      <div class="playground playground-app">
         <section class="pane">
           <h2>project</h2>
           <demo-tree id="file-tree"></demo-tree>
@@ -60,21 +70,23 @@ const sandboxBaseUrl =
             <pre id="output" class="terminal" aria-label="Program output"></pre>
             <ul id="files" aria-label="Resulting files"></ul>
           </div>
-          <lion-accordion>
-            <h3 slot="invoker"><button>checks</button></h3>
-            <div slot="content">
-              <p id="content-check" class="status"></p>
-              <ul id="findings" aria-label="Content check findings"></ul>
-              <p id="governance" class="status" aria-label="Governance check"></p>
-              <h3>packages you can import</h3>
-              <ul id="packages" aria-label="Importable packages"></ul>
-              <p class="note">
-                A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
-                <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
-                boundary, not a bug: those need a real runtime.
-              </p>
-            </div>
-          </lion-accordion>
+          <!-- Lion's accordion cannot be themed: measured no `--lion-*` tokens, no `::part` and no `:host`
+               background in the component, so it paints its own light chrome on a dark surface. A native
+               `<details>` is a disclosure this page owns and can style; the Lion components stay where they can
+               carry the look — the tree (the menu system), the tabs, the busy indicator. -->
+          <details class="checks">
+            <summary>checks</summary>
+            <p id="content-check" class="status"></p>
+            <ul id="findings" aria-label="Content check findings"></ul>
+            <p id="governance" class="status" aria-label="Governance check"></p>
+            <h3>packages you can import</h3>
+            <ul id="packages" aria-label="Importable packages"></ul>
+            <p class="note">
+              A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
+              <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
+              boundary, not a bug: those need a real runtime.
+            </p>
+          </details>
           <p class="note" id="mode-note"></p>
         </section>
       </div>
@@ -88,9 +100,9 @@ const sandboxBaseUrl =
       // `docs/components/menu/src/DemoTree.js` — a `MultiLevelListMixin` host with `role="tree"` — which is the
       // configuration the menu system's own docs and migration guide point at.
       import { DemoTree } from '../../../docs/components/menu/src/DemoTree.js';
-      // The chrome is Lion's: the same components the providence playground's shell composes.
-      import '@lion/ui/define/lion-switch.js';
-      import '@lion/ui/define/lion-accordion.js';
+      // The chrome is Lion's where it can carry the look: the tree is the menu system, the tabs are Lion's, the busy
+      // state is Lion's progress indicator. The accordion is not here — it has no theming surface (see the markup
+      // comment). Dark mode is the portal header's, not this page's: see ThemeInit and TopNav.
       import '@lion/ui/define/lion-progress-indicator.js';
 
       void DemoTree;
@@ -155,6 +167,7 @@ const sandboxBaseUrl =
             item.textContent = part;
             parent.appendChild(item);
             if (child.file) {
+              item.dataset.file = child.file;
               item.addEventListener('click', () => {
                 openFile(child.file);
               });
@@ -231,6 +244,11 @@ const sandboxBaseUrl =
           openFilesBar.appendChild(panel);
         });
         openFilesBar.selectedIndex = Math.max(0, openFiles.indexOf(activeFile));
+        // The tree marks the open file as well, so the two never disagree about what is being edited.
+        for (const item of fileTree.querySelectorAll('[role="treeitem"][data-file]')) {
+          if (item.dataset.file === activeFile) item.setAttribute('aria-current', 'true');
+          else item.removeAttribute('aria-current');
+        }
       };
 
       const openFile = name => {
@@ -284,28 +302,9 @@ const sandboxBaseUrl =
         reorderOpenFile(activeFile, event.key === 'ArrowLeft' ? -1 : 1);
       });
 
-      // One theme mechanism, not two: the portal already stores this choice and maps `data-theme` onto
-      // `color-scheme` in its own stylesheet, so this switch drives that one.
-      const THEME_KEY = 'lion-portal-theme';
-      const applyTheme = choice => {
-        document.documentElement.dataset.theme = choice;
-        try {
-          localStorage.setItem(THEME_KEY, choice);
-        } catch {
-          // A comfort setting, not a requirement: private mode just forgets it.
-        }
-      };
-      try {
-        const stored = localStorage.getItem(THEME_KEY);
-        if (stored === 'dark' || stored === 'light') document.documentElement.dataset.theme = stored;
-      } catch {
-        // ignore
-      }
-      const themeSwitch = document.querySelector('#theme-switch');
-      themeSwitch.checked = document.documentElement.dataset.theme === 'dark';
-      themeSwitch.addEventListener('checked-changed', event =>
-        applyTheme(event.target.checked ? 'dark' : 'light'),
-      );
+      // The theme is the portal's, not this page's: the header's radio group drives `data-theme` on <html> through
+      // `public/styles/theme.css` and ThemeInit keeps the stored choice in sync, so there is nothing to wire here.
+      // The page's dark rules below simply follow that attribute.
 
       // Booted by the project's own index.html. It reads the project's files from the served filesystem — that
       // is the mechanism, and it is what makes an edit in the editor re-run with the new content instead of
@@ -648,7 +647,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       applyMode('browser');
     </script>
 
-    <style>
+    <style is:global>
       main {
         margin: 0 auto;
         max-width: 84rem;
@@ -715,7 +714,136 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       html[data-theme='dark'] #open-files [slot='tab'] .close { color: #aaa; }
       html[data-theme='dark'] #open-files [slot='tab'] .close:hover { background: #3a3a42; color: #fff; }
 
-      /* The output is a terminal, because that is what the program is writing to. */
+      /* --- StackBlitz look, assigned through the design tokens playground-elements itself ships ---------------
+         `playground-styles.css` is deliberately rewritten upstream to expose `--playground-code-*` and friends, so
+         the editor's palette is configuration rather than a hack on internals. The app surface stays dark whatever
+         the portal theme does; only the page around it follows the header's switch. */
+      .playground-app {
+        --playground-code-background: #141416;
+        --playground-code-default-color: #d4d4d8;
+        --playground-code-font-family: Menlo, Cascadia Code, Consolas, 'Liberation Mono', monospace;
+        --playground-code-font-size: 13px;
+        --playground-code-line-height: 1.55;
+        --playground-code-padding: 10px 0;
+        --playground-code-gutter-border-right: 1px solid #2a2a30;
+        --playground-code-gutter-box-shadow: none;
+        --playground-code-linenumber-color: #565662;
+        --playground-code-cursor-color: #7dd3fc;
+        --playground-code-selection-background: #26456b;
+        --playground-highlight-color: #26456b;
+        --playground-code-comment-color: #6b7280;
+        --playground-code-keyword-color: #c586c0;
+        --playground-code-string-color: #ce9178;
+        --playground-code-number-color: #b5cea8;
+        --playground-code-variable-color: #9cdcfe;
+        --playground-code-def-color: #dcdcaa;
+        --playground-code-type-color: #4ec9b0;
+        --playground-code-tag-color: #569cd6;
+        --playground-code-attribute-color: #9cdcfe;
+        --playground-code-property-color: #9cdcfe;
+        --playground-code-operator-color: #d4d4d8;
+        --playground-code-meta-color: #d7ba7d;
+        --playground-code-atom-color: #569cd6;
+        --playground-code-builtin-color: #4ec9b0;
+        --playground-code-callee-color: #dcdcaa;
+        --playground-code-qualifier-color: #dcdcaa;
+        --playground-border: 1px solid #2a2a30;
+        --playground-bar-height: 28px;
+        --playground-preview-toolbar-background: #1b1b1e;
+        --playground-preview-toolbar-foreground-color: #b9b9c0;
+        --playground-tab-bar-background: #1b1b1e;
+        --playground-tab-bar-foreground-color: #b9b9c0;
+        --playground-tab-bar-active-background: #141416;
+        --playground-tab-bar-font-size: 12px;
+      }
+      #preview::part(preview-toolbar) { border-bottom: 1px solid #2a2a30; }
+      #preview::part(preview-reload-button) { color: #b9b9c0; }
+
+      /* The panels of the app: flat, tight, layered dark greys — a work surface, not a card. */
+      .playground-app .pane h2 {
+        color: #9aa0a6; border-bottom-color: #2a2a30; letter-spacing: 0.08em;
+      }
+      .playground-app #open-files [slot='tab'] {
+        background: #0d0d0f; border-color: #232329; color: #8b8b95; margin-right: 0;
+        border-radius: 0; border-left: none; font-size: 12px; padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+      }
+      .playground-app #open-files [slot='tab']:first-child { border-left: 1px solid #232329; }
+      .playground-app #open-files [slot='tab'][selected] {
+        background: #141416; color: #f4f4f5; border-top: 2px solid #1389fd; padding-top: 0.15rem;
+      }
+      .playground-app #open-files [slot='tab'] .close { color: #8b8b95; }
+      .playground-app #open-files [slot='tab'] .close:hover { background: #3a3a42; color: #fff; }
+      .playground-app #file-tree [role='treeitem'] { color: #c3c3cb; border-radius: 3px; }
+      .playground-app #file-tree [role='treeitem']:hover { background: #26262c; }
+      .playground-app #editor {
+        border: 1px solid #2a2a30; border-radius: 0 4px 4px 4px; background: #141416; height: 30rem;
+      }
+      .playground-app #preview {
+        border: 1px solid #2a2a30; border-radius: 4px; background: #141416; height: 18rem;
+      }
+      .playground-app .terminal {
+        background: #101012; border: 1px solid #2a2a30; border-radius: 4px; color: #d4d4d8;
+      }
+      .playground-app .status { color: #b9b9c0; }
+      .playground-app .note { color: #8b8b95; }
+      .playground-app code { color: #ce9178; }
+
+      /* The output pane is the app's status bar: monospace, one line of state, always at hand. */
+      .playground-app .pane { background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 6px; padding: 0.85rem; }
+
+      /* The preview is a light canvas inside dark chrome: the served document is somebody else's page and renders on
+         white, and a transparent iframe shows the host through — which is what made it dark-on-dark. */
+      .playground-app #preview { background: #fff; }
+      /* The active tab is the ARIA state this page owns (Lion does not decorate tabs it did not add), so the
+         highlight follows `aria-selected` rather than a `selected` attribute that never lands. */
+      .playground-app #open-files [slot='tab'][aria-selected='true'] {
+        background: #141416; color: #f4f4f5; border-top: 2px solid #1389fd; padding-top: 0.15rem;
+      }
+      /* The invoker is a bare `<button>` slotted into Lion's accordion, and a bare button is exactly what it looks
+         like — the white box in the corner. Style the element this page owns, not Lion's internals. */
+      .playground-app lion-accordion [slot='invoker'] button {
+        font: inherit; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
+        color: #9aa0a6; background: transparent; border: none; padding: 0.2rem 0; cursor: pointer;
+      }
+      .playground-app lion-accordion [slot='content'] { color: #b9b9c0; font-size: 0.82rem; }
+      .playground-app lion-accordion [slot='content'] h3 { color: #9aa0a6; font-size: 0.78rem; }
+      /* The checks disclosure is this page's own (see the markup comment for why it is not Lion's accordion). */
+      .playground-app .checks {
+        background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 4px;
+        padding: 0.45rem 0.6rem; margin: 0.5rem 0;
+      }
+      .playground-app .checks summary {
+        cursor: pointer; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: #9aa0a6;
+      }
+      .playground-app .checks summary:hover { color: #d4d4d8; }
+      .playground-app .checks h3 { color: #9aa0a6; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+      .playground-app .checks code { color: #ce9178; }
+      /* The file that is open is marked in the tree too, so the tree and the tabs agree. */
+      .playground-app #file-tree [role='treeitem'][aria-current] { background: #26262c; color: #f4f4f5; }
+      /* Polish from reading the render back: no browser defaults anywhere in an app surface. */
+      .playground-app #files { list-style: none; padding-left: 0; }
+      .playground-app #files li { color: #8b8b95; font-family: Menlo, Cascadia Code, Consolas, monospace; }
+      .playground-app #output { border-radius: 4px; }
+      .playground-app #findings { color: #8b8b95; }
+      /* Breathing room, and one left edge for everything in the run pane. */
+      .playground-app .pane h2 { margin-bottom: 0.6rem; padding-bottom: 0.35rem; }
+      .playground-app .lede { margin-bottom: 1.25rem; }
+      .playground-app #file-tree { padding: 0.3rem 0.2rem; }
+      .playground-app #file-tree [role='treeitem'] { padding: 0.15rem 0.35rem; }
+      .playground-app #open-files { margin-bottom: 0; }
+      .playground-app #files { padding-left: 1.1rem; margin-top: 0; }
+
+      /* The toolbar is the app's title bar: the controls belong to the surface they drive, not to the page around it. */
+      .playground-app .toolbar,
+      .toolbar.playground-app {
+        background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 6px;
+        padding: 0.55rem 0.7rem; margin-bottom: 0.85rem;
+      }
+      .playground-app #modes [role='tab'] { color: #b9b9c0; border-color: #3a3a42; }
+      .playground-app #modes [role='tab'][aria-selected='true'] {
+        background: #1389fd; border-color: #1389fd; color: #fff;
+      }
+      html[data-theme='dark'] .toolbar.playground-app { border-color: #2a2a30; }
       .terminal {
         margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; min-height: 3rem; max-height: 16rem;
         overflow: auto; white-space: pre-wrap; background: #101014; color: #eaeaea;
@@ -741,6 +869,11 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       html[data-theme='dark'] #modes [role='tab'][aria-selected='true'] {
         background: #ececec; color: #16161a; border-color: #ececec;
       }
+      /* The app surface is dark in both themes, so the header's switch must not lighten its panels. */
+      .playground-app .pane h2,
+      .playground-app .status,
+      .playground-app .note { color: #9aa0a6; }
+      .playground-app #editor { border-color: #2a2a30; background: #141416; }
     </style>
   </body>
 </html>
