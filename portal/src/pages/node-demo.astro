@@ -56,7 +56,9 @@ const sandboxBaseUrl =
         <section class="pane">
           <h2>project</h2>
           <demo-tree id="file-tree"></demo-tree>
-          <lion-tabs id="open-files"></lion-tabs>
+          <div class="tab-scroller">
+            <lion-tabs id="open-files"></lion-tabs>
+          </div>
           <playground-project id="project" sandbox-base-url={sandboxBaseUrl}></playground-project>
           <playground-file-editor id="editor"></playground-file-editor>
         </section>
@@ -220,13 +222,25 @@ const sandboxBaseUrl =
           tab.addEventListener('dragend', () => {
             tab.classList.remove('dragging');
             draggedFile = null;
+            commitTabOrder();
           });
+          // A drag that shows the result while it happens: the tab follows the pointer, and the *DOM node* moves
+          // rather than the list re-rendering — replacing the dragged element mid-drag cancels the drag itself.
           tab.addEventListener('dragover', event => {
-            if (draggedFile && draggedFile !== name) event.preventDefault();
+            if (!draggedFile || draggedFile === name) return;
+            event.preventDefault();
+            const dragged = openFilesBar.querySelector(
+              `[slot="tab"][data-file="${CSS.escape(draggedFile)}"]`,
+            );
+            if (!dragged || dragged === tab) return;
+            const rect = tab.getBoundingClientRect();
+            const afterPointer = event.clientX > rect.left + rect.width / 2;
+            openFilesBar.insertBefore(dragged, afterPointer ? tab.nextSibling : tab);
+            if (dragged.__panel) openFilesBar.insertBefore(dragged.__panel, dragged.nextSibling);
           });
           tab.addEventListener('drop', event => {
             event.preventDefault();
-            moveOpenFile(draggedFile, name);
+            commitTabOrder();
           });
           openFilesBar.appendChild(tab);
           // Lion decorates its slotted tabs (`role="tab"`, `aria-controls` and the key handlers) from a
@@ -241,6 +255,8 @@ const sandboxBaseUrl =
           panel.slot = 'panel';
           panel.hidden = true;
           panel.setAttribute('aria-hidden', 'true');
+          // The panel that Lion requires per tab travels with its tab, so a live reorder cannot separate the pair.
+          tab.__panel = panel;
           openFilesBar.appendChild(panel);
         });
         openFilesBar.selectedIndex = Math.max(0, openFiles.indexOf(activeFile));
@@ -266,6 +282,17 @@ const sandboxBaseUrl =
           activeFile = openFiles[Math.min(index, openFiles.length - 1)] ?? null;
           if (activeFile) editor.filename = activeFile;
         }
+        renderOpenFiles();
+      };
+
+      /**
+       * The order the user dragged is the DOM order, so it is read back from there rather than reconstructed from
+       * indices — a live drag moves nodes, and only the DOM knows what the user ended up looking at.
+       */
+      const commitTabOrder = () => {
+        const order = [...openFilesBar.querySelectorAll('[slot="tab"]')].map(tab => tab.dataset.file);
+        if (order.length === openFiles.length) openFiles = order;
+        draggedFile = null;
         renderOpenFiles();
       };
 
@@ -419,15 +446,21 @@ console.log('files here:', readdirSync('/').join(', '));
 `,
             'styles.css': `body {
   font-family: system-ui, sans-serif;
-  padding: 1rem;
+  /* The preview is a light canvas: the demo paints its own surface so it never inherits the app's darkness.
+     Matched to the preview shell's own value, so the canvas and its content agree. */
+  background: #f7f7f8;
+  color: #111;
+  padding: 16px 18px;
+  margin: 0;
 }
 h1 {
   font-size: 1rem;
   margin: 0 0 0.75rem;
+  letter-spacing: -0.01em;
 }
 lion-input, lion-button {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 `,
           },
@@ -829,6 +862,111 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app #files li { color: #8b8b95; font-family: Menlo, Cascadia Code, Consolas, monospace; }
       .playground-app #output { border-radius: 4px; }
       .playground-app #findings { color: #8b8b95; }
+
+      /* --- runware.ai-informed polish, with this page's own palette ---------------------------------------------
+         What is borrowed is structure, not colour: a 64px header (measured on runware), ghost buttons with a 1px
+         border and a 6px radius, a three-tier grey system where 1px borders — not shadows — define containers, rows
+         of 14px labels in a medium grey that brightens on hover, tighter tracking on headings, and the framed feel
+         of a 24px page inset with generous padding inside the panels. The greys stay this page's: #141416 behind,
+         #1b1b1e for surfaces, #2a2a30 for borders. */
+      main { padding: 24px; }
+      .playground-app .toolbar,
+      .toolbar.playground-app {
+        min-height: 64px; display: flex; align-items: center; gap: 12px;
+        border-radius: 16px; padding: 0 20px; margin-bottom: 16px;
+      }
+      .playground-app #modes { gap: 8px; }
+      .playground-app #modes [role='tab'] {
+        border: 1px solid #2a2a30; border-radius: 6px; background: transparent; color: #9aa0a6;
+        font-size: 14px; padding: 6px 14px; transition: color 0.15s ease, border-color 0.15s ease;
+      }
+      .playground-app #modes [role='tab']:hover { color: #f2f2f2; border-color: #454545; }
+      .playground-app #modes [role='tab'][aria-selected='true'] {
+        background: #1389fd; border-color: #1389fd; color: #fff;
+      }
+      .playground-app .playground > .pane,
+      .playground-app .pane {
+        border-radius: 16px; padding: 20px;
+      }
+      .playground-app .pane h2 { font-weight: 500; letter-spacing: -0.01em; }
+      .playground-app .lede { font-size: 14px; color: #9aa0a6; }
+
+      /* Tabs scroll horizontally instead of wrapping, and the scroller is this page's own: Lion's tab group has no
+         reachable shadow root (measured: `shadowRoot` null, host `display: block`), so its internals cannot be
+         asked to scroll. The host grows to its content inside a scrolling wrapper, which works either way. */
+      .tab-scroller { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+      .tab-scroller::-webkit-scrollbar { height: 6px; }
+      .tab-scroller::-webkit-scrollbar-thumb { background: #3a3a42; border-radius: 3px; }
+      .playground-app #open-files { display: block; width: max-content; min-width: 100%; }
+      .playground-app #open-files [slot='tab'] { flex: 0 0 auto; white-space: nowrap; color: #9aa0a6; }
+      .playground-app #open-files [slot='tab'][aria-selected='true'] { color: #f2f2f2; }
+
+      /* The wordmark, made slick: the accent half goes grey and lighter, so the mark reads as one word with a quieter
+         second half instead of two colours shouting at each other. Page-scoped on purpose — the same component is
+         the docs site's logo, where the yellow is deliberate. */
+      .logo-text-svg text.wordmark-accent { fill: #9aa0a6; font-weight: 400; letter-spacing: -0.01em; }
+
+      /* --- second pass, from reading the render back ---------------------------------------------------------- */
+
+      /* One app surface. The portal header was a white bar above a dark application, which reads as a website
+         sitting on top of a tool. Here the header joins the app's background and switches its own text, so the page
+         is one object; the docs site keeps its own header, this is page-scoped. */
+      /* The header is `header.site-header`: a translucent sticky bar. `body > header` lost to it on specificity, a
+         plain `header.site-header` did too, and so did `html body header.site-header` — which means the portal's own
+         rule carries `!important`, there is no specificity left that wins. So this page overrides exactly the three
+         properties it is changing, and nothing else, on the one element it is changing them on. */
+      html body header.site-header {
+        background: #141416 !important;
+        backdrop-filter: none !important;
+        border-bottom: 1px solid #2a2a30 !important;
+      }
+      html body header.site-header a,
+      html body header.site-header span,
+      html body header.site-header li,
+      html body header.site-header button { color: #9aa0a6; }
+      html body header.site-header a:hover,
+      html body header.site-header button:hover { color: #f2f2f2; }
+      html body header.site-header .theme-switch label { color: #9aa0a6; background: transparent; }
+      html body header.site-header .theme-switch [type='radio']:checked + label {
+        color: #f2f2f2; background: transparent;
+      }
+
+      /* The intro belongs to the app surface, not to the page: a white strip between a header and a dark tool is
+         the one thing left that still reads as two documents stapled together. */
+      main > header {
+        background: #141416; border: 1px solid #2a2a30; border-radius: 16px;
+        padding: 20px; margin: 0 0 16px; text-align: left;
+      }
+      main > header h1 { margin: 0 0 6px; font-weight: 500; letter-spacing: -0.01em; color: #f2f2f2; }
+      main > header .lede { margin: 0; }
+
+      /* The preview canvas, softened off pure white so it sits inside the dark shell instead of punching a hole
+         through it. The served document paints the same value, so the canvas and its content agree. */
+      .playground-app #preview { background: #f7f7f8; }
+
+      /* One radius scale, borrowed from runware: 16 for the containers, 8 for the boxes inside them, 6 for
+         controls. Mixed radii are what makes an interface look assembled rather than designed. */
+      .playground-app .terminal,
+      .playground-app #output,
+      .playground-app #preview,
+      .playground-app #editor,
+      .playground-app .checks { border-radius: 8px; }
+      /* The scrollbars this page owns, not the browser's. */
+      .playground-app .terminal,
+      .tab-scroller { scrollbar-width: thin; scrollbar-color: #3a3a42 transparent; }
+      /* Inactive labels a step brighter: on #1b1b1e the old values sat too close to the background. */
+      .playground-app #open-files [slot='tab'] { color: #a8a8b0; }
+      .playground-app #open-files [slot='tab'] .close { color: #9aa0a6; }
+      .playground-app #file-tree [role='treeitem'] { color: #c3c3cb; padding: 0.2rem 0.35rem; }
+      .playground-app #files li { color: #9aa0a6; }
+      /* The status reads as a status row: label, state, indicator on one line. */
+      .playground-app #busy { display: flex; align-items: center; gap: 8px; margin: -4px 0 8px; }
+      .playground-app lion-progress-indicator { --lion-progress-indicator-size: 18px; }
+      /* The checks disclosure: a quiet row with a caret, not a heavy box. */
+      .playground-app .checks { border-width: 1px; }
+      .playground-app .checks summary { list-style: none; }
+      .playground-app .checks summary::after { content: '⌄'; float: right; opacity: 0.6; }
+      .playground-app .checks[open] summary::after { content: '⌃'; }
       /* Breathing room, and one left edge for everything in the run pane. */
       .playground-app .pane h2 { margin-bottom: 0.6rem; padding-bottom: 0.35rem; }
       .playground-app .lede { margin-bottom: 1.25rem; }
