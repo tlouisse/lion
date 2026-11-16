@@ -35,7 +35,7 @@ const sandboxBaseUrl =
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -61,6 +61,22 @@ const sandboxBaseUrl =
       </div>
 
       <div class="playground playground-app">
+        <!-- The view rail: the icons switch what the app shows, the way an activity bar does. One view model, driven
+             from one attribute — the phone gets the same model as a bar at the bottom instead. -->
+        <nav class="view-rail" aria-label="Views">
+          <button type="button" data-view="files" class="is-active" title="Files" aria-label="Files">
+            <span class="material-symbols-outlined" aria-hidden="true">folder</span>
+          </button>
+          <button type="button" data-view="code" title="Code" aria-label="Code">
+            <span class="material-symbols-outlined" aria-hidden="true">code</span>
+          </button>
+          <button type="button" data-view="preview" title="Preview" aria-label="Preview">
+            <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
+          </button>
+          <button type="button" data-view="output" title="Output" aria-label="Output">
+            <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+          </button>
+        </nav>
         <section class="pane" id="pane-project">
           <h2>project</h2>
           <demo-tree id="file-tree"></demo-tree>
@@ -104,9 +120,13 @@ const sandboxBaseUrl =
       <!-- CodeSandbox's mobile shape: one thing at a time, switched from a fixed bar at the bottom, drawn with the
            icons their interface actually uses (Material Symbols Outlined — measured — over Inter, also measured). -->
       <nav class="mobile-tabs" aria-label="View">
-        <button type="button" data-view="code" class="is-active">
+        <button type="button" data-view="files">
           <span class="material-symbols-outlined" aria-hidden="true">folder</span>
-          <span>Project</span>
+          <span>Files</span>
+        </button>
+        <button type="button" data-view="code" class="is-active">
+          <span class="material-symbols-outlined" aria-hidden="true">code</span>
+          <span>Code</span>
         </button>
         <button type="button" data-view="preview">
           <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>
@@ -729,20 +749,24 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         modeTabs.appendChild(tab);
       }
 
-      // CodeSandbox's mobile shape: one view at a time, chosen from the fixed bar. The attribute drives the CSS, so
-      // the show/hide rules live in one place, and the bar is inert above the breakpoint it is hidden at.
-      const mobileTabs = document.querySelector('.mobile-tabs');
-      const setMobileView = view => {
-        document.body.dataset.mobileView = view;
-        for (const button of mobileTabs.querySelectorAll('button')) {
+      // The view model: one attribute on <body>, driven from whichever affordance the width offers — the rail on a
+      // desktop, the bar at the bottom on a phone. Show/hide lives in CSS, so there is one source of truth.
+      const viewControls = [...document.querySelectorAll('.view-rail button, .mobile-tabs button')];
+      const setView = view => {
+        document.body.dataset.view = view;
+        for (const button of viewControls) {
           button.classList.toggle('is-active', button.dataset.view === view);
         }
       };
-      mobileTabs.addEventListener('click', event => {
-        const button = event.target.closest('button[data-view]');
-        if (button) setMobileView(button.dataset.view);
-      });
-      setMobileView('code');
+      for (const rail of [document.querySelector('.view-rail'), document.querySelector('.mobile-tabs')]) {
+        rail.addEventListener('click', event => {
+          const button = event.target.closest('button[data-view]');
+          if (button) setView(button.dataset.view);
+        });
+      }
+      // The default view depends on the width: the full layout on a desktop, the editor alone on a phone, where the
+      // bar offers the other views. Same model either way.
+      setView(window.innerWidth < 768 ? 'code' : 'files');
 
       applyMode('browser');
     </script>
@@ -932,7 +956,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
          of 14px labels in a medium grey that brightens on hover, tighter tracking on headings, and the framed feel
          of a 24px page inset with generous padding inside the panels. The greys stay this page's: #141416 behind,
          #1b1b1e for surfaces, #2a2a30 for borders. */
-      main { padding: 24px; }
+      main { padding: 24px; padding-top: 72px; }
       .playground-app .toolbar,
       .toolbar.playground-app {
         min-height: 64px; display: flex; align-items: center; gap: 12px;
@@ -983,6 +1007,18 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         background: #141416 !important;
         backdrop-filter: none !important;
         border-bottom: 1px solid #2a2a30 !important;
+        /* Narrow and fixed, the way runware's nav reads: a 48px bar that stays put, with the theme switch living in
+           it rather than floating somewhere of its own. */
+        display: flex !important;
+        align-items: center !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 50 !important;
         /* The wordmark's first half is `fill="currentColor"`, so it inherits this and went near-black on the new
            dark bar. Setting the header's own colour is what fixes it — targeting a/span/li never would. */
         color: #f2f2f2;
@@ -1063,6 +1099,66 @@ console.log('hydrated; the button in the document is', document.querySelector('l
 
       .mobile-tabs { display: none; }
 
+      /* --- the view rail, and the editors' font ---------------------------------------------------------------
+         The icons switch what the app shows, the way an activity bar does, and the same view model runs at every
+         width: the rail on a desktop, the bottom bar on a phone, one `<body>` attribute underneath. */
+      .playground-app { grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1fr); }
+      .view-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 44px;
+        padding: 8px 0;
+        background: #141416;
+        border: 1px solid #2a2a30;
+        border-radius: 16px;
+      }
+      .view-rail button {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: #8b8b95;
+        cursor: pointer;
+      }
+      .view-rail button:hover { color: #f2f2f2; background: #1b1b1e; }
+      .view-rail button.is-active { color: #1389fd; background: #1b1b1e; }
+      .view-rail button .material-symbols-outlined { font-size: 20px; }
+
+      /* The view rules, at every width. `files` is the full layout — the rail switches focus, not the editor out of
+         existence, which is how an activity bar behaves and the only sane default for a playground: open it and the
+         code is there. `code` is that same view with the tree folded away, and the last two are the run pane alone. */
+      body[data-view='code'] #file-tree,
+      body[data-view='code'] #pane-run { display: none; }
+      body[data-view='preview'] #pane-project,
+      body[data-view='output'] #pane-project { display: none; }
+      body[data-view='preview'] #node-panes,
+      body[data-view='preview'] .checks,
+      body[data-view='preview'] #mode-note { display: none; }
+      body[data-view='output'] #preview { display: none; }
+      /* A focused view gets the whole width beside the rail, not a narrow column. */
+      body[data-view='preview'] #pane-run,
+      body[data-view='output'] #pane-run { grid-column: 2 / -1; }
+
+      /* The editors, exactly as runware's: their <pre> measures JetBrains Mono at 13.5px on a 1.8 line-height, and
+         the console reads in the same face — which is what was asked for. */
+      .playground-app {
+        --playground-code-font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        --playground-code-font-size: 13.5px;
+        --playground-code-line-height: 1.7;
+      }
+      .playground-app .terminal,
+      .playground-app #files li,
+      .playground-app #file-tree [role='treeitem'],
+      .playground-app #open-files [slot='tab'] {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .playground-app .terminal { font-size: 13px; line-height: 1.7; }
+
       /* File-type icons in the tree and the tabs, from the same set as the bar. */
       .playground-app #file-tree [role='treeitem'],
       .playground-app #open-files [slot='tab'] { display: inline-flex; align-items: center; gap: 6px; }
@@ -1070,7 +1166,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app #open-files [slot='tab'] .material-symbols-outlined { font-size: 16px; color: #8b8b95; }
 
       @media (max-width: 48rem) {
-        main { padding: 12px 12px 84px; }
+        main { padding: 12px 12px 84px; padding-top: 60px; }
         main > header { padding: 14px 16px; border-radius: 12px; }
         main > header .lede { display: none; }
         .playground-app .playground,
@@ -1085,14 +1181,8 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         .playground-app #editor { height: 22rem; }
         .playground-app #preview { height: 22rem; }
 
-        /* One view at a time. */
-        body[data-mobile-view='code'] #pane-run { display: none; }
-        body[data-mobile-view='preview'] #pane-project,
-        body[data-mobile-view='output'] #pane-project { display: none; }
-        body[data-mobile-view='preview'] #node-panes,
-        body[data-mobile-view='preview'] .checks,
-        body[data-mobile-view='preview'] #mode-note { display: none; }
-        body[data-mobile-view='output'] #preview { display: none; }
+        /* One view at a time; the rail is replaced by the bar at this width. */
+        .view-rail { display: none; }
 
         /* The bar: fixed, safe-area aware, one icon and one word per view. */
         .mobile-tabs {
