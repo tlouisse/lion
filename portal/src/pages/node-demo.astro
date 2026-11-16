@@ -45,7 +45,7 @@ const sandboxBaseUrl =
       <div class="playground">
         <section class="pane">
           <h2>project</h2>
-          <playground-file-system-controls id="file-tree"></playground-file-system-controls>
+          <demo-tree id="file-tree"></demo-tree>
           <playground-ide id="ide" sandbox-base-url={sandboxBaseUrl}></playground-ide>
         </section>
 
@@ -79,11 +79,16 @@ const sandboxBaseUrl =
 
     <script>
       import 'playground-elements/playground-ide.js';
-      import 'playground-elements/playground-file-system-controls.js';
+      // The file tree is Lion's own. `LionTree` was removed from the package and survives as
+      // `docs/components/menu/src/DemoTree.js` — a `MultiLevelListMixin` host with `role="tree"` — which is the
+      // configuration the menu system's own docs and migration guide point at.
+      import { DemoTree } from '../../../docs/components/menu/src/DemoTree.js';
       // The chrome is Lion's: the same components the providence playground's shell composes.
       import '@lion/ui/define/lion-switch.js';
       import '@lion/ui/define/lion-accordion.js';
       import '@lion/ui/define/lion-progress-indicator.js';
+
+      void DemoTree;
 
       const _base = import.meta.env.BASE_URL;
       const base = _base.endsWith('/') ? _base : `${_base}/`;
@@ -107,11 +112,49 @@ const sandboxBaseUrl =
       const modeNote = document.querySelector('#mode-note');
       const governance = document.querySelector('#governance');
       const busy = document.querySelector('#busy');
-      const fileTree = document.querySelector('#file-tree');
+      let fileTree = document.querySelector('#file-tree');
 
-      // The file tree is a control *for a project*, so it is bound to the one the ide holds rather than owning a
-      // second copy of the files.
-      fileTree.project = ide.project;
+      // A tree in Lion today is markup, not a component API: a `demo-tree` holds `role="treeitem"` items and, for
+      // a folder, another `demo-tree` beside the item — the menu system's `MultiLevelListMixin` contract.
+      //
+      // The mixin reads its items when it upgrades, so filling an existing tree afterwards leaves it inert
+      // (measured: the element defined, `aria-level`/`aria-posinset`/`aria-setsize` never set, no `role="tree"`).
+      // A fresh host with its children already in place is the condition the docs' static markup has, so that is
+      // what this builds — and the items are the project's flat file list turned into that nesting.
+      const renderTree = (mount, files) => {
+        const root = { children: new Map() };
+        for (const name of Object.keys(files)) {
+          const parts = name.split('/');
+          let node = root;
+          parts.forEach((part, index) => {
+            if (!node.children.has(part)) node.children.set(part, { children: new Map() });
+            node = node.children.get(part);
+            if (index === parts.length - 1) node.file = name;
+          });
+        }
+        const next = document.createElement('demo-tree');
+        next.id = mount.id;
+        const append = (parent, node) => {
+          for (const [part, child] of node.children) {
+            const item = document.createElement('div');
+            item.setAttribute('role', 'treeitem');
+            item.textContent = part;
+            parent.appendChild(item);
+            if (child.file) {
+              item.addEventListener('click', () => {
+                ide.activeFile = child.file;
+              });
+            } else if (child.children.size) {
+              const group = document.createElement('demo-tree');
+              append(group, child);
+              parent.appendChild(group);
+            }
+          }
+        };
+        append(next, root);
+        mount.replaceWith(next);
+        return next;
+      };
 
       // One theme mechanism, not two: the portal already stores this choice and maps `data-theme` onto
       // `color-scheme` in its own stylesheet, so this switch drives that one.
@@ -435,6 +478,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         if (modes[name].entry) {
           projectFiles['boot.js'] = bootSourceFor({ names: modes[name].names, entry: modes[name].entry });
         }
+        fileTree = renderTree(fileTree, projectFiles);
 
         ide.config = {
           importMap,
@@ -507,6 +551,13 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         margin: 0 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem;
       }
       #file-tree { display: block; margin-bottom: 0.5rem; }
+      #file-tree [role='treeitem'] {
+        cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem;
+        font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
+      }
+      #file-tree [role='treeitem']:hover { background: #e8e8e8; }
+      #file-tree demo-tree { display: block; margin-left: 0.85rem; }
+      html[data-theme='dark'] #file-tree [role='treeitem']:hover { background: #2a2a30; }
       #ide { display: block; height: 28rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
 
       /* The output is a terminal, because that is what the program is writing to. */
