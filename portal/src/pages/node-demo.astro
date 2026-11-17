@@ -1231,23 +1231,33 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         mark.setAttribute('height', String(bounds.height));
 
         // A dot on the i, which the mark does not have: the wordmark is "lıon" with a dotless ı (U+0131), so the dot is
-        // drawn here rather than restyled. It is a square rather than a circle, to echo the square plate around it, and
-        // its top lines up with the top of the l — which is the run's own box top, since that box starts at the
-        // ascender and the l is the tallest glyph in "lıon". Its x comes from the glyph (getExtentOfChar(1) is the run's
-        // second character); its vertical geometry cannot, and that is measured rather than assumed: that box comes back
-        // as the *em box* — 35 units tall for a 32-unit font — so a first attempt placed the dot at cy -7.52 in a
-        // viewBox starting at y -0.71, i.e. outside the SVG, where the default overflow: hidden clipped it away: present
-        // in the DOM with the right colour, and invisible in the render. The side is 0.15em, a little smaller than the
-        // circle's diameter was, so a square carries the same visual weight as the round dot it replaces.
+        // drawn here rather than restyled. It is a square rather than a circle, to echo the square plate around it.
+        //
+        // Its top has to be level with the l, and that is not the run box's top: measured on a 12x render of the mark
+        // alone, the run box starts at the font's ascent, which put the dot 9.75 CSS px above the ink of the letters.
+        // The painted ascent comes from measuring the same glyph in the same font on a canvas — actualBoundingBoxAscent
+        // is the only API that reports ink rather than layout, where getBBox() and getExtentOfChar() both report boxes.
+        // The dot's x stays the glyph's centre, which measured exactly on the stem.
+        //
         // The colour is fixed rather than a token: the plate is black in both themes, so a theme-following accent would
         // put a 15%-grey dot on black in light mode and lose it.
-        const i = lion.getExtentOfChar(1);
         const em = parseFloat(getComputedStyle(lion).fontSize) || 32;
+        const style = getComputedStyle(lion);
+        const measurer = document.createElement('canvas').getContext('2d');
+        measurer.font = `${style.fontWeight} ${em}px ${style.fontFamily}`;
+        const ell = measurer.measureText('l');
+        const ascender = ell.actualBoundingBoxAscent || em * 0.72;
+        const baseline = Number(lion.getAttribute('y') ?? 28);
         const side = Math.round(em * 0.15 * 100) / 100;
-        const centre = i.x + i.width / 2;
+        // The dot is centred on the stem, not on the glyph's advance box: measured, the advance centre put it 0.67px to
+        // one side of the painted stem, because the glyph carries side bearings. The ink's own centre is the midpoint of
+        // the canvas metrics' left and right bounding boxes, measured from the glyph's own origin.
+        const iota = measurer.measureText('ı');
+        const inkCentre = (iota.actualBoundingBoxRight - iota.actualBoundingBoxLeft) / 2;
+        const centre = lion.getStartPositionOfChar(1).x + inkCentre;
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         dot.setAttribute('x', String(Math.round((centre - side / 2) * 100) / 100));
-        dot.setAttribute('y', String(Math.round(bounds.y * 100) / 100));
+        dot.setAttribute('y', String(Math.round((baseline - ascender) * 100) / 100));
         dot.setAttribute('width', String(side));
         dot.setAttribute('height', String(side));
         dot.setAttribute('fill', '#9aa0a6');
