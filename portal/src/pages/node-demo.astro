@@ -1215,9 +1215,13 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       // getBBox() returns the *layout* box, which came out about 8px wider than the glyphs, so the word sat off-centre in
       // the frame however the frame was aligned. The run's true horizontal extent is where the first character starts
       // plus the text's own advance length; vertically the layout box was already right (measured slack 8.9 / 10.1).
-      const mark = document.querySelector('.logo svg');
-      const lion = mark?.querySelector('text.wordmark-glyphs');
-      if (mark && lion) {
+      // Measured after the webfont is ready: the geometry below is read from the rendered glyphs, and measuring before
+      // the font settles gives the fallback face's metrics instead. Measured: the run box came out 39.5 units tall on one
+      // load and 35.9 on the next, which moved the dot's alignment with the l by two pixels depending on timing.
+      document.fonts.ready.then(() => {
+        const mark = document.querySelector('.logo svg');
+        const lion = mark?.querySelector('text.wordmark-glyphs');
+        if (!mark || !lion) return;
         const bounds = lion.getBBox();
         const start = lion.getStartPositionOfChar(0);
         const advance = lion.getComputedTextLength();
@@ -1249,7 +1253,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         dot.setAttribute('fill', '#9aa0a6');
         dot.setAttribute('data-creative-dot', 'i');
         mark.append(dot);
-      }
+      });
     </script>
 
     <style is:global>
@@ -1391,9 +1395,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: auto !important;
       }
 
-      /* A solid plate: black behind the word, white letterforms, and the hairline edge kept so the plate has an edge
-         against the dark page as well as the light one. The mark's glyphs are `fill="currentColor"`, so the colour goes
-         on the frame and the word follows it — no rule needed on the text itself.
+      /* A solid plate: black behind the word, white letterforms, and a white outline. The outline is a 1px hairline with a
+         small radius, which is what the page's own chrome uses — its borders are 1px and its control radius is 6px, so
+         this sits just under that rather than fighting it. An earlier 3px outline was named as too heavy.
          `!important` for the same measured reason as the size above: the portal's `.logo[data-astro-cid-…]` rule sets
          the colour too, and it wins on specificity. Measured without it: in light mode the plate stayed black while the
          glyphs took the portal's `rgb(24, 24, 27)` — a black word on a black plate, i.e. invisible. */
@@ -1404,8 +1408,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: 36px;
         background: #000;
         color: #fff !important;
-        border: 3px solid #fff;
-        border-radius: 0;
+        border: 1px solid #fff;
+        border-radius: 4px;
         padding: 0;
         line-height: 0;
       }
