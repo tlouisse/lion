@@ -1227,21 +1227,25 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         mark.setAttribute('height', String(bounds.height));
 
         // A dot on the i, which the mark does not have: the wordmark is "lıon" with a dotless ı (U+0131), so the dot is
-        // drawn here rather than restyled. Its x comes from the glyph itself (getExtentOfChar(1) is the run's second
-        // character), but its y and radius cannot: measured, that box comes back as the em box — 35 units tall for a
-        // 32-unit font — so a dot placed from it landed above the viewBox and was clipped away. The vertical geometry
-        // is therefore derived from the two things that are actually known: the run's baseline, which is the text's own
-        // y attribute, and the font size, with the dot at a typical i-dot height and a little over a tenth of an em
-        // across. The colour is fixed rather than a token: the plate is black in both themes, so a theme-following
-        // accent would put a 15%-grey dot on black in light mode and lose it.
+        // drawn here rather than restyled. It is a square rather than a circle, to echo the square plate around it, and
+        // its top lines up with the top of the l — which is the run's own box top, since that box starts at the
+        // ascender and the l is the tallest glyph in "lıon". Its x comes from the glyph (getExtentOfChar(1) is the run's
+        // second character); its vertical geometry cannot, and that is measured rather than assumed: that box comes back
+        // as the *em box* — 35 units tall for a 32-unit font — so a first attempt placed the dot at cy -7.52 in a
+        // viewBox starting at y -0.71, i.e. outside the SVG, where the default overflow: hidden clipped it away: present
+        // in the DOM with the right colour, and invisible in the render. The side is 0.15em, a little smaller than the
+        // circle's diameter was, so a square carries the same visual weight as the round dot it replaces.
+        // The colour is fixed rather than a token: the plate is black in both themes, so a theme-following accent would
+        // put a 15%-grey dot on black in light mode and lose it.
         const i = lion.getExtentOfChar(1);
         const em = parseFloat(getComputedStyle(lion).fontSize) || 32;
-        const baseline = Number(lion.getAttribute('y') ?? 28);
-        const radius = Math.round(em * 0.085 * 100) / 100;
-        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        dot.setAttribute('cx', String(Math.round((i.x + i.width / 2) * 100) / 100));
-        dot.setAttribute('cy', String(Math.round((baseline - em * 0.69) * 100) / 100));
-        dot.setAttribute('r', String(radius));
+        const side = Math.round(em * 0.15 * 100) / 100;
+        const centre = i.x + i.width / 2;
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        dot.setAttribute('x', String(Math.round((centre - side / 2) * 100) / 100));
+        dot.setAttribute('y', String(Math.round(bounds.y * 100) / 100));
+        dot.setAttribute('width', String(side));
+        dot.setAttribute('height', String(side));
         dot.setAttribute('fill', '#9aa0a6');
         dot.setAttribute('data-creative-dot', 'i');
         mark.append(dot);
@@ -1400,7 +1404,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: 36px;
         background: #000;
         color: #fff !important;
-        border: 3px solid var(--pg-line-strong);
+        border: 3px solid #fff;
         border-radius: 0;
         padding: 0;
         line-height: 0;
