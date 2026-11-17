@@ -6,11 +6,13 @@
 // (`PUBLIC_SAME_ORIGIN_SANDBOX`), where the worker sets a policy on the documents it serves and the content
 // check below is the mitigation.
 //
-// Two modes, both served by that worker:
-//  - `browser`: index.html is the document, main.js its module — the playground's own model.
-//  - `node`: index.html boots `boot.js`, which reads the project's own files and hands them to the
-//    dependency-free Node layer (fs, path, process, os, util, events, url). Reading the files from the served
-//    filesystem is what makes an edit in the editor re-run with the new content.
+// Three modes, all served by that worker, named for where the code runs — the split a developer already has:
+//  - `client`: `client/index.html` is the document, `client/main.js` its module — the playground's own model.
+//  - `server`: a hidden harness (`index.html` + `boot.js`) imports `server/main.js` by its served url and runs it
+//    against the dependency-free Node layer (fs, path, process, os, util, events, url, worker_threads), with the
+//    project's own files as its filesystem. Reading them from the served project is what makes an edit re-run.
+//  - `ssr`: the same harness runs `server/render.js`, puts its response in the document, and `client/hydrate.js`
+//    takes over. Before anything runs, client/ is checked for imports a browser cannot have (Node builtins, server/).
 import TopNav from '../components/TopNav.astro';
 import ThemeInit from '../components/ThemeInit.astro';
 
@@ -43,14 +45,14 @@ const sandboxBaseUrl =
     <TopNav />
     <main>
       <header>
-        <h1>Lion playground</h1>
         <p class="lede">
-          Three modes, one mechanism: the playground's service worker serves this project — no WebContainer, no
-          second runtime. <strong>browser</strong> renders <code>index.html</code> with <code>main.js</code>;
-          <strong>node</strong> runs the project's own files through a dependency-free Node layer
-          (<code>fs</code>, <code>path</code>, <code>process</code>, <code>os</code>, <code>util</code>,
-          <code>events</code>, <code>url</code>); <strong>ssr</strong> renders a component to a string with
-          <code>@lit-labs/ssr</code> and then hydrates it.
+          One project, split the way an app is: <code>client/</code> runs in the browser, <code>server/</code> runs
+          on the server. <strong>client</strong> renders a page; <strong>server</strong> reads and writes files,
+          prints to stdout and starts a worker thread; <strong>ssr</strong> is both halves — the server renders the
+          markup and the client takes it over. There is no real server: the playground's service worker serves the
+          files, and <code>server/</code> runs in this browser against a dependency-free Node layer
+          (<code>fs</code>, <code>path</code>, <code>process</code>, <code>worker_threads</code>, …) — no
+          WebContainer, no second runtime.
         </p>
       </header>
 
@@ -91,10 +93,16 @@ const sandboxBaseUrl =
           <h2>run</h2>
           <p id="status" class="status" role="status">Not run yet.</p>
           <playground-preview id="preview"></playground-preview>
+          <!-- A server has no page. In server mode the preview still runs the harness — it is where the server code
+               executes — but it shows nothing worth looking at, so this says where the result is instead. -->
+          <div id="no-page" class="no-page">
+            <span class="material-symbols-outlined" aria-hidden="true">dns</span>
+            <p>A server has no page. What it did is in the console: its stdout, the files it wrote and its worker.</p>
+          </div>
           <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
           <div id="node-panes">
             <pre id="output" class="terminal" aria-label="Program output"></pre>
-            <ul id="files" aria-label="Resulting files"></ul>
+            <ul id="files" aria-label="Files the run wrote"></ul>
           </div>
           <!-- Lion's accordion cannot be themed: measured no `--lion-*` tokens, no `::part` and no `:host`
                background in the component, so it paints its own light chrome on a dark surface. A native
@@ -104,6 +112,7 @@ const sandboxBaseUrl =
             <summary>checks</summary>
             <p id="content-check" class="status"></p>
             <ul id="findings" aria-label="Content check findings"></ul>
+            <p id="boundary" class="status" aria-label="Client/server boundary"></p>
             <p id="governance" class="status" aria-label="Governance check"></p>
             <h3>packages you can import</h3>
             <ul id="packages" aria-label="Importable packages"></ul>
@@ -213,11 +222,13 @@ const sandboxBaseUrl =
         element.prepend(icon);
       };
 
-      // The files sit under one root folder named for the project, so the tree reads as structure — a folder,
-      // indented children, a disclosure — and not as a second row of tabs. Lion's menu system makes a folder row
-      // the invoker of the group after it but does not open or close it here (its disclosure wiring is not in
-      // this mixin), so the page owns that: `aria-expanded` on the row, `hidden` on the group.
-      const renderTree = (mount, files, rootName) => {
+      // The tree is the app's split: its top-level folders are `client/` and `server/`, and each says where it runs,
+      // so the tree itself shows which code runs where. It reads as structure — folders, indented children, a
+      // disclosure — and not as a second row of tabs. Lion's menu system makes a folder row the invoker of the group
+      // after it but does not open or close it here (its disclosure wiring is not in this mixin), so the page owns
+      // that: `aria-expanded` on the row, `hidden` on the group.
+      const sides = { client: ['web', 'in the browser'], server: ['dns', 'on the server'] };
+      const renderTree = (mount, files) => {
         const root = { children: new Map() };
         for (const name of Object.keys(files)) {
           const parts = name.split('/');
@@ -240,21 +251,29 @@ const sandboxBaseUrl =
           parent.appendChild(item);
           return item;
         };
-        const folder = (parent, name, node) => {
-          const item = treeItem(parent, name, 'folder_open');
+        const folder = (parent, name, node, depth) => {
+          const side = depth === 0 ? sides[name] : undefined;
+          const item = treeItem(parent, name, side ? side[0] : 'folder_open');
           item.dataset.folder = '';
           item.setAttribute('aria-expanded', 'true');
+          if (side) {
+            item.dataset.side = name;
+            const hint = document.createElement('span');
+            hint.className = 'tree-hint';
+            hint.textContent = side[1];
+            item.append(hint);
+          }
           const group = document.createElement('demo-tree');
-          append(group, node);
+          append(group, node, depth + 1);
           parent.appendChild(group);
           item.addEventListener('click', () => {
             const open = item.getAttribute('aria-expanded') !== 'true';
             item.setAttribute('aria-expanded', String(open));
-            item.querySelector('.material-symbols-outlined').textContent = open ? 'folder_open' : 'folder';
+            if (!side) item.querySelector('.material-symbols-outlined').textContent = open ? 'folder_open' : 'folder';
             group.hidden = !open;
           });
         };
-        function append(parent, node) {
+        function append(parent, node, depth) {
           for (const [part, child] of node.children) {
             if (child.file) {
               const item = treeItem(parent, part, iconForFile(part));
@@ -263,12 +282,11 @@ const sandboxBaseUrl =
                 openFile(child.file);
               });
             } else if (child.children.size) {
-              folder(parent, part, child);
+              folder(parent, part, child, depth);
             }
           }
         }
-        if (rootName) folder(next, rootName, root);
-        else append(next, root);
+        append(next, root, 0);
         mount.replaceWith(next);
         return next;
       };
@@ -279,6 +297,20 @@ const sandboxBaseUrl =
       // inside it. Lion pairs every tab with a panel (it asserts equal counts), so each tab gets an empty one and the
       // editor is the real panel — it cannot be re-parented into a Lion panel without re-initialising CodeMirror.
       const openFilesBar = document.querySelector('#open-files');
+      const tabScroller = openFilesBar.parentElement;
+      // A strip that scrolls says so with a fade at the edge it scrolls towards, so a cut-off tab reads as "more this
+      // way" rather than as a rendering bug. Measured on every render, resize and scroll, because only the layout
+      // knows whether the tabs fit.
+      const updateTabOverflow = () => {
+        const overflowing = tabScroller.scrollWidth > tabScroller.clientWidth + 1;
+        tabScroller.classList.toggle('is-overflowing', overflowing);
+        tabScroller.classList.toggle(
+          'is-at-end',
+          tabScroller.scrollLeft + tabScroller.clientWidth >= tabScroller.scrollWidth - 1,
+        );
+      };
+      tabScroller.addEventListener('scroll', updateTabOverflow, { passive: true });
+      new ResizeObserver(updateTabOverflow).observe(tabScroller);
       let openFiles = [];
       let activeFile = null;
       let draggedFile = null;
@@ -290,8 +322,13 @@ const sandboxBaseUrl =
           tab.slot = 'tab';
           tab.draggable = true;
           tab.dataset.file = name;
+          // A tab names the file; the tree already shows where it lives, and the full path is the tooltip. Two open
+          // files with the same name show their paths, so the strip never shows two identical labels.
           const label = document.createElement('span');
-          label.textContent = name;
+          const fileName = name.split('/').pop();
+          const clash = openFiles.some(other => other !== name && other.split('/').pop() === fileName);
+          label.textContent = clash ? name : fileName;
+          tab.title = name;
           const close = document.createElement('button');
           close.type = 'button';
           close.className = 'close';
@@ -349,6 +386,7 @@ const sandboxBaseUrl =
           openFilesBar.appendChild(panel);
         });
         openFilesBar.selectedIndex = Math.max(0, openFiles.indexOf(activeFile));
+        requestAnimationFrame(updateTabOverflow);
         // The tree marks the open file as well, so the two never disagree about what is being edited.
         for (const item of fileTree.querySelectorAll('[role="treeitem"][data-file]')) {
           if (item.dataset.file === activeFile) item.setAttribute('aria-current', 'true');
@@ -422,26 +460,91 @@ const sandboxBaseUrl =
       // `public/styles/theme.css` and ThemeInit keeps the stored choice in sync, so there is nothing to wire here.
       // The page's dark rules below simply follow that attribute.
 
-      // Booted by the project's own index.html. It reads the project's files from the served filesystem — that
-      // is the mechanism, and it is what makes an edit in the editor re-run with the new content instead of
-      // re-running a payload baked into the document. Server rendering needs the same three things a browser
-      // needs and one it does not: an entry, the files that entry reads, and somewhere to write, plus a string
-      // instead of a mounted document.
-      const bootSourceFor = ({ names, entry }) => `const names = ${JSON.stringify(names)};
+      /**
+       * The client/server boundary, checked the way a bundler checks it: statically, from the import specifiers of
+       * every `client/` file, before anything runs. A client file may not import a Node builtin (`fs`, `path`,
+       * `process`, `node:*`, …) — a browser has none — and may not import from `server/`, which is never sent to a
+       * browser. A server file may import anything, including client code it renders.
+       *
+       * What it does not catch, said plainly: a specifier computed at run time (`import(name)`). Nor does a bundler.
+       *
+       * Self-contained on purpose — no outside names — because its source is also embedded in the harness (see
+       * `bootSourceFor`), so the page and the run enforce the same rule from one definition.
+       *
+       * `shimBase` is for the harness: it reads the files as the playground *serves* them, and the playground has
+       * already rewritten bare specifiers through the import map — measured: `node:process` arrives as the shim's
+       * url. A specifier inside the shim directory is therefore a builtin under another name, and is reported by
+       * the builtin's name.
+       * @param {{[name: string]: string}} files
+       * @param {string} [shimBase] the url the shims are served from
+       * @returns {{file: string, line: number, specifier: string, message: string}[]}
+       */
+      function checkBoundary(files, shimBase) {
+        const builtins = new Set(
+          ('assert async_hooks buffer child_process cluster console crypto dgram diagnostics_channel dns events fs ' +
+            'http http2 https inspector module net os path perf_hooks process querystring readline repl stream ' +
+            'string_decoder timers tls tty url util v8 vm worker_threads zlib').split(' '),
+        );
+        const violations = [];
+        for (const [file, content] of Object.entries(files)) {
+          if (!file.startsWith('client/') || typeof content !== 'string') continue;
+          content.split('\n').forEach((text, index) => {
+            for (const match of text.matchAll(/(?:\bfrom\s*|\bimport\s*\(?\s*)(['"])([^'"\n]+)\1/g)) {
+              let specifier = match[2];
+              if (shimBase && specifier.startsWith(shimBase)) {
+                specifier = specifier
+                  .slice(shimBase.length)
+                  .replace(/^\/+/, '')
+                  .replace(/\.js$/, '')
+                  .replace('fs-promises', 'fs/promises')
+                  .replace(/-/g, '_');
+              }
+              const where = `${file}:${index + 1}`;
+              if (specifier.startsWith('node:') || builtins.has(specifier.split('/')[0])) {
+                violations.push({
+                  file,
+                  line: index + 1,
+                  specifier,
+                  message: `${where} imports "${specifier}", a Node builtin — client/ runs in the browser, where there is no "${specifier}". Move this code to server/, or have the server send its result to the client.`,
+                });
+              } else if (
+                /^\.\.?\//.test(specifier) &&
+                new URL(specifier, `file:///${file}`).pathname.startsWith('/server/')
+              ) {
+                violations.push({
+                  file,
+                  line: index + 1,
+                  specifier,
+                  message: `${where} imports "${specifier}", which is server code — client/ runs in the browser, and server/ is never sent to it. Have the server send its result to the client instead.`,
+                });
+              }
+            }
+          });
+        }
+        return violations;
+      }
+
+      // The harness: what a real setup splits over a server process, a network and a browser, played in the one
+      // document the preview serves. It is a hidden project file because it is not part of the app — it is how the
+      // app runs here — and it does three things in the order a real deployment does them:
+      //  1. the build: the boundary check above, over the files as they are *now* (edits included); a violation
+      //     fails the run before any code executes, with the message a bundler would give;
+      //  2. the server: its entry is imported by its served url, not as a blob, so its relative imports and
+      //     `new URL('./worker.js', import.meta.url)` resolve the way they do under Node. It runs against the
+      //     in-memory filesystem, seeded with the project's own files, with the project root as working directory;
+      //  3. for ssr, the client: the server's response goes into the document and the client entry takes over, with
+      //     its console reported as the browser's, not as the server's stdout.
+      const bootSourceFor = ({ names, entry, hydrate }) => `const checkBoundary = ${checkBoundary.toString()};
+const names = ${JSON.stringify(names)};
 const files = {};
 let styles = '';
 for (const name of names) {
-  const response = await fetch(name);
-  const content = await response.text();
-  if (name.endsWith('.css')) styles = content;
-  else files['/' + name] = { content };
+  const content = await (await fetch(name)).text();
+  files['/' + name] = { content };
+  if (name.startsWith('client/') && name.endsWith('.css')) styles += content;
 }
-if (styles) {
-  const style = document.createElement('style');
-  style.textContent = styles;
-  document.head.appendChild(style);
-}
-window.__nodeDemoRunnerPayload = { entry: ${JSON.stringify(entry)}, files };
+const report = (log, exitCode, written) =>
+  window.parent.postMessage({ source: 'lion-node-demo-runner', log, exitCode, files: written || {} }, '*');
 
 // What this document can actually do, measured *here* rather than assumed by the page. The worker's policy is
 // what stands in for a boundary in the same-origin posture, so its presence is checked instead of trusted.
@@ -473,7 +576,50 @@ window.parent.postMessage(
   '*',
 );
 
-await import(${JSON.stringify(engineUrl)});
+// 1. The build.
+const violations = checkBoundary(
+  Object.fromEntries(names.map(name => [name, files['/' + name].content])),
+  ${JSON.stringify(new URL('./shims/', engineUrl).href)},
+);
+if (violations.length) {
+  report(violations.map(violation => ({ stream: 'stderr', text: 'build failed: ' + violation.message + '\\n' })), 1);
+} else {
+  // 2. The server. The engine is imported without a payload on the window, so it does not start itself; the
+  // harness runs it and keeps the report, because for ssr the run is not over when the server is.
+  const { runDemo } = await import(${JSON.stringify(engineUrl)});
+  const server = await runDemo({ payload: { entry: new URL(${JSON.stringify(entry)}, location.href).href, files } });
+  const log = server.log;
+  let exitCode = server.exitCode;
+
+  // 3. The client takes over what the server sent.
+  const hydrate = ${JSON.stringify(hydrate || null)};
+  if (hydrate && exitCode === 0) {
+    if (styles) {
+      const style = document.createElement('style');
+      style.textContent = styles;
+      document.head.appendChild(style);
+    }
+    // The response is parsed the way a browser parses a page from a server: with its declarative shadow roots
+    // attached (\`setHTMLUnsafe\`), which \`innerHTML\` would leave as inert templates for hydration to trip over.
+    const response = server.files['/response.html'] || '';
+    if (document.body.setHTMLUnsafe) document.body.setHTMLUnsafe(response);
+    else document.body.innerHTML = response;
+    const browserConsole = (...args) => log.push({ stream: 'browser', text: args.map(String).join(' ') + '\\n' });
+    globalThis.console = { log: browserConsole, info: browserConsole, debug: browserConsole, warn: browserConsole, error: browserConsole };
+    try {
+      await import(new URL(hydrate, location.href).href);
+    } catch (error) {
+      log.push({ stream: 'stderr', text: hydrate + ': ' + (error && error.message ? error.message : error) + '\\n' });
+      exitCode = 1;
+    }
+  }
+
+  // Only what the run wrote or changed: the project's own files are the input, not the result.
+  const written = Object.fromEntries(
+    Object.entries(server.files).filter(([pathname, content]) => !files[pathname] || files[pathname].content !== content),
+  );
+  report(log, exitCode, written);
+}
 `;
 
       // The preview canvas, shared by all three modes. It renders somebody else's document, so it stays light, but
@@ -505,13 +651,22 @@ lion-input, lion-button {
 }
 `;
 
+      // The three demos, named the way a developer splits an app — by where the code runs — with the shim-layer term
+      // each one used to carry kept as the quieter subtitle. Every file lives under `client/` or `server/`.
+      // Paths in the server code are relative: the working directory is the project root, under real Node as here,
+      // and that is the one convention that means the same file in both worlds (`/x` is the machine root under Node
+      // and the project root here).
       const modes = {
-        browser: {
-          note: 'Browser mode: index.html is the document and main.js is its module. There is no filesystem to write to — the demo is the page.',
+        client: {
+          label: 'client',
+          hint: 'browser',
+          note: 'client/ is what a browser runs: index.html is the document and main.js its module. There is no filesystem and no Node builtins on this side — a client file that imports fs, path or process fails the build check, the way a bundler fails it, and the document has no import for them either.',
+          open: ['client/index.html', 'client/main.js'],
+          active: 'client/index.html',
           files: {
-            'index.html': [
+            'client/index.html': [
               '<link rel="stylesheet" href="./styles.css">',
-              '<h1>A Lion component, in browser mode</h1>',
+              '<h1>A Lion component, running in the browser</h1>',
               '<lion-input label="Your name"></lion-input>',
               '<lion-button>Save</lion-button>',
               // A literal script end tag in this string would end the inline script that contains it, so the
@@ -519,8 +674,7 @@ lion-input, lion-button {
               '<script type="module" src="./main.js"><\/script>',
               '',
             ].join('\n'),
-            'styles.css': canvasStyles,
-            'main.js': `import '@lion/ui/define/lion-input.js';
+            'client/main.js': `import '@lion/ui/define/lion-input.js';
 import '@lion/ui/define/lion-button.js';
 
 const button = document.querySelector('lion-button');
@@ -528,87 +682,104 @@ button.addEventListener('click', () => {
   button.textContent = 'Saved';
 });
 `,
+            'client/styles.css': canvasStyles,
           },
         },
-        node: {
-          note: 'Node mode: the entry runs against the shim layer, reading the project’s own files, so it reads and writes files and reports output. A builtin the layer does not answer — module, child_process, http — fails with “Failed to resolve module specifier”.',
-          names: ['demo.js', 'styles.css', 'data.json'],
-          entry: '/demo.js',
+        server: {
+          label: 'server',
+          hint: 'node',
+          note: 'server/ is what a server runs: main.js reads server/data.json, writes out.txt, prints to stdout and starts a worker thread that answers with a message. There is no real server — this runs in your browser, against an in-memory filesystem and a dependency-free layer that answers Node’s API (fs, path, process, os, util, events, url, worker_threads); the worker is a real Web Worker. A server has no page, so its result is the console.',
+          open: ['server/main.js', 'server/worker.js'],
+          active: 'server/main.js',
+          run: { entry: 'server/main.js', status: 'Running server/main.js…' },
           files: {
-            'index.html': '<script type="module" src="./boot.js"><\/script>\n',
-            'demo.js': `import '@lion/ui/define/lion-button.js';
-import '@lion/ui/define/lion-input.js';
-import { readFileSync, writeFileSync, readdirSync } from 'fs';
-import { basename } from 'path';
+            'server/main.js': `import { readFileSync, writeFileSync, readdirSync } from 'fs';
+import { join } from 'path';
+import { Worker } from 'worker_threads';
 
-const data = JSON.parse(readFileSync('/data.json', 'utf8'));
+// Relative paths resolve against the working directory: the project root, under real Node as here.
+const data = JSON.parse(readFileSync(join('server', 'data.json'), 'utf8'));
+console.log('read server/data.json:', data.message);
 
-document.body.innerHTML = [
-  '<h1>' + data.title + '</h1>',
-  '<lion-input label="' + data.field + '"></lion-input>',
-  '<lion-button>' + data.action + '</lion-button>',
-].join('');
+writeFileSync('out.txt', data.message.toUpperCase());
+console.log('wrote out.txt:', readFileSync('out.txt', 'utf8'));
+console.log('in the project root:', readdirSync('.').join(', '));
 
-await customElements.whenDefined('lion-button');
-await customElements.whenDefined('lion-input');
-await document.querySelector('lion-input').updateComplete;
-
-writeFileSync('/out.txt', data.action.toUpperCase());
-console.log('components registered:', ['lion-button', 'lion-input'].every(t => customElements.get(t)));
-console.log('wrote', basename('/out.txt'), '->', readFileSync('/out.txt', 'utf8'));
-console.log('files here:', readdirSync('/').join(', '));
+// A real thread: server/worker.js runs beside this one and answers with a message.
+const worker = new Worker(new URL('./worker.js', import.meta.url), { workerData: { value: data.value } });
+worker.on('message', message => console.log('worker said', JSON.stringify(message)));
+worker.on('error', error => console.error('worker failed:', error.message));
 `,
-            'data.json': `{
-  "title": "A Lion component, run by the Node layer",
-  "field": "Your name",
-  "action": "Save"
+            'server/worker.js': `import { parentPort, workerData, isMainThread } from 'worker_threads';
+
+parentPort.postMessage({ doubled: workerData.value * 2, inWorker: !isMainThread });
+`,
+            'server/data.json': `{
+  "message": "hello from the server",
+  "value": 21
 }
 `,
-            'styles.css': canvasStyles,
           },
         },
         ssr: {
-          note: 'SSR mode: the same Node layer renders a Lion component to a string with @lit-labs/ssr — no document, no mount, a string — and then the browser adopts exactly that string and lets the components hydrate in place. The string is printed below, so you can read what the server sent.',
-          names: ['server.js', 'styles.css', 'data.json'],
-          entry: '/server.js',
+          label: 'ssr',
+          hint: 'render + hydrate',
+          note: 'One app, two halves. server/render.js renders client/app.js to a string with @lit-labs/ssr and writes it out as the response, with the data it rendered from; the client puts that markup in the page and client/hydrate.js takes over the same components in place, without rendering them again. The server may import client code to render it; the client may not import server code. The server’s stdout and the browser’s console are printed separately below.',
+          open: ['server/render.js', 'client/app.js', 'client/hydrate.js'],
+          active: 'server/render.js',
+          run: { entry: 'server/render.js', hydrate: 'client/hydrate.js', status: 'Rendering on the server…' },
           files: {
-            'index.html': '<script type="module" src="./boot.js"><\/script>\n',
-            'server.js': `import { html } from 'lit';
+            'server/render.js': `import { readFileSync, writeFileSync } from 'fs';
 import { render } from '@lit-labs/ssr';
 // \`index.js\` re-exports \`render\` and the element renderers, not the collectors: those live in
 // \`lib/render-result.js\`, and since this package has no exports map that subpath is a plain specifier the
 // import map already carries.
 import { collectResult } from '@lit-labs/ssr/lib/render-result.js';
-import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
-import { hydrate } from '@lit-labs/ssr-client';
-import '@lion/ui/define/lion-button.js';
-import '@lion/ui/define/lion-input.js';
-import { readFileSync } from 'fs';
+// The server renders the client's own components: server code may import client code, never the reverse.
+import { app } from '../client/app.js';
 
-const data = JSON.parse(readFileSync('/data.json', 'utf8'));
-const template = html\`<h1>\${data.title}</h1>
-<lion-input label="\${data.field}"></lion-input>
-<lion-button>\${data.action}</lion-button>\`;
+const data = JSON.parse(readFileSync('server/data.json', 'utf8'));
 
 // What a server does: no document, no mount — a string.
-const serverHtml = await collectResult(render(template));
-console.log('the server rendered', serverHtml.length, 'characters:');
-console.log(serverHtml);
+const markup = await collectResult(render(app(data)));
+console.log('rendered', markup.length, 'characters of markup:');
+console.log(markup);
 
-// What the browser then does with those very bytes: adopt them, and let the same components hydrate in place.
-document.body.innerHTML = serverHtml;
-await hydrate(template, document.body);
-await customElements.whenDefined('lion-button');
-await customElements.whenDefined('lion-input');
-console.log('hydrated; the button in the document is', document.querySelector('lion-button').constructor.name);
+// The response: the markup, and the data it was rendered from, so the client can take over without a refetch.
+writeFileSync(
+  'response.html',
+  '<div id="app">' + markup + '</div>' +
+    '<script type="application/json" id="app-data">' + JSON.stringify(data).replace(/</g, '\\\\u003c') + '<\/script>',
+);
 `,
-            'data.json': `{
+            'server/data.json': `{
   "title": "Rendered on the server, hydrated here",
   "field": "Your name",
   "action": "Save"
 }
 `,
-            'styles.css': canvasStyles,
+            'client/app.js': `// One component tree, used by both halves: the server renders it to a string, the client hydrates it.
+// The hydrate support has to load before any component is defined, so it comes first.
+import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+import { html } from 'lit';
+import '@lion/ui/define/lion-button.js';
+import '@lion/ui/define/lion-input.js';
+
+export const app = data => html\`<h1>\${data.title}</h1>
+<lion-input label="\${data.field}"></lion-input>
+<lion-button>\${data.action}</lion-button>\`;
+`,
+            'client/hydrate.js': `import { hydrate } from '@lit-labs/ssr-client';
+import { app } from './app.js';
+
+// The server's markup is already in the page. Hydrating attaches the components to it instead of rendering again.
+const data = JSON.parse(document.querySelector('#app-data').textContent);
+hydrate(app(data), document.querySelector('#app'));
+
+await customElements.whenDefined('lion-button');
+console.log('hydrated: the button in the page is a', document.querySelector('lion-button').constructor.name);
+`,
+            'client/styles.css': canvasStyles,
           },
         },
       };
@@ -622,7 +793,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
               ? 'application/json'
               : 'sample/js';
 
-      let mode = 'browser';
+      let mode = 'client';
       let assets = null;
       const load = specifier => import(/* @vite-ignore */ specifier);
       const loadAssets = async () => {
@@ -639,11 +810,20 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       };
 
       const report = { log: [], exitCode: null, files: {} };
+      // The console is stdout and stderr (stderr marked `!`). In ssr the run has two halves, so the server's stdout
+      // and the browser's console are two labelled sections rather than one stream that mixes them.
       const showReport = () => {
-        output.textContent = '';
+        const twoHalves = report.log.some(entry => entry.stream === 'browser');
+        let text = twoHalves ? '── server · stdout\n' : '';
+        let inBrowser = false;
         for (const entry of report.log) {
-          output.textContent += entry.stream === 'stderr' ? `! ${entry.text}` : entry.text;
+          if (entry.stream === 'browser' && !inBrowser) {
+            inBrowser = true;
+            text += '\n── client · browser console\n';
+          }
+          text += entry.stream === 'stderr' ? `! ${entry.text}` : entry.text;
         }
+        output.textContent = text;
         filesList.textContent = '';
         for (const [pathname, content] of Object.entries(report.files || {})) {
           const item = document.createElement('li');
@@ -684,17 +864,68 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         report.exitCode = data.exitCode;
         report.files = data.files || {};
         showReport();
-        status.textContent = `Finished with exit code ${report.exitCode}.`;
+        const buildFailure = report.log.find(entry => entry.text.startsWith('build failed: '));
+        status.textContent = buildFailure
+          ? `Build failed (exit code ${report.exitCode}): ${buildFailure.text.slice('build failed: '.length).trim()}`
+          : `Finished with exit code ${report.exitCode}.`;
         status.dataset.state = report.exitCode === 0 ? 'ok' : 'error';
       });
 
+      // The boundary, shown and enforced on the page side. The harness enforces it again in server and ssr mode,
+      // where both halves share the served document; in client mode the document is the client's alone, so it is the
+      // page that reports the build failure — and the document's import map has no builtins to resolve anyway.
+      const boundary = document.querySelector('#boundary');
+      let visibleNames = [];
+      const showBoundary = violations => {
+        const clientFiles = visibleNames.filter(name => name.startsWith('client/')).length;
+        boundary.dataset.consistent = String(violations.length === 0);
+        boundary.textContent = violations.length
+          ? `client/server boundary: ${violations.length} violation(s) — ${violations.map(violation => violation.message).join(' · ')}`
+          : clientFiles
+            ? `client/server boundary: ${clientFiles} client file(s) checked the way a bundler checks them — no Node builtins, no imports from server/`
+            : 'client/server boundary: no client/ files here — server/ may import anything, Node builtins included';
+        if (!modes[mode].run) {
+          nodePanes.hidden = violations.length === 0;
+          output.textContent = violations.map(violation => `! build failed: ${violation.message}\n`).join('');
+          if (violations.length) {
+            status.textContent = `Build failed: ${violations[0].message}`;
+            status.dataset.state = 'error';
+          } else if (status.dataset.state === 'error') {
+            status.textContent = modes[mode].status;
+            status.dataset.state = 'ok';
+          }
+        } else if (violations.length) {
+          status.textContent = `Build failed: ${violations[0].message}`;
+          status.dataset.state = 'error';
+        }
+      };
+
+      // Client documents get no Node builtins: the map is the full one minus every specifier the shim layer answers
+      // (it answers each builtin in both the bare and the `node:` form, so the `node:` keys name them all). An import
+      // of `fs` from client code then fails in the browser for the reason it would in a real one: there is no `fs`.
+      const withoutBuiltins = importMap => {
+        const builtinKeys = new Set(
+          Object.keys(importMap.imports)
+            .filter(key => key.startsWith('node:'))
+            .flatMap(key => [key, key.slice('node:'.length)]),
+        );
+        return {
+          imports: Object.fromEntries(Object.entries(importMap.imports).filter(([key]) => !builtinKeys.has(key))),
+        };
+      };
+
+      modes.client.status = 'Served by the worker; the preview renders client/index.html.';
+
       const applyMode = async name => {
         mode = name;
+        const config = modes[name];
+        // The mode is an attribute too, for the one thing CSS does with it: a server has no page (see the stylesheet).
+        document.body.dataset.mode = name;
         for (const tab of modeTabs.querySelectorAll('[role="tab"]')) {
           tab.setAttribute('aria-selected', String(tab.dataset.mode === name));
         }
-        modeNote.textContent = modes[name].note;
-        nodePanes.hidden = name === 'browser';
+        modeNote.textContent = config.note;
+        nodePanes.hidden = !config.run;
         status.textContent = 'Not run yet.';
         // The state drives the dot beside the status text (see the stylesheet); the text stays the message.
         status.dataset.state = 'running';
@@ -718,7 +949,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         // What the content does, before the preview runs it. With the sandbox on its own origin this is
         // information for a reviewer; on this origin it is the gate, because there nothing but the worker's
         // policy and this review stands between a demo and this origin's cookies and storage.
-        const contentReport = checkDemoContent(modes[name].files);
+        const contentReport = checkDemoContent(config.files);
         const decision = decideRun({ report: contentReport, sameOriginSandbox });
         contentCheck.textContent = `${describeContentReport(contentReport)} — ${decision.reason}`;
         findingsList.textContent = '';
@@ -728,28 +959,40 @@ console.log('hydrated; the button in the document is', document.querySelector('l
           findingsList.appendChild(item);
         }
         if (!decision.allow) {
-          ide.config = { importMap: { imports: {} }, files: {} };
+          project.config = { importMap: { imports: {} }, files: {} };
           status.textContent = decision.reason;
           status.dataset.state = 'error';
           return;
         }
 
-        const importMap = host.buildFenceImportMap(
+        const fullImportMap = host.buildFenceImportMap(
           { importMapPerPackage, packageMains },
           location.origin,
           new URL('./shims', engineUrl).href,
         );
+        const importMap = config.run ? fullImportMap : withoutBuiltins(fullImportMap);
         // The map has to be *in the document*, not only in the project config: the config drives
         // playground-elements' own rewriting, while the packages a demo imports keep their bare specifiers and
         // need the document's map. Written with an escaped slash, so the HTML parser does not read it as the end
         // of the script that contains this string.
         const importMapScript = `<script type="importmap">${JSON.stringify(importMap).replace(/</g, '\\u003c')}<\/script>`;
 
-        const projectFiles = { ...modes[name].files };
-        if (modes[name].entry) {
-          projectFiles['boot.js'] = bootSourceFor({ names: modes[name].names, entry: modes[name].entry });
+        visibleNames = Object.keys(config.files);
+        const projectFiles = { ...config.files };
+        // The harness is served but hidden: it is how the app runs here, not part of the app (see `bootSourceFor`).
+        const harness = new Set();
+        if (config.run) {
+          projectFiles['index.html'] = '<script type="module" src="./boot.js"><\/script>\n';
+          projectFiles['boot.js'] = bootSourceFor({
+            names: visibleNames,
+            entry: config.run.entry,
+            hydrate: config.run.hydrate,
+          });
+          harness.add('index.html');
+          harness.add('boot.js');
         }
-        fileTree = renderTree(fileTree, projectFiles, `${name}-demo`);
+        preview.htmlFile = config.run ? 'index.html' : 'client/index.html';
+        fileTree = renderTree(fileTree, config.files);
 
         project.config = {
           importMap,
@@ -760,34 +1003,50 @@ console.log('hydrated; the button in the document is', document.querySelector('l
                 filename: fileName,
                 contentType: contentTypeFor(fileName),
                 content: fileName.endsWith('.html') ? `${importMapScript}\n${content}` : content,
+                ...(harness.has(fileName) ? { hidden: true } : {}),
               },
             ]),
           ),
         };
-        editor.filename = modes[name].entry ? modes[name].entry.replace(/^\//, '') : 'index.html';
-        openFiles = Object.keys(projectFiles);
-        activeFile = editor.filename;
+        // An editor opens what you are working on, not every file: the tree has the rest.
+        openFiles = [...config.open];
+        activeFile = config.active;
+        editor.filename = activeFile;
         renderOpenFiles();
-        status.textContent = 'Served by the worker; the preview runs it.';
-        // Browser mode is done here; the node modes stay "running" until their report arrives.
-        status.dataset.state = modes[name].entry ? 'running' : 'ok';
-        // Browser mode posts no report — nothing but the preview runs there — so the wait ends when the config is
+        status.textContent = config.run ? config.run.status : config.status;
+        // Client mode is done here; server and ssr stay "running" until their report arrives.
+        status.dataset.state = config.run ? 'running' : 'ok';
+        // Client mode posts no report — nothing but the preview runs there — so the wait ends when the config is
         // in place rather than when a message arrives, or the indicator would spin forever.
         busy.hidden = true;
+        showBoundary(checkBoundary(config.files));
       };
+
+      // Every edit is a new build: the boundary is re-checked against the files as they are now, so moving an `fs`
+      // import into a client file fails as you type it, and moving it back clears it.
+      project.addEventListener('compileDone', () => {
+        const current = Object.fromEntries(
+          (project.files || [])
+            .filter(file => visibleNames.includes(file.name))
+            .map(file => [file.name, file.content]),
+        );
+        const violations = checkBoundary(current);
+        if (modes[mode].run && !violations.length && status.dataset.state !== 'running') {
+          status.textContent = modes[mode].run.status;
+          status.dataset.state = 'running';
+        }
+        showBoundary(violations);
+      });
 
       for (const name of Object.keys(modes)) {
         const tab = document.createElement('button');
         tab.type = 'button';
         tab.setAttribute('role', 'tab');
         tab.dataset.mode = name;
-        // The mode is the label and what it runs is a quieter hint beside it; the space between the two spans is
-        // a real text node so the accessible name reads "node modules + fs", not "nodemodules + fs".
-        const [label, hint] = {
-          browser: ['browser', 'html + js'],
-          node: ['node', 'modules + fs'],
-          ssr: ['ssr', 'server render + hydrate'],
-        }[name];
+        // The mode is named for where the code runs, and the term it is known by elsewhere is the quieter hint;
+        // the space between the two spans is a real text node so the accessible name reads "server node", not
+        // "servernode".
+        const { label, hint } = modes[name];
         const labelSpan = document.createElement('span');
         labelSpan.className = 'mode-name';
         labelSpan.textContent = label;
@@ -818,7 +1077,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       // bar offers the other views. Same model either way.
       setView(window.innerWidth < 768 ? 'code' : 'files');
 
-      applyMode('browser');
+      applyMode('client');
     </script>
 
     <style is:global>
@@ -1199,7 +1458,23 @@ console.log('hydrated; the button in the document is', document.querySelector('l
          highlight, not as a second selected tab. */
       .playground-app #file-tree [role='treeitem'][aria-current] { color: var(--pg-fg); background: var(--pg-hover); }
       .playground-app #file-tree [role='treeitem'] .material-symbols-outlined { font-size: 18px; color: var(--pg-faint); }
+      /* The icons are centred on the row and so is the label's line box, but a lowercase mono label's ink sits below
+         its box's centre: measured at 3x, the file-type badges read about 1px high. A transform moves the glyph
+         without moving the layout (the row heights and the shared left edge stay as measured). */
+      .playground-app :is(#file-tree [role='treeitem'], #open-files [slot='tab']) > .material-symbols-outlined {
+        transform: translateY(1px);
+      }
       .playground-app #file-tree [role='treeitem'][aria-current] .material-symbols-outlined { color: var(--pg-accent); }
+      /* The two top-level folders are the split itself: each says where it runs, in the UI's quieter voice. */
+      .playground-app #file-tree [role='treeitem'][data-side] { color: var(--pg-fg); }
+      .playground-app #file-tree [role='treeitem'][data-side] .material-symbols-outlined { color: var(--pg-muted); }
+      .playground-app #file-tree .tree-hint {
+        margin-left: auto;
+        padding-left: 12px;
+        font: 400 12px/1 var(--pg-ui);
+        color: var(--pg-faint);
+        white-space: nowrap;
+      }
 
       /* --- open files: a tab strip that sits on the editor ---------------------------------------------------
          Tabs scroll horizontally instead of wrapping, and the scroller is this page's own: Lion's tab group has no
@@ -1216,6 +1491,10 @@ console.log('hydrated; the button in the document is', document.querySelector('l
            so the tab and the editor read as one sheet. */
         box-shadow: inset 0 1px 0 var(--pg-line), inset 1px 0 0 var(--pg-line), inset -1px 0 0 var(--pg-line),
           inset 0 -1px 0 var(--pg-line);
+      }
+      /* When the tabs do not fit, the edge they continue past fades out, so the strip reads as a scroller. */
+      .tab-scroller.is-overflowing:not(.is-at-end) {
+        mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent);
       }
       .tab-scroller::-webkit-scrollbar { height: 6px; }
       .tab-scroller::-webkit-scrollbar-thumb { background: #3a3a42; border-radius: 3px; }
@@ -1337,6 +1616,33 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       #preview::part(preview-reload-button) { color: var(--pg-muted); transition: color var(--pg-fast); }
       #preview::part(preview-reload-button):hover { color: var(--pg-fg); }
 
+      /* A server has no page. The preview still runs — the harness in it is where the server code executes — so it is
+         taken out of sight without being taken out of the document (`display: none` is not a risk worth taking with
+         the frame that runs the code), and an empty state says where the result is instead. */
+      .no-page { display: none; }
+      body[data-mode='server'] .playground-app #preview {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        border: 0;
+      }
+      body[data-mode='server'] .playground-app .no-page {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        border: 1px dashed var(--pg-line-strong);
+        border-radius: var(--pg-r);
+        color: var(--pg-muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .playground-app .no-page p { margin: 0; }
+      .playground-app .no-page .material-symbols-outlined { font-size: 22px; color: var(--pg-faint); }
+      body[data-view='output'] .no-page { display: none !important; }
+
       /* The console: an inset well. Empty, it says what will appear in it rather than being a blank box. */
       .playground-app .terminal {
         margin: 12px 0 0;
@@ -1414,7 +1720,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       .playground-app .checks > p:first-of-type { margin-top: 12px; }
       .playground-app .checks > :last-child { margin-bottom: 12px; }
       .playground-app .checks .status { display: block; margin-bottom: 8px; font-size: 13px; }
-      .playground-app #governance[data-consistent='false'] { color: var(--pg-error); }
+      .playground-app :is(#governance, #boundary)[data-consistent='false'] { color: var(--pg-error); }
       .playground-app .checks h3 {
         margin-top: 16px;
         margin-bottom: 8px;
