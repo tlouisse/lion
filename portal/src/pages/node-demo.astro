@@ -1341,7 +1341,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .logo {
         border: 1px solid var(--pg-line);
         border-radius: 0;
-        padding: 3px 7px;
+        padding: 2px 5px;
         line-height: 0;
       }
 
@@ -1924,8 +1924,16 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         .playground-app .pane { padding: 0; box-shadow: none; }
         .playground-app .pane h2 { display: none; }
 
-        /* A part: its header is a full-width row with a hairline rule above it; the open part's chevron turns. The
-           header clears the fixed site header when the bar scrolls a part into view. */
+        /* No disclosure arrow on the accordion headers: the native marker was the arrow on project, code, preview and
+           output (`list-style` covers the standard `::marker`, the pseudo-element covers WebKit's own). The checks
+           disclosure keeps its own drawn chevron — it is a different element that was not part of the ask. */
+        .part > summary {
+          list-style: none;
+        }
+        .part > summary::-webkit-details-marker {
+          display: none;
+        }
+
         .part { scroll-margin-top: 56px; border-top: 1px solid var(--pg-line); }
         #pane-run .part:last-child { border-bottom: 1px solid var(--pg-line); }
         .part-head {
@@ -1942,19 +1950,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
           transition: color var(--pg-fast);
         }
         .part-head .material-symbols-outlined { font-size: 20px; color: var(--pg-faint); }
-        .part-head::after {
-          content: 'expand_more';
-          margin-left: auto;
-          font: normal 20px/1 'Material Symbols Outlined';
-          font-feature-settings: 'liga';
-          letter-spacing: normal;
-          text-transform: none;
-          color: var(--pg-faint);
-          transition: transform var(--pg-med);
-        }
+        /* No arrow on these headers: the `expand_more` glyph and its rotation are gone. The header still reads as
+           open or closed — the label brightens and its icon takes the accent — which is the state, not a widget. */
         .part[open] > .part-head { color: var(--pg-fg); }
         .part[open] > .part-head .material-symbols-outlined { color: var(--pg-accent); }
-        .part[open] > .part-head::after { transform: rotate(180deg); }
         .part[open] { padding-bottom: 16px; }
 
         /* The code, bare and full width, a screenful tall at most so the next part's header stays reachable. */
