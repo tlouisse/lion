@@ -112,6 +112,24 @@ export async function runDemo({
     }
   }
 
+  // A demo may have started a worker thread. Node keeps the process alive for it, so the report waits too. A worker
+  // that only went quiet is normal in a browser (there is no event loop that empties), so that case says nothing; one
+  // that had to be cut off by the cap is reported, with the real numbers rather than an invented duration.
+  try {
+    const workerThreads = await import('./shims/worker-threads.js');
+    const drained = await workerThreads.__drainWorkers({ quietMs: 750, timeoutMs: 5000 });
+    if (drained.stillRunning > 0 && !drained.quiet) {
+      log.push({
+        stream: 'stderr',
+        text:
+          `${drained.stillRunning} worker thread(s) still producing output after ${drained.waitedMs}ms; ` +
+          'terminated to close the report\n',
+      });
+    }
+  } catch {
+    // No worker support in this host: nothing to wait for.
+  }
+
   return { log, exitCode, files: __snapshot() };
 }
 

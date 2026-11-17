@@ -18,21 +18,15 @@ import * as path from './path.js';
 import * as process from './process.js';
 import * as url from './url.js';
 import * as util from './util.js';
+import * as workerThreads from './worker-threads.js';
 
 /** @type {Record<string, string>} specifier -> shim module file */
-const SHIM_FILES = {
-  fs: 'fs.js',
-  'fs/promises': 'fs-promises.js',
-  path: 'path.js',
-  process: 'process.js',
-  os: 'os.js',
-  util: 'util.js',
-  events: 'events.js',
-  url: 'url.js',
-};
+import { SHIM_FILES } from './shim-files.js';
+
+export { SHIM_FILES };
 
 /** @type {Record<string, object>} shim name -> the module behind it, for direct use in a host page */
-export const shimModules = { fs, fsPromises, path, process, os, util, events, url };
+export const shimModules = { fs, fsPromises, path, process, os, util, events, url, workerThreads };
 
 /**
  * Builtins that work. Pure computation or a browser API with the same shape.
@@ -64,11 +58,17 @@ export const PARTIAL = {
   process: 'argv/env/cwd/exit/stdout/stderr; no signals, no IPC, no real memory numbers',
   stream: 'the browser has no streaming filesystem; a package that pipes files needs a real runtime',
   zlib: 'only if the package is bundlable with a browser zlib; not provided by this registry',
+  worker_threads:
+    'a real module Web Worker behind the API: another thread, another realm. workerData travels in the worker url hash, the filesystem shim is per-realm rather than shared, there is no SharedArrayBuffer (needs cross-origin isolation) and no receiveMessageOnPort (needs a synchronous port read)',
 };
 
 /**
  * Builtins that cannot work in a browser, and why. A package needing one of these needs a real Node
  * runtime (a wasm syscall layer or a server-side container), not a shim.
+ *
+ * `worker_threads` used to sit here. It does not belong: the browser has the capability — a worker is a worker —
+ * and what was missing was the API over it, which the shim now provides. A Web Worker still cannot open a socket or
+ * spawn a process, so the rest of this list stands.
  */
 export const UNCOVERED = [
   'child_process',
@@ -86,7 +86,6 @@ export const UNCOVERED = [
   'tty',
   'v8',
   'vm',
-  'worker_threads',
 ];
 
 /**

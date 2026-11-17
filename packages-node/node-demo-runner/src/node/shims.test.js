@@ -145,14 +145,22 @@ describe('shims: registry', () => {
     assert.equal(entries['node:fs'], 'https://host/shims/fs.js');
     assert.equal(entries['fs/promises'], 'https://host/shims/fs-promises.js');
     assert.equal(entries['node:fs/promises'], 'https://host/shims/fs-promises.js');
-    assert.equal(Object.keys(entries).length, 16);
+    // Nine shims, each mapped in the bare and the `node:` form.
+    assert.equal(Object.keys(entries).length, 18);
   });
 
   it('reports what is covered, partial and impossible, without overlap', () => {
     const report = getCompatibilityReport();
-    for (const name of ['child_process', 'worker_threads', 'vm', 'net']) {
+    // `worker_threads` used to be pinned here. It moved to partial when the shim landed — the browser has the
+    // capability, so it is no longer in the impossible list, and this test says so instead of quietly dropping it.
+    for (const name of ['child_process', 'vm', 'net']) {
       assert.equal(report.uncovered.includes(name), true, `${name} should be reported uncovered`);
     }
+    assert.equal(report.uncovered.includes('worker_threads'), false, 'worker_threads is no longer uncovered');
+    assert.ok(
+      report.partial.some(entry => entry.startsWith('worker_threads: ')),
+      'worker_threads should be reported partial, with its limits',
+    );
     for (const name of report.covered) {
       assert.equal(
         report.uncovered.includes(name),
