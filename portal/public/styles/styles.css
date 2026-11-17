@@ -198,9 +198,23 @@ main {
 }
 
 /*
- * Mobile: the nav collapses to the hamburger, and the burger belongs on the right - the logo keeps
- * the left edge, the theme switch sits next to the burger. Order only, so the DOM keeps reading
- * logo -> nav -> theme switch for the desktop row (which is where the links and command icons live).
+ * The container must span the bar even when the header itself is a flex box.
+ *
+ * A page that centres the bar's contents vertically with `display: flex` on `header.site-header` turns this
+ * container into a flex item, and a flex item with the default `flex-grow: 0` shrinks to its content — so
+ * `justify-content: space-between` had nothing to space out and `margin: 0 auto` centred a 326px cluster in the
+ * middle of a 1440px screen. Measured: the logo sat at x 597 while `main` started at 24. This keeps the container
+ * full width in both cases, so the logo holds the left edge and the controls hold the right one.
+ */
+.site-header > .container {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/*
+ * Mobile keeps the nav's own order: it collapses to the hamburger, the burger belongs on the right, and the logo
+ * keeps the left edge. The theme switch is no longer a child of this container — it is slotted into the nav's
+ * level-0 row (see TopNav.astro), so the nav places it and these rules only need to keep the burger right.
  */
 @media (max-width: 1023px) {
     /* The switch group and the burger are two controls, not one block: give them a gutter. */
@@ -210,11 +224,6 @@ main {
 
     .site-header .container > .site-nav {
         order: 3;
-    }
-
-    .site-header .container > .theme-switch {
-        order: 2;
-        margin-left: auto;
     }
 }
 
