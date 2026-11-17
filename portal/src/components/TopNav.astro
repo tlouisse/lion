@@ -331,22 +331,16 @@ const { variant } = Astro.props;
   }
 
   /*
-   * Smaller type in the bar, which is what "on par with StackBlitz" means for the header: their nav links are 13px at
-   * weight 500 and their bar is 64px tall. The wordmark goes from 19.2px to 16px and the bar's own base to 14px,
-   * which the nav's shadow tree inherits for anything it does not set itself — measured after, rather than assumed.
+   * The bar's own type is smaller — that part of "on par with StackBlitz" holds (their nav links are 13px at weight
+   * 500). It sits on `.site-nav` rather than on the whole bar because the nav is what it is for.
+   *
+   * The wordmark is deliberately untouched, and not for the reason first written here: measured, its SVG text
+   * carries its own font-size (32 user units) and inherits nothing from the bar. The mark's apparent smallness came
+   * from the weight — at 400 the "lion" glyphs are narrower than the 600 they are drawn for, which opened a 4.2px
+   * gap to "ui" where the docs site has 2px. That gap is closed in the page's own stylesheet, on the accent half.
    */
-  .site-header {
+  .site-nav {
     font-size: 0.875rem;
-  }
-
-  /*
-   * The wordmark's size is set with higher specificity than a plain descendant selector reaches (measured: 16px on
-   * `.logo-text-svg text` did not move it, it stayed at 19.2px), so this matches what the component uses and wins on
-   * importance. Page-scoped to this page's header, which is the bar that was asked to be tighter.
-   */
-  .site-header :global(.logo-text-svg text.wordmark-glyphs),
-  .site-header :global(.logo-text-svg text.wordmark-accent) {
-    font-size: 16px !important;
   }
 
 </style>

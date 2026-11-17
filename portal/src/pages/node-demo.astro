@@ -1185,9 +1185,17 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       /* The wordmark: both halves at weight 400 and the accent half in grey, so the mark reads as one quiet word.
          The component sets 600 on `.wordmark-glyphs`, so the selector matches that specificity and wins on order.
-         Page-scoped on purpose: on the docs site the yellow and the heavier weight are deliberate. */
+         Page-scoped on purpose: on the docs site the yellow and the heavier weight are deliberate.
+         The accent half is also pulled back onto the spacing the mark has everywhere else: at 400 the glyphs of
+         "lion" are narrower than the 600 they are drawn for, while "ui" keeps its authored x — measured as a 4.2px
+         gap against the docs site's 2px. The transform turns out to apply one-to-one in rendered pixels here, not in
+         the SVG's user units: -3.4px measured a 0.8px gap, so -2.2px is the value that lands on 2px. */
       .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
-      .logo-text-svg text.wordmark-accent { fill: var(--pg-muted); stroke: none; }
+      .logo-text-svg text.wordmark-accent {
+        fill: var(--pg-muted);
+        stroke: none;
+        transform: translateX(-2.2px);
+      }
 
       /* --- the intro: type on the page, not another box ------------------------------------------------------ */
       main > header { margin: 0 0 16px; text-align: left; }
