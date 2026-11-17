@@ -1208,16 +1208,23 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       applyMode('client');
 
-      // "lion" alone, and the box around it hugging the letters. The mark is one SVG whose viewBox is 86 units wide
-      // with "ui" starting at x=54, so hiding that half leaves 20 units of empty viewport on the right: narrowing the
-      // viewBox to the word (and the element with it, keeping the mark's ~0.83 scale so it stays the size it is) puts
-      // the box around the letters instead of around the gap. Measured before this: "lion" rendered 41.5px wide
-      // starting at x=40.2 while the mark's box was 72px, so the difference was all empty space.
+      // "lion" alone, and the square around it. The accent half is hidden in the stylesheet; what is left is one SVG
+      // whose viewBox is 86 units wide with "ui" at x=54, i.e. 20 units of viewport that draw nothing.
+      //
+      // The viewBox is taken from the word's own painted run, not written by hand and not from getBBox(). Measured why:
+      // getBBox() returns the *layout* box, which came out about 8px wider than the glyphs, so the word sat off-centre in
+      // the frame however the frame was aligned. The run's true horizontal extent is where the first character starts
+      // plus the text's own advance length; vertically the layout box was already right (measured slack 8.9 / 10.1).
       const mark = document.querySelector('.logo svg');
-      if (mark) {
-        mark.setAttribute('viewBox', '0 0 52 36');
-        mark.style.width = '43px';
-        mark.style.height = '30px';
+      const lion = mark?.querySelector('text.wordmark-glyphs');
+      if (mark && lion) {
+        const bounds = lion.getBBox();
+        const start = lion.getStartPositionOfChar(0);
+        const advance = lion.getComputedTextLength();
+        mark.setAttribute('viewBox', `${start.x} ${bounds.y} ${advance} ${bounds.height}`);
+        mark.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        mark.setAttribute('width', String(advance));
+        mark.setAttribute('height', String(bounds.height));
       }
     </script>
 
@@ -1227,7 +1234,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          elements' parts and custom properties, the items the script creates at runtime — and a page's styles
          only load on that page, so "global" here still means this page.
 
-         The language, measured from StackBlitz's own stylesheet and kept in this page's dark family:
+         The language, measured from StackBlitz's own stylesheet, in a dark and a light half that the portal's theme
+         switch chooses between (see the token block):
          - type: Inter for the UI at 400 / 500 / 600 (headings 600), JetBrains Mono for every code surface;
          - motion: 0.1s for state changes, 0.16s for movement, `ease`, nothing that bounces;
          - surfaces: no cards. The playground's regions are sections of one page, on the page's own background,
@@ -1235,36 +1243,45 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
            console) are bare, the way runware's docs set code — measured there: no border, no radius, no shadow, the
            code background and generous padding;
          - radius: only on controls (6px) and small things (4px) — never on a region or a code surface;
-         - colour: one accent (their blue) for selection and focus, mint for success, red for failure. */
+         - colour: one accent, a grey with no hue, for selection and focus — lighter than the body text on the dark
+           half, darker than it on the light one, so it reads as emphasis in both. Colour is kept for meaning only:
+           mint for success, red for failure. */
       :root {
         --pg-ui: Inter, system-ui, sans-serif;
         --pg-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-        /* light-dark() resolves against the `color-scheme` of the element that uses the value. The portal's
-           theme.css sets that on <html> for light, dark and auto; this page pins its <body> to dark (below), so here
-           these resolve to their dark half in every theme. */
-        --pg-page: light-dark(#f4f4f5, #0b0b0d);
+        /* Every colour is a light-dark() pair, and nothing on this page forces a `color-scheme` (the <meta> only
+           declares that both are supported; the demo canvas's own stylesheet is the served document's, not this
+           page's): light-dark() resolves against the `color-scheme` the element inherits, which the portal's theme.css
+           sets on :root — light, dark, or both for auto, where the OS decides. So the header's switch is the single control, and each token below
+           is its light half first, then its dark half. Contrast, measured per pair (WCAG): every text token passes
+           4.5:1 on the surfaces it is used on, in both halves; the status dots pass 3:1 as non-text. */
+        --pg-page: light-dark(#fafafa, #0b0b0d);
         --pg-page-fg: light-dark(#18181b, #ededef);
-        --pg-page-muted: light-dark(#5f5f67, hsl(0 0% 62%));
+        --pg-page-muted: light-dark(#5c5c64, hsl(0 0% 62%));
         --pg-page-chip: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.07));
 
-        --pg-chrome: #0b0b0d; /* header and the phone's bottom bar */
-        --pg-surface: #161618; /* panels and the rail */
-        --pg-inset: #101012; /* editor, console, the mode control */
-        --pg-strip: #131315; /* the tab strip and the preview toolbar */
-        --pg-hover: rgb(255 255 255 / 0.05);
-        --pg-selected: #26262b;
-        --pg-line: rgb(255 255 255 / 0.07);
-        --pg-line-strong: rgb(255 255 255 / 0.12);
+        --pg-chrome: light-dark(#fafafa, #0b0b0d); /* header and the phone's bottom bar */
+        --pg-surface: light-dark(#f4f4f6, #161618); /* a raised surface; no region uses one since the cards went */
+        --pg-inset: light-dark(#f2f2f4, #101012); /* editor, console: the code background */
+        --pg-strip: light-dark(#eaeaed, #131315); /* the tab strip and the preview toolbar */
+        --pg-hover: light-dark(rgb(0 0 0 / 0.045), rgb(255 255 255 / 0.05));
+        --pg-selected: light-dark(#e2e2e6, #26262b);
+        --pg-line: light-dark(rgb(0 0 0 / 0.09), rgb(255 255 255 / 0.07));
+        --pg-line-strong: light-dark(rgb(0 0 0 / 0.15), rgb(255 255 255 / 0.12));
+        --pg-scrollbar: light-dark(#c6c6cc, #3a3a42);
 
-        --pg-fg: #ededef;
-        --pg-fg-2: #c2c2c8;
-        --pg-muted: hsl(0 0% 62%);
-        --pg-faint: #6c6c74;
+        --pg-fg: light-dark(#18181b, #ededef);
+        --pg-fg-2: light-dark(#3f3f46, #c2c2c8);
+        --pg-muted: light-dark(#5c5c64, hsl(0 0% 62%));
+        --pg-faint: light-dark(#6b6b73, #7e7e86);
 
-        --pg-accent: rgb(0 168 219);
-        --pg-ok: rgb(51 255 204);
-        --pg-error: rgb(237 94 106);
+        /* The accent is grey with no hue at all: 15% on the light half, 90% on the dark one. */
+        --pg-accent: light-dark(hsl(0 0% 15%), hsl(0 0% 90%));
+        /* Not accents: success and failure, where colour is the only thing that tells them apart. Each half is dark
+           or light enough to hold its contrast on its own page. */
+        --pg-ok: light-dark(rgb(0 135 95), rgb(51 255 204));
+        --pg-error: light-dark(rgb(198 42 60), rgb(237 94 106));
 
         --pg-r: 6px;
         --pg-r-sm: 4px;
@@ -1272,10 +1289,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         --pg-med: 0.16s ease;
       }
 
-      /* The app is dark, and without panel surfaces its sections sit on the page's own background — so the page is the
-         app's dark in every theme. A light page would put the app's light-grey text on near-white. The theme switch
-         keeps governing the rest of the site; on this page it has nothing left to switch. */
-      html body { color-scheme: dark; background-color: var(--pg-page); }
+      /* The sections sit on the page's own background (there are no panel surfaces), so the page is the app's
+         background — in whichever half the portal's switch chose. No `color-scheme` here: see the token block. */
+      html body { background-color: var(--pg-page); }
 
       main {
         margin: 0 auto;
@@ -1338,10 +1354,35 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       /* A square, not a pill: no radius, a hairline, and padding tight enough that it reads as drawn around the word.
          `--pg-line` is this page's hairline; say so and it can be a heavier line, or a literal square with equal
          sides, in one edit. */
+      /* A true square, not a snug rectangle: fixed sides with the mark centred in them, and a 2px border so the frame
+         reads as drawn rather than as a hairline. 36px is 75% of the 48px bar, which leaves air above and below it.
+         The word inside has to be smaller than it was (43px wide) or a square could not hold it: 26px wide keeps the
+         mark's own ratio, so it is the same word, just set smaller to sit in the frame. */
+      /* `!important` here for a measured reason, the same one the header overrides above carry: the portal's own rule is
+         `.site-header[data-astro-cid-…] .logo svg`, which is three class-level selectors against the two in mine, so it
+         wins and sets 72x30 — and a second one, `.logo-text-svg[data-astro-cid-…]`, sets height 36px. Matching that
+         would mean writing the portal's hash into this file. */
+      html body header.site-header .logo svg {
+        width: 24px !important;
+        height: auto !important;
+      }
+
+      /* A solid plate: black behind the word, white letterforms, and the hairline edge kept so the plate has an edge
+         against the dark page as well as the light one. The mark's glyphs are `fill="currentColor"`, so the colour goes
+         on the frame and the word follows it — no rule needed on the text itself.
+         `!important` for the same measured reason as the size above: the portal's `.logo[data-astro-cid-…]` rule sets
+         the colour too, and it wins on specificity. Measured without it: in light mode the plate stayed black while the
+         glyphs took the portal's `rgb(24, 24, 27)` — a black word on a black plate, i.e. invisible. */
       .logo {
-        border: 1px solid var(--pg-line);
+        display: grid !important;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        background: #000;
+        color: #fff !important;
+        border: 2px solid var(--pg-line-strong);
         border-radius: 0;
-        padding: 2px 5px;
+        padding: 0;
         line-height: 0;
       }
 
@@ -1418,10 +1459,13 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       }
 
       /* The editor's look, assigned through the custom properties playground-elements ships for exactly this —
-         the palette is configuration, never a reach into its shadow DOM. */
+         the palette is configuration, never a reach into its shadow DOM. Each value is a light-dark() pair like the
+         tokens: the dark half is VS Code's Dark+ palette, the light half its Light+ counterpart, adjusted where a
+         colour fell under 4.5:1 on the light code background. `color-scheme` inherits into the elements' shadow
+         trees, so the pair resolves inside them the way it does on the page. Selection is neutral, like the accent. */
       .playground-app {
         --playground-code-background: var(--pg-inset);
-        --playground-code-default-color: #d4d4d8;
+        --playground-code-default-color: light-dark(#1f1f23, #d4d4d8);
         --playground-code-font-family: var(--pg-mono);
         --playground-code-font-size: 13.5px;
         --playground-code-line-height: 1.7;
@@ -1430,29 +1474,29 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         --playground-code-gutter-background: var(--pg-inset);
         --playground-code-gutter-border-right: 0;
         --playground-code-gutter-box-shadow: none;
-        --playground-code-linenumber-color: #4b4b53;
+        --playground-code-linenumber-color: light-dark(#85858d, #66666f);
         --playground-code-cursor-color: var(--pg-accent);
-        --playground-code-selection-background: #1d3b52;
-        --playground-highlight-color: #1d3b52;
-        --playground-code-comment-color: #6b7280;
-        --playground-code-keyword-color: #c586c0;
-        --playground-code-string-color: #ce9178;
-        --playground-code-string-2-color: #d7ba7d;
-        --playground-code-number-color: #b5cea8;
-        --playground-code-variable-color: #9cdcfe;
-        --playground-code-variable-2-color: #9cdcfe;
-        --playground-code-variable-3-color: #4ec9b0;
-        --playground-code-def-color: #dcdcaa;
-        --playground-code-type-color: #4ec9b0;
-        --playground-code-tag-color: #569cd6;
-        --playground-code-attribute-color: #9cdcfe;
-        --playground-code-property-color: #9cdcfe;
-        --playground-code-operator-color: #d4d4d8;
-        --playground-code-meta-color: #d7ba7d;
-        --playground-code-atom-color: #569cd6;
-        --playground-code-builtin-color: #4ec9b0;
-        --playground-code-callee-color: #dcdcaa;
-        --playground-code-qualifier-color: #dcdcaa;
+        --playground-code-selection-background: light-dark(#d9d9de, #303036);
+        --playground-highlight-color: light-dark(#d9d9de, #303036);
+        --playground-code-comment-color: light-dark(#5f6670, #7c8491);
+        --playground-code-keyword-color: light-dark(#9b1fb8, #c586c0);
+        --playground-code-string-color: light-dark(#a31515, #ce9178);
+        --playground-code-string-2-color: light-dark(#811f3f, #d7ba7d);
+        --playground-code-number-color: light-dark(#0b7a52, #b5cea8);
+        --playground-code-variable-color: light-dark(#0a3069, #9cdcfe);
+        --playground-code-variable-2-color: light-dark(#0a3069, #9cdcfe);
+        --playground-code-variable-3-color: light-dark(#1f6f83, #4ec9b0);
+        --playground-code-def-color: light-dark(#6f5310, #dcdcaa);
+        --playground-code-type-color: light-dark(#1f6f83, #4ec9b0);
+        --playground-code-tag-color: light-dark(#800000, #569cd6);
+        --playground-code-attribute-color: light-dark(#b0170f, #9cdcfe);
+        --playground-code-property-color: light-dark(#0a3069, #9cdcfe);
+        --playground-code-operator-color: light-dark(#1f1f23, #d4d4d8);
+        --playground-code-meta-color: light-dark(#6f5310, #d7ba7d);
+        --playground-code-atom-color: light-dark(#0b4fd6, #569cd6);
+        --playground-code-builtin-color: light-dark(#1f6f83, #4ec9b0);
+        --playground-code-callee-color: light-dark(#6f5310, #dcdcaa);
+        --playground-code-qualifier-color: light-dark(#6f5310, #dcdcaa);
         --playground-border: 1px solid var(--pg-line);
         --playground-bar-height: 36px;
         --playground-floating-controls-color: var(--pg-muted);
@@ -1629,7 +1673,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         overflow-x: auto;
         overflow-y: hidden;
         scrollbar-width: thin;
-        scrollbar-color: #3a3a42 transparent;
+        scrollbar-color: var(--pg-scrollbar) transparent;
         background: var(--pg-strip);
         /* No frame: a hairline under the strip only, which the selected tab paints over with the editor's
            background, so the tab and the editor read as one bare sheet. */
@@ -1640,7 +1684,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent);
       }
       .tab-scroller::-webkit-scrollbar { height: 6px; }
-      .tab-scroller::-webkit-scrollbar-thumb { background: #3a3a42; border-radius: 3px; }
+      .tab-scroller::-webkit-scrollbar-thumb { background: var(--pg-scrollbar); border-radius: 3px; }
       .playground-app #open-files { display: block; position: relative; z-index: 1; width: max-content; min-width: 100%; margin: 0; }
       .playground-app #open-files [slot='tab'] {
         display: inline-flex;
@@ -1718,17 +1762,21 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         background: var(--pg-faint);
         transition: background-color var(--pg-med), box-shadow var(--pg-med);
       }
-      .playground-app #status[data-state='running']::before { background: var(--pg-accent); box-shadow: 0 0 0 3px rgb(0 168 219 / 0.18); }
-      .playground-app #status[data-state='ok']::before { background: var(--pg-ok); box-shadow: 0 0 0 3px rgb(51 255 204 / 0.14); }
-      .playground-app #status[data-state='error']::before { background: var(--pg-error); box-shadow: 0 0 0 3px rgb(237 94 106 / 0.16); }
+      /* Each halo is its dot's own colour at low strength, mixed from the token — so it follows the half the page is
+         in, and the running dot's halo is as hue-free as the accent it surrounds. */
+      .playground-app #status[data-state='running']::before { background: var(--pg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pg-accent) 18%, transparent); }
+      .playground-app #status[data-state='ok']::before { background: var(--pg-ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pg-ok) 16%, transparent); }
+      .playground-app #status[data-state='error']::before { background: var(--pg-error); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pg-error) 16%, transparent); }
 
       .playground-app #busy { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; }
       .playground-app lion-progress-indicator { --lion-progress-indicator-size: 16px; }
 
-      /* The preview is a light canvas on the dark page: the served document is somebody else's page and renders on
-         white, and a transparent iframe shows the host through. It sits *in* the page rather than glaring out of it:
-         an off-white (#f3f3f4, the value the demos' shared styles.css paints too) and a soft inner shadow under the
-         toolbar, so the canvas reads as recessed. No frame and no radius: it is a region, not a card. */
+      /* The preview is a light canvas in both halves: the served document is somebody else's page and renders on
+         white, and a transparent iframe shows the host through. Its colours are therefore not light-dark() pairs —
+         the canvas is light whatever the page is. It sits *in* the page rather than glaring out of it: an off-white
+         (#f3f3f4, the value the demos' shared styles.css paints too), a soft inner shadow under the toolbar, and a
+         hairline edge, which on the light page is what keeps a near-white canvas from dissolving into a near-white
+         page. A hairline, not a frame: no radius, no shadow — it is a region, not a card. */
       /* No `display` here: the element's own `:host` is a flex column whose `#content` takes `flex: 1`, and that
          is what sizes the iframe to the frame. Forcing `display: block` (as this page used to) leaves the iframe at
          the browser's default 150px, and anything below that line in the canvas is cut off. */
@@ -1737,6 +1785,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: 18rem;
         overflow: hidden;
         background: #f3f3f4;
+        /* padding-box: the edge is a translucent hairline, and the canvas under it would show through as a halo. */
+        background-clip: padding-box;
+        border: 1px solid var(--pg-line-strong);
       }
       /* Drawn over the iframe, below the toolbar, and never in the way of the pointer. */
       .playground-app #preview::after {
@@ -1786,7 +1837,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         background: var(--pg-inset);
         color: var(--pg-fg-2);
         scrollbar-width: thin;
-        scrollbar-color: #3a3a42 transparent;
+        scrollbar-color: var(--pg-scrollbar) transparent;
       }
       .playground-app .terminal:empty::before {
         content: 'Console output appears here when the program runs.';
@@ -1865,7 +1916,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .playground-app .checks .note { margin-top: 12px; }
 
       .playground-app .note { margin: 12px 0 0; max-width: 68ch; font-size: 13px; line-height: 1.6; color: var(--pg-muted); }
-      .playground-app code { font-family: var(--pg-mono); font-size: 12.5px; color: #ce9178; }
+      .playground-app code { font-family: var(--pg-mono); font-size: 12.5px; color: light-dark(#a31515, #ce9178); }
 
       /* --- the parts ------------------------------------------------------------------------------------------
          Four native disclosures wrap the content (see the markup). Their two arrangements follow. */
