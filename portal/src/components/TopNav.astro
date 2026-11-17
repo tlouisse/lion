@@ -330,6 +330,25 @@ const { variant } = Astro.props;
     height: auto;
   }
 
+  /*
+   * Smaller type in the bar, which is what "on par with StackBlitz" means for the header: their nav links are 13px at
+   * weight 500 and their bar is 64px tall. The wordmark goes from 19.2px to 16px and the bar's own base to 14px,
+   * which the nav's shadow tree inherits for anything it does not set itself — measured after, rather than assumed.
+   */
+  .site-header {
+    font-size: 0.875rem;
+  }
+
+  /*
+   * The wordmark's size is set with higher specificity than a plain descendant selector reaches (measured: 16px on
+   * `.logo-text-svg text` did not move it, it stayed at 19.2px), so this matches what the component uses and wins on
+   * importance. Page-scoped to this page's header, which is the bar that was asked to be tighter.
+   */
+  .site-header :global(.logo-text-svg text.wordmark-glyphs),
+  .site-header :global(.logo-text-svg text.wordmark-accent) {
+    font-size: 16px !important;
+  }
+
 </style>
 
 <header class="site-header">
@@ -357,7 +376,13 @@ const { variant } = Astro.props;
               left the default state with nothing selected and made the control appear/disappear as
               you used it (see public/styles/theme.css).
             -->
-            <form class="theme-switch" aria-label="Colour theme" slot="l0-after">
+            <!--
+              The theme switch is slotted into the nav's *level* rather than its level-0 row: level 0 is the bar the
+              hamburger sits in, which is the closed bar on a phone, so a control there stays outside the open drawer.
+              The level slot renders in the row on a desktop and inside the drawer on a phone — one element, both
+              layouts. See `level-${level}-after` in UIMainNav.
+            -->
+            <form class="theme-switch" aria-label="Colour theme" slot="level-1-after">
                 <input type="radio" name="theme" id="theme-light" value="light" />
                 <label for="theme-light" title="Light theme"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2l1.9 1.9M16.9 16.9l1.9 1.9M18.8 5.2l-1.9 1.9M7.1 16.9l-1.9 1.9"/></g></svg></label>
                 <input type="radio" name="theme" id="theme-dark" value="dark" />

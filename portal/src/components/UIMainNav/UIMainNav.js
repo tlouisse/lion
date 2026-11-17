@@ -580,6 +580,12 @@ export class UIMainNav extends UIBaseElement {
                   </li>`,
             )}
           </ul>
+          <!--
+            A place for a control that belongs to the navigation without being a nav item — the portal puts its theme
+            switch here. It sits inside the level, so the same element renders in the row on a desktop and inside the
+            drawer when the nav collapses to the hamburger: one slot, both layouts.
+          -->
+          <slot name="level-${level}-after"></slot>
         </div>`;
     },
     navItem(context, { item, level }) {

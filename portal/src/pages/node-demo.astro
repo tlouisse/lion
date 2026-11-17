@@ -1134,9 +1134,12 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       main {
         margin: 0 auto;
-        max-width: 84rem;
+        /* The header's own container size, so the logo and the playground below it share one left edge. Measured
+           before: this page used 84rem here and 24px there while the header used 1600px and 40px, which put the
+           content 32px right of the logo on a 1440px screen (48 + 24 against 0 + 40). */
+        max-width: 1600px;
         /* 48px fixed header + 24px: the content clears the bar by the same 24px it keeps from the sides. */
-        padding: 72px 24px 24px;
+        padding: 72px var(--page-gutter) 24px;
         font-family: var(--pg-ui);
         line-height: 1.5;
         color: var(--pg-page-fg);
@@ -1768,7 +1771,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       /* --- a phone: one view at a time, switched from a fixed bar at the bottom ------------------------------- */
       @media (max-width: 48rem) {
         /* 48px header + 12px on top; the 57px bar + 27px underneath, so the last line is never under the bar. */
-        main { padding: 60px 16px 84px; }
+        main { padding: 60px var(--page-gutter) 84px; }
         main > header h1 { font-size: 18px; }
         main > header .lede { display: none; }
 

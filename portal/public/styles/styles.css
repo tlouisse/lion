@@ -152,6 +152,22 @@ body {
 }
 
 /*
+ * One gutter for the header and for the page content under it, so the logo sits exactly on the content's left edge
+ * instead of 16px off it. Measured before this existed: the header's container padded 40px while this page's `main`
+ * padded 24px, so the logo and the playground below it did not line up — and on a phone the same mismatch ran the
+ * other way (24 against 16). Pages that set their own `main` padding should use this value too.
+ */
+:root {
+    --page-gutter: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    :root {
+        --page-gutter: 2.5rem;
+    }
+}
+
+/*
  * Desktop gets wider side gutters. 1.5rem stays as the narrow-viewport value; from 1024px up the
  * gutter grows so content does not sit against the edge of a large screen. Header, hero, docs,
  * search and footer all share .container, so this is the one knob.
@@ -209,6 +225,8 @@ main {
 .site-header > .container {
     flex: 1 1 auto;
     min-width: 0;
+    padding-left: var(--page-gutter);
+    padding-right: var(--page-gutter);
 }
 
 /*
