@@ -1207,6 +1207,18 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       applyLayout();
 
       applyMode('client');
+
+      // "lion" alone, and the box around it hugging the letters. The mark is one SVG whose viewBox is 86 units wide
+      // with "ui" starting at x=54, so hiding that half leaves 20 units of empty viewport on the right: narrowing the
+      // viewBox to the word (and the element with it, keeping the mark's ~0.83 scale so it stays the size it is) puts
+      // the box around the letters instead of around the gap. Measured before this: "lion" rendered 41.5px wide
+      // starting at x=40.2 while the mark's box was 72px, so the difference was all empty space.
+      const mark = document.querySelector('.logo svg');
+      if (mark) {
+        mark.setAttribute('viewBox', '0 0 52 36');
+        mark.style.width = '43px';
+        mark.style.height = '30px';
+      }
     </script>
 
     <style is:global>
@@ -1316,20 +1328,21 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         color: var(--pg-fg); background: transparent;
       }
 
-      /* The wordmark: both halves at weight 400 and the accent half in grey, so the mark reads as one quiet word.
-         The component sets 600 on `.wordmark-glyphs`, so the selector matches that specificity and wins on order.
-         Page-scoped on purpose: on the docs site the yellow and the heavier weight are deliberate.
-         The accent half is also pulled back onto the spacing the mark has everywhere else: at 400 the glyphs of
-         "lion" are narrower than the 600 they are drawn for, while "ui" keeps its authored x — measured as a 4.2px
-         gap against the docs site's 2px. The transform applies in the SVG's own user units, which were 1:1 at the size
-         the mark had when this was written (an 86-unit viewBox rendered at 86px, so -3.4px measured a 0.8px gap and
-         -2.2px landed on 2px). If the mark is ever scaled, this value scales with it — verified after the mark went to
-         72x30: the gap measured 1.7px, exactly proportional to the 2px both pages had before. */
-      .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
-      .logo-text-svg text.wordmark-accent {
-        fill: var(--pg-muted);
-        stroke: none;
-        transform: translateX(-2.2px);
+      /* "lion" alone on this page, inside a square. Hiding the accent half leaves the SVG's viewport wider than the
+         word — the mark is one SVG with "ui" at x=54 — so the script below narrows the viewBox; without that the box
+         would enclose the empty space beside the letters rather than the letters. Page-scoped: the full mark with
+         "ui" in the accent colour is the brand on every other page, so removing that half site-wide is a bigger call
+         than one line of instruction. */
+      .logo-text-svg text.wordmark-accent { display: none; }
+
+      /* A square, not a pill: no radius, a hairline, and padding tight enough that it reads as drawn around the word.
+         `--pg-line` is this page's hairline; say so and it can be a heavier line, or a literal square with equal
+         sides, in one edit. */
+      .logo {
+        border: 1px solid var(--pg-line);
+        border-radius: 0;
+        padding: 3px 7px;
+        line-height: 0;
       }
 
       /* --- the intro: type on the page, not another box ------------------------------------------------------ */
