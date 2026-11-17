@@ -63,8 +63,8 @@ const sandboxBaseUrl =
       </div>
 
       <div class="playground playground-app">
-        <!-- The view rail: the icons switch what the app shows, the way an activity bar does. One view model, driven
-             from one attribute — the phone gets the same model as a bar at the bottom instead. -->
+        <!-- The view rail: the icons switch what the desktop shows, the way an activity bar does — one view model,
+             driven from one attribute. A phone has no rail: its bar at the bottom drives the accordion instead. -->
         <nav class="view-rail" aria-label="Views">
           <button type="button" data-view="files" class="is-active" title="Files" aria-label="Files">
             <span class="material-symbols-outlined" aria-hidden="true">folder</span>
@@ -79,27 +79,52 @@ const sandboxBaseUrl =
             <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
           </button>
         </nav>
+        <!-- The four parts — project, code, preview, output — are native disclosures. On a phone they are the
+             accordion the bottom bar drives: each is independent, so several may be open at once, and the bar shows
+             the one in view rather than "the open one". Above the breakpoint they are `display: contents` with their
+             summaries hidden, so the two columns lay out exactly as they do without them. They wrap the content where
+             it already is: the editor cannot be moved to another parent without CodeMirror re-initialising.
+             `<details>`, not lion-accordion: see the checks. -->
         <section class="pane" id="pane-project">
           <h2>project</h2>
-          <demo-tree id="file-tree"></demo-tree>
-          <div class="tab-scroller">
-            <lion-tabs id="open-files"></lion-tabs>
-          </div>
-          <playground-project id="project" sandbox-base-url={sandboxBaseUrl}></playground-project>
-          <playground-file-editor id="editor"></playground-file-editor>
+          <details class="part" id="part-files" data-part="files" open>
+            <summary class="part-head">
+              <span class="material-symbols-outlined" aria-hidden="true">folder</span>project
+            </summary>
+            <demo-tree id="file-tree"></demo-tree>
+          </details>
+          <details class="part" id="part-code" data-part="code" open>
+            <summary class="part-head">
+              <span class="material-symbols-outlined" aria-hidden="true">code</span>code
+            </summary>
+            <div class="tab-scroller">
+              <lion-tabs id="open-files"></lion-tabs>
+            </div>
+            <playground-project id="project" sandbox-base-url={sandboxBaseUrl}></playground-project>
+            <playground-file-editor id="editor"></playground-file-editor>
+          </details>
         </section>
 
         <section class="pane" id="pane-run">
           <h2>run</h2>
-          <p id="status" class="status" role="status">Not run yet.</p>
-          <playground-preview id="preview"></playground-preview>
-          <!-- A server has no page. In server mode the preview still runs the harness — it is where the server code
-               executes — but it shows nothing worth looking at, so this says where the result is instead. -->
-          <div id="no-page" class="no-page">
-            <span class="material-symbols-outlined" aria-hidden="true">dns</span>
-            <p>A server has no page. What it did is in the console: its stdout, the files it wrote and its worker.</p>
-          </div>
-          <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
+          <details class="part" id="part-preview" data-part="preview" open>
+            <summary class="part-head">
+              <span class="material-symbols-outlined" aria-hidden="true">smartphone</span>preview
+            </summary>
+            <p id="status" class="status" role="status">Not run yet.</p>
+            <playground-preview id="preview"></playground-preview>
+            <!-- A server has no page. In server mode the preview still runs the harness — it is where the server code
+                 executes — but it shows nothing worth looking at, so this says where the result is instead. -->
+            <div id="no-page" class="no-page">
+              <span class="material-symbols-outlined" aria-hidden="true">dns</span>
+              <p>A server has no page. What it did is in the console: its stdout, the files it wrote and its worker.</p>
+            </div>
+            <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
+          </details>
+          <details class="part" id="part-output" data-part="output" open>
+            <summary class="part-head">
+              <span class="material-symbols-outlined" aria-hidden="true">terminal</span>output
+            </summary>
           <div id="node-panes">
             <pre id="output" class="terminal" aria-label="Program output"></pre>
             <ul id="files" aria-label="Files the run wrote"></ul>
@@ -123,15 +148,16 @@ const sandboxBaseUrl =
             </p>
           </details>
           <p class="note" id="mode-note"></p>
+          </details>
         </section>
       </div>
 
-      <!-- CodeSandbox's mobile shape: one thing at a time, switched from a fixed bar at the bottom, drawn with the
-           icons their interface actually uses (Material Symbols Outlined — measured — over Inter, also measured). -->
+      <!-- The phone's bar: it drives the accordion above — a tap opens that part and scrolls it into view — and it
+           shows which part is open. The icons are Material Symbols Outlined over Inter, the same set as the rail. -->
       <nav class="mobile-tabs" aria-label="View">
         <button type="button" data-view="files">
           <span class="material-symbols-outlined" aria-hidden="true">folder</span>
-          <span>Files</span>
+          <span>Project</span>
         </button>
         <button type="button" data-view="code" class="is-active">
           <span class="material-symbols-outlined" aria-hidden="true">code</span>
@@ -724,7 +750,7 @@ parentPort.postMessage({ doubled: workerData.value * 2, inWorker: !isMainThread 
         ssr: {
           label: 'ssr',
           hint: 'render + hydrate',
-          note: 'One app, two halves. server/render.js renders client/app.js to a string with @lit-labs/ssr and writes it out as the response, with the data it rendered from; the client puts that markup in the page and client/hydrate.js takes over the same components in place, without rendering them again. The server may import client code to render it; the client may not import server code. The server’s stdout and the browser’s console are printed separately below.',
+          note: 'One app, two halves. server/render.js renders client/app.js to a string with @lit-labs/ssr and writes it out as the response, with the data it rendered from; the client puts that markup in the page and client/hydrate.js takes over the same components in place, without rendering them again. The server may import client code to render it; the client may not import server code. The server’s stdout and the browser’s console are printed as two sections of the console.',
           open: ['server/render.js', 'client/app.js', 'client/hydrate.js'],
           active: 'server/render.js',
           run: { entry: 'server/render.js', hydrate: 'client/hydrate.js', status: 'Rendering on the server…' },
@@ -1058,24 +1084,127 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         modeTabs.appendChild(tab);
       }
 
-      // The view model: one attribute on <body>, driven from whichever affordance the width offers — the rail on a
-      // desktop, the bar at the bottom on a phone. Show/hide lives in CSS, so there is one source of truth.
-      const viewControls = [...document.querySelectorAll('.view-rail button, .mobile-tabs button')];
+      // Two arrangements of the same four parts, one per width.
+      //
+      // Desktop: the view model. One attribute on <body>, driven by the rail; show/hide lives in CSS, so there is one
+      // source of truth, and the parts are laid out as if they were not there (see the stylesheet).
+      const railButtons = [...document.querySelectorAll('.view-rail button')];
       const setView = view => {
         document.body.dataset.view = view;
-        for (const button of viewControls) {
+        for (const button of railButtons) {
           button.classList.toggle('is-active', button.dataset.view === view);
         }
       };
-      for (const rail of [document.querySelector('.view-rail'), document.querySelector('.mobile-tabs')]) {
-        rail.addEventListener('click', event => {
-          const button = event.target.closest('button[data-view]');
-          if (button) setView(button.dataset.view);
+      document.querySelector('.view-rail').addEventListener('click', event => {
+        const button = event.target.closest('button[data-view]');
+        if (button) setView(button.dataset.view);
+      });
+      setView('files');
+
+      // Phone: the parts are an accordion, and the bottom bar drives it. A tap on the bar opens that part and scrolls
+      // it into view. The parts are **independent** — several may be open at once — so the bar cannot mean "the open
+      // one": it shows the part that is in view, which is what a reader is looking at and what a tap would move.
+      // Nothing sets the `name` attribute here, because that is native exclusivity and it was explicitly not wanted.
+      // Smooth scrolling, unless the user asked for reduced motion: then the jump is instant ('instant', not 'auto' —
+      // 'auto' defers to the CSS `scroll-behavior`, which the portal sets smooth).
+      const parts = [...document.querySelectorAll('details.part')];
+      const barButtons = [...document.querySelectorAll('.mobile-tabs button')];
+      const phone = window.matchMedia('(max-width: 48rem)');
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const scrollBehavior = () => (reducedMotion.matches ? 'instant' : 'smooth');
+
+      /** @type {string | null} */
+      let partInView = null;
+
+      const updateBar = () => {
+        for (const button of barButtons) {
+          const active = button.dataset.view === partInView;
+          button.classList.toggle('is-active', active);
+          if (active) button.setAttribute('aria-current', 'true');
+          else button.removeAttribute('aria-current');
+        }
+      };
+
+      const revealPart = part => {
+        // After the layout has settled: a part that closed above this one has already given its height back.
+        requestAnimationFrame(() => part.scrollIntoView({ behavior: scrollBehavior(), block: 'start' }));
+      };
+
+      const openPart = view => {
+        const part = parts.find(candidate => candidate.dataset.part === view);
+        if (!part) return;
+        part.open = true;
+        updateBar();
+        revealPart(part);
+      };
+
+      for (const part of parts) {
+        part.addEventListener('toggle', () => {
+          if (!phone.matches || !part.open) return;
+          // Opened from its own header: keep it in view if opening another part above moved its header off screen.
+          const top = part.getBoundingClientRect().top;
+          if (top < 48 || top > window.innerHeight - 57) revealPart(part);
         });
       }
-      // The default view depends on the width: the full layout on a desktop, the editor alone on a phone, where the
-      // bar offers the other views. Same model either way.
-      setView(window.innerWidth < 768 ? 'code' : 'files');
+
+      // Which part is in view. The rule is the last part whose top has passed the line a revealed part comes to rest
+      // at — "which section fills the viewport" — rather than the topmost of those intersecting a band: with long
+      // sections open, one that has already scrolled past still intersects, and picking it named the wrong part
+      // (measured: the bar said preview while output filled the screen). The line is the parts' own
+      // `scroll-margin-top`, so there is one source of truth for where a reveal lands instead of a second constant
+      // that can drift. A passive scroll listener, throttled to a frame, keeps it right during a smooth scroll too.
+      let revealLine = 0;
+      const syncPartInView = () => {
+        if (!phone.matches) {
+          partInView = null;
+          updateBar();
+          return;
+        }
+        let current = null;
+        for (const part of parts) {
+          if (part.getBoundingClientRect().top <= revealLine + 1) current = part.dataset.part ?? null;
+        }
+        // Nothing has passed the line yet: the first part is what the reader is at.
+        if (current === null) current = parts[0]?.dataset.part ?? null;
+        if (current !== partInView) {
+          partInView = current;
+          updateBar();
+        }
+      };
+      let scrollScheduled = false;
+      window.addEventListener(
+        'scroll',
+        () => {
+          if (scrollScheduled) return;
+          scrollScheduled = true;
+          requestAnimationFrame(() => {
+            scrollScheduled = false;
+            syncPartInView();
+          });
+        },
+        { passive: true },
+      );
+
+      document.querySelector('.mobile-tabs').addEventListener('click', event => {
+        const button = event.target.closest('button[data-view]');
+        if (button && phone.matches) openPart(button.dataset.view);
+      });
+
+      // Entering a width sets its arrangement: on a phone the code is open and the rest are closed — closed only as a
+      // default, not enforced, so opening several is fine. Above the breakpoint every part is open, because the
+      // desktop lays them out side by side.
+      const applyLayout = () => {
+        if (phone.matches) {
+          const keep = parts.find(part => part.dataset.part === 'code');
+          for (const part of parts) part.open = part === keep;
+        } else {
+          for (const part of parts) part.open = true;
+        }
+        revealLine = parts.length ? parseFloat(getComputedStyle(parts[0]).scrollMarginTop) || 0 : 0;
+        syncPartInView();
+      };
+      phone.addEventListener('change', applyLayout);
+      applyLayout();
 
       applyMode('client');
     </script>
@@ -1089,16 +1218,19 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          The language, measured from StackBlitz's own stylesheet and kept in this page's dark family:
          - type: Inter for the UI at 400 / 500 / 600 (headings 600), JetBrains Mono for every code surface;
          - motion: 0.1s for state changes, 0.16s for movement, `ease`, nothing that bounces;
-         - surfaces: three greys (page, panel, inset) separated by a hairline ring and one soft shadow — not a
-           border on every box;
-         - radius: 8px panels, 6px insets and controls, 4px for small things;
+         - surfaces: no cards. The playground's regions are sections of one page, on the page's own background,
+           separated by space and a hairline rule where a divider is genuinely needed. The code surfaces (editor,
+           console) are bare, the way runware's docs set code — measured there: no border, no radius, no shadow, the
+           code background and generous padding;
+         - radius: only on controls (6px) and small things (4px) — never on a region or a code surface;
          - colour: one accent (their blue) for selection and focus, mint for success, red for failure. */
       :root {
         --pg-ui: Inter, system-ui, sans-serif;
         --pg-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-        /* The page around the app follows the portal's theme switch (light-dark() resolves the portal's
-           `color-scheme`, which theme.css sets for light, dark and auto alike); the app itself is dark in both. */
+        /* light-dark() resolves against the `color-scheme` of the element that uses the value. The portal's
+           theme.css sets that on <html> for light, dark and auto; this page pins its <body> to dark (below), so here
+           these resolve to their dark half in every theme. */
         --pg-page: light-dark(#f4f4f5, #0b0b0d);
         --pg-page-fg: light-dark(#18181b, #ededef);
         --pg-page-muted: light-dark(#5f5f67, hsl(0 0% 62%));
@@ -1122,15 +1254,16 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         --pg-ok: rgb(51 255 204);
         --pg-error: rgb(237 94 106);
 
-        --pg-shadow: 0 0 0 1px var(--pg-line), 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.6);
-        --pg-r-lg: 8px;
         --pg-r: 6px;
         --pg-r-sm: 4px;
         --pg-fast: 0.1s ease;
         --pg-med: 0.16s ease;
       }
 
-      html body { background-color: var(--pg-page); }
+      /* The app is dark, and without panel surfaces its sections sit on the page's own background — so the page is the
+         app's dark in every theme. A light page would put the app's light-grey text on near-white. The theme switch
+         keeps governing the rest of the site; on this page it has nothing left to switch. */
+      html body { color-scheme: dark; background-color: var(--pg-page); }
 
       main {
         margin: 0 auto;
@@ -1188,8 +1321,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          Page-scoped on purpose: on the docs site the yellow and the heavier weight are deliberate.
          The accent half is also pulled back onto the spacing the mark has everywhere else: at 400 the glyphs of
          "lion" are narrower than the 600 they are drawn for, while "ui" keeps its authored x — measured as a 4.2px
-         gap against the docs site's 2px. The transform turns out to apply one-to-one in rendered pixels here, not in
-         the SVG's user units: -3.4px measured a 0.8px gap, so -2.2px is the value that lands on 2px. */
+         gap against the docs site's 2px. The transform applies in the SVG's own user units, which were 1:1 at the size
+         the mark had when this was written (an 86-unit viewBox rendered at 86px, so -3.4px measured a 0.8px gap and
+         -2.2px landed on 2px). If the mark is ever scaled, this value scales with it — verified after the mark went to
+         72x30: the gap measured 1.7px, exactly proportional to the 2px both pages had before. */
       .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
       .logo-text-svg text.wordmark-accent {
         fill: var(--pg-muted);
@@ -1199,16 +1334,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       /* --- the intro: type on the page, not another box ------------------------------------------------------ */
       main > header { margin: 0 0 16px; text-align: left; }
-      main > header h1 {
-        margin: 0;
-        font-size: 20px;
-        line-height: 1.3;
-        font-weight: 600;
-        letter-spacing: -0.015em;
-        color: var(--pg-page-fg);
-      }
       .lede {
-        margin: 6px 0 0;
+        margin: 0;
         max-width: 76ch;
         font-size: 14px;
         line-height: 1.6;
@@ -1240,13 +1367,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         gap: 12px;
         margin: 0 0 16px;
       }
+      /* On the page itself: no well around the control, only the selected mode carries a fill. */
       #modes {
         display: inline-flex;
-        gap: 2px;
-        padding: 3px;
-        border-radius: 8px;
-        background: var(--pg-inset);
-        box-shadow: 0 0 0 1px var(--pg-line);
+        gap: 4px;
       }
       #modes [role='tab'] {
         display: inline-flex;
@@ -1261,14 +1385,13 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         font: 500 13px/30px var(--pg-ui);
         white-space: nowrap;
         cursor: pointer;
-        transition: color var(--pg-fast), background-color var(--pg-fast), box-shadow var(--pg-fast);
+        transition: color var(--pg-fast), background-color var(--pg-fast);
       }
       #modes .mode-hint { font-weight: 400; color: var(--pg-faint); transition: color var(--pg-fast); }
       #modes [role='tab']:hover { color: var(--pg-fg); background: var(--pg-hover); }
       #modes [role='tab'][aria-selected='true'] {
         color: var(--pg-fg);
         background: var(--pg-selected);
-        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.5);
       }
       #modes [role='tab'][aria-selected='true'] .mode-hint { color: var(--pg-muted); }
       #modes [role='tab']:active { background: var(--pg-selected); }
@@ -1329,7 +1452,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         --playground-tab-bar-font-size: 12px;
       }
 
-      /* --- the view rail: an activity bar, full height ------------------------------------------------------- */
+      /* --- the view rail: an activity bar, full height, on the page — the panel beside it draws the divider ---- */
       .view-rail {
         display: flex;
         flex-direction: column;
@@ -1338,9 +1461,6 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         width: 48px;
         padding: 6px 0;
         align-self: stretch;
-        background: var(--pg-surface);
-        border-radius: var(--pg-r-lg);
-        box-shadow: var(--pg-shadow);
       }
       .view-rail button {
         position: relative;
@@ -1374,18 +1494,19 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .view-rail button.is-active::before { opacity: 1; transform: none; }
       .view-rail button.is-active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 
-      /* --- panels ------------------------------------------------------------------------------------------- */
+      /* --- sections ----------------------------------------------------------------------------------------- *
+         Not cards: no surface, no radius, no shadow. Each column is a section of the page, divided from the one
+         before it by a hairline down its left edge — the one divider the columns genuinely need. The 16px inset
+         stays, so the tree, the tabs and the editor keep their measured left edge (40 + 48 rail + 24 + 16 = 128). */
       .playground-app .pane {
         display: flex;
         flex-direction: column;
         min-width: 0;
         padding: 0 16px 16px;
-        background: var(--pg-surface);
-        border-radius: var(--pg-r-lg);
-        box-shadow: var(--pg-shadow);
+        box-shadow: inset 1px 0 0 var(--pg-line);
         color: var(--pg-fg-2);
       }
-      /* The panel title is a header row across the full panel, divided from the body by a hairline. */
+      /* The section title is a header row across the full section, divided from the body by a hairline rule. */
       .playground-app .pane h2 {
         display: flex;
         align-items: center;
@@ -1497,11 +1618,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         scrollbar-width: thin;
         scrollbar-color: #3a3a42 transparent;
         background: var(--pg-strip);
-        border-radius: var(--pg-r) var(--pg-r) 0 0;
-        /* A hairline on all four sides; the selected tab paints over the bottom one with the editor's background,
-           so the tab and the editor read as one sheet. */
-        box-shadow: inset 0 1px 0 var(--pg-line), inset 1px 0 0 var(--pg-line), inset -1px 0 0 var(--pg-line),
-          inset 0 -1px 0 var(--pg-line);
+        /* No frame: a hairline under the strip only, which the selected tab paints over with the editor's
+           background, so the tab and the editor read as one bare sheet. */
+        box-shadow: inset 0 -1px 0 var(--pg-line);
       }
       /* When the tabs do not fit, the edge they continue past fades out, so the strip reads as a scroller. */
       .tab-scroller.is-overflowing:not(.is-at-end) {
@@ -1525,7 +1644,6 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         box-shadow: inset -1px 0 0 var(--pg-line);
         transition: color var(--pg-fast), background-color var(--pg-fast);
       }
-      .playground-app #open-files [slot='tab']:first-child { border-top-left-radius: var(--pg-r); }
       .playground-app #open-files [slot='tab']:hover { color: var(--pg-fg-2); background: var(--pg-hover); }
       /* The active tab is the ARIA state this page owns (Lion does not decorate tabs it did not add), so the
          highlight follows `aria-selected`. It takes the editor's background, so tab and editor read as one sheet. */
@@ -1558,16 +1676,13 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       /* Lion's tabs require a panel per tab; the editor is the panel here, so the empty ones take no space. */
       #open-files [slot='panel'] { display: none !important; }
 
-      /* --- the editor: fills what is left of the panel, so the panel never ends in dead space ----------------- */
+      /* --- the editor: bare code, filling what is left of the section so it never ends in dead space -------- */
       .playground-app #editor {
         display: block;
         flex: 1 0 30rem;
         min-height: 0;
         overflow: hidden;
         background: var(--pg-inset);
-        border: 1px solid var(--pg-line);
-        border-top: 0;
-        border-radius: 0 0 var(--pg-r) var(--pg-r);
       }
 
       /* --- the run panel ------------------------------------------------------------------------------------- */
@@ -1597,10 +1712,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .playground-app #busy { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; }
       .playground-app lion-progress-indicator { --lion-progress-indicator-size: 16px; }
 
-      /* The preview is a light canvas inside dark chrome: the served document is somebody else's page and renders
-         on white, and a transparent iframe shows the host through. It sits *in* the shell rather than glaring out of
-         it: an off-white (#f3f3f4, the value the demos' shared styles.css paints too), a slightly stronger hairline
-         edge than the dark wells get, and a soft inner shadow under the toolbar so the canvas reads as recessed. */
+      /* The preview is a light canvas on the dark page: the served document is somebody else's page and renders on
+         white, and a transparent iframe shows the host through. It sits *in* the page rather than glaring out of it:
+         an off-white (#f3f3f4, the value the demos' shared styles.css paints too) and a soft inner shadow under the
+         toolbar, so the canvas reads as recessed. No frame and no radius: it is a region, not a card. */
       /* No `display` here: the element's own `:host` is a flex column whose `#content` takes `flex: 1`, and that
          is what sizes the iframe to the frame. Forcing `display: block` (as this page used to) leaves the iframe at
          the browser's default 150px, and anything below that line in the canvas is cut off. */
@@ -1609,10 +1724,6 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: 18rem;
         overflow: hidden;
         background: #f3f3f4;
-        /* padding-box: the border is a translucent hairline, and the light canvas under it would show as a halo. */
-        background-clip: padding-box;
-        border: 1px solid var(--pg-line-strong);
-        border-radius: var(--pg-r);
       }
       /* Drawn over the iframe, below the toolbar, and never in the way of the pointer. */
       .playground-app #preview::after {
@@ -1620,7 +1731,6 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         position: absolute;
         inset: var(--playground-bar-height) 0 0;
         pointer-events: none;
-        border-radius: 0 0 5px 5px;
         box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.14), inset 0 0 0 1px rgb(0 0 0 / 0.05);
       }
       #preview::part(preview-toolbar) { border-bottom: 1px solid var(--pg-line); font-family: var(--pg-ui); font-size: 12px; }
@@ -1643,29 +1753,25 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 16px;
-        border: 1px dashed var(--pg-line-strong);
-        border-radius: var(--pg-r);
+        padding: 4px 0 8px;
         color: var(--pg-muted);
         font-size: 13px;
         line-height: 1.5;
       }
       .playground-app .no-page p { margin: 0; }
       .playground-app .no-page .material-symbols-outlined { font-size: 22px; color: var(--pg-faint); }
-      body[data-view='output'] .no-page { display: none !important; }
 
-      /* The console: an inset well. Empty, it says what will appear in it rather than being a blank box. */
+      /* The console: bare code, like the editor — the code background and generous padding, no frame. Empty, it says
+         what will appear in it rather than being a blank block. */
       .playground-app .terminal {
-        margin: 12px 0 0;
-        padding: 10px 12px;
+        margin: 16px 0 0;
+        padding: 16px 20px;
         min-height: 3rem;
         max-height: 16rem;
         overflow: auto;
         white-space: pre-wrap;
         background: var(--pg-inset);
         color: var(--pg-fg-2);
-        border: 1px solid var(--pg-line);
-        border-radius: var(--pg-r);
         scrollbar-width: thin;
         scrollbar-color: #3a3a42 transparent;
       }
@@ -1675,28 +1781,24 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         font-size: 13px;
         color: var(--pg-faint);
       }
-      /* The files the program wrote are the console's footer, in the same well: one box, one text column. */
-      .playground-app .terminal:has(+ #files:not(:empty)) { border-radius: var(--pg-r) var(--pg-r) 0 0; }
+      /* The files the program wrote are the console's footer, on the same code background and text column, divided
+         from the output by a hairline. */
       .playground-app #files {
         list-style: none;
         margin: 0;
-        padding: 8px 12px 10px;
+        padding: 12px 20px 16px;
         background: var(--pg-inset);
-        border: 1px solid var(--pg-line);
-        border-top: 0;
-        border-radius: 0 0 var(--pg-r) var(--pg-r);
+        box-shadow: inset 0 1px 0 var(--pg-line);
       }
       .playground-app #files:empty { display: none; }
       .playground-app #files li { color: var(--pg-muted); }
 
-      /* The checks disclosure is this page's own: Lion's accordion cannot be themed (see the markup comment). It is
-         the same kind of well as the console above it — same surface, same hairline, same 12px inner edge — so its
-         label and its content start on the console's text column instead of floating as a box of its own. */
+      /* The checks disclosure is this page's own: Lion's accordion cannot be themed (see the markup comment). It is a
+         section, not a box: a hairline rule above it, and its label and content on the section's own text column —
+         the column the status line and the notes use. */
       .playground-app .checks {
-        margin: 12px 0 0;
-        background: var(--pg-inset);
-        border: 1px solid var(--pg-line);
-        border-radius: var(--pg-r);
+        margin: 16px 0 0;
+        border-top: 1px solid var(--pg-line);
         font-size: 13px;
         color: var(--pg-fg-2);
       }
@@ -1704,9 +1806,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         display: flex;
         align-items: center;
         justify-content: space-between;
-        height: 36px;
-        padding: 0 10px 0 12px;
-        border-radius: var(--pg-r);
+        height: 40px;
+        padding: 0;
         list-style: none;
         cursor: pointer;
         font: 600 11.5px/1 var(--pg-ui);
@@ -1716,7 +1817,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         transition: color var(--pg-fast), background-color var(--pg-fast);
       }
       .playground-app .checks summary::-webkit-details-marker { display: none; }
-      .playground-app .checks summary:hover { color: var(--pg-fg-2); background: var(--pg-hover); }
+      .playground-app .checks summary:hover { color: var(--pg-fg-2); }
       .playground-app .checks summary::after {
         content: 'expand_more';
         font: normal 18px/1 'Material Symbols Outlined';
@@ -1726,10 +1827,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         transition: transform var(--pg-med);
       }
       .playground-app .checks[open] summary::after { transform: rotate(180deg); }
-      .playground-app .checks[open] summary { border-radius: var(--pg-r) var(--pg-r) 0 0; box-shadow: inset 0 -1px 0 var(--pg-line); }
-      .playground-app .checks > :not(summary) { margin-left: 12px; margin-right: 12px; }
-      .playground-app .checks > p:first-of-type { margin-top: 12px; }
-      .playground-app .checks > :last-child { margin-bottom: 12px; }
+      .playground-app .checks > p:first-of-type { margin-top: 4px; }
+      .playground-app .checks > :last-child { margin-bottom: 4px; }
       .playground-app .checks .status { display: block; margin-bottom: 8px; font-size: 13px; }
       .playground-app :is(#governance, #boundary)[data-consistent='false'] { color: var(--pg-error); }
       .playground-app .checks h3 {
@@ -1755,32 +1854,49 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .playground-app .note { margin: 12px 0 0; max-width: 68ch; font-size: 13px; line-height: 1.6; color: var(--pg-muted); }
       .playground-app code { font-family: var(--pg-mono); font-size: 12.5px; color: #ce9178; }
 
-      /* --- the view model -------------------------------------------------------------------------------------
-         One attribute on <body>, driven by the rail on a desktop and the bottom bar on a phone; show/hide lives
-         here so there is one source of truth. `files` is the full layout — the rail switches focus, not the editor
-         out of existence, which is how an activity bar behaves. `code` is that view with the tree folded away, and
-         the last two are the run pane alone. */
-      body[data-view='code'] #file-tree,
-      body[data-view='code'] #pane-run { display: none; }
-      body[data-view='preview'] #pane-project,
-      body[data-view='output'] #pane-project { display: none; }
-      body[data-view='preview'] #node-panes,
-      body[data-view='preview'] .checks,
-      body[data-view='preview'] #mode-note { display: none; }
-      body[data-view='output'] #preview { display: none; }
-      /* A focused view gets the whole width beside the rail, not a narrow column. */
-      body[data-view='preview'] #pane-run,
-      body[data-view='output'] #pane-run { grid-column: 2 / -1; }
-      /* With the preview gone, the console is the view: it starts at the top of the panel. */
-      body[data-view='output'] .playground-app .terminal { margin-top: 0; }
+      /* --- the parts ------------------------------------------------------------------------------------------
+         Four native disclosures wrap the content (see the markup). Their two arrangements follow. */
+      .part-head { list-style: none; }
+      .part-head::-webkit-details-marker { display: none; }
+
+      /* --- desktop: two columns and the view model ---------------------------------------------------------------
+         The parts are not boxes here: `display: contents` on the disclosure and on its content slot makes their
+         children lay out as children of the column, exactly as without them, and the summaries are not shown — the
+         rail is how a desktop switches. (`::details-content` is its own rule: a browser without it drops only that
+         rule, and still gets the hidden summaries and the open parts.) */
+      @media (min-width: 48.01rem) {
+        .part { display: contents; }
+        .part > summary { display: none; }
+
+        /* The view model: one attribute on <body>, driven by the rail; show/hide lives here so there is one source
+           of truth. `files` is the full layout — the rail switches focus, not the editor out of existence, which is
+           how an activity bar behaves. `code` is that view with the tree folded away, and the last two are the run
+           pane alone. */
+        body[data-view='code'] #file-tree,
+        body[data-view='code'] #pane-run { display: none; }
+        body[data-view='preview'] #pane-project,
+        body[data-view='output'] #pane-project { display: none; }
+        body[data-view='preview'] #node-panes,
+        body[data-view='preview'] .checks,
+        body[data-view='preview'] #mode-note { display: none; }
+        body[data-view='output'] #preview,
+        body[data-view='output'] .no-page { display: none !important; }
+        /* A focused view gets the whole width beside the rail, not a narrow column. */
+        body[data-view='preview'] #pane-run,
+        body[data-view='output'] #pane-run { grid-column: 2 / -1; }
+        /* With the preview gone, the console is the view: it starts at the top of the section. */
+        body[data-view='output'] .playground-app .terminal { margin-top: 0; }
+      }
+      @media (min-width: 48.01rem) {
+        .part::details-content { display: contents; }
+      }
 
       .mobile-tabs { display: none; }
 
-      /* --- a phone: one view at a time, switched from a fixed bar at the bottom ------------------------------- */
+      /* --- a phone: the four parts stacked as an accordion, driven by a fixed bar at the bottom ----------------- */
       @media (max-width: 48rem) {
         /* 48px header + 12px on top; the 57px bar + 27px underneath, so the last line is never under the bar. */
         main { padding: 60px var(--page-gutter) 84px; }
-        main > header h1 { font-size: 18px; }
         main > header .lede { display: none; }
 
         .toolbar.playground-app { display: block; }
@@ -1788,26 +1904,59 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         #modes [role='tab'] { justify-content: center; height: 40px; line-height: 40px; padding: 0 8px; }
         #modes .mode-hint { display: none; }
 
-        .playground.playground-app { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+        /* One column of parts, one after the other: no columns, no section titles (each part has its own header),
+           no column divider. */
+        .playground.playground-app { grid-template-columns: minmax(0, 1fr); gap: 0; }
         .view-rail { display: none; }
-        /* The focused views span "column 2 to the end" beside the rail; with no rail and one column that would
-           invent an implicit second column and push the run pane off to the right. */
-        body[data-view] #pane-run { grid-column: auto; }
+        .playground-app .pane { padding: 0; box-shadow: none; }
+        .playground-app .pane h2 { display: none; }
 
-        .playground-app .pane { padding: 0 12px 12px; }
-        .playground-app .pane h2 { margin: 0 -12px 12px; padding: 0 12px; }
-        /* The editor takes the rest of the screen above the bar (never less than 22rem), so the code view is the
-           whole phone rather than a box with empty page beneath it. */
-        .playground-app #editor { flex-basis: max(22rem, calc(100dvh - 360px)); }
+        /* A part: its header is a full-width row with a hairline rule above it; the open part's chevron turns. The
+           header clears the fixed site header when the bar scrolls a part into view. */
+        .part { scroll-margin-top: 56px; border-top: 1px solid var(--pg-line); }
+        #pane-run .part:last-child { border-bottom: 1px solid var(--pg-line); }
+        .part-head {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-height: 48px;
+          cursor: pointer;
+          font: 600 12px/1 var(--pg-ui);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--pg-muted);
+          -webkit-tap-highlight-color: transparent;
+          transition: color var(--pg-fast);
+        }
+        .part-head .material-symbols-outlined { font-size: 20px; color: var(--pg-faint); }
+        .part-head::after {
+          content: 'expand_more';
+          margin-left: auto;
+          font: normal 20px/1 'Material Symbols Outlined';
+          font-feature-settings: 'liga';
+          letter-spacing: normal;
+          text-transform: none;
+          color: var(--pg-faint);
+          transition: transform var(--pg-med);
+        }
+        .part[open] > .part-head { color: var(--pg-fg); }
+        .part[open] > .part-head .material-symbols-outlined { color: var(--pg-accent); }
+        .part[open] > .part-head::after { transform: rotate(180deg); }
+        .part[open] { padding-bottom: 16px; }
+
+        /* The code, bare and full width, a screenful tall at most so the next part's header stays reachable. */
+        .playground-app #editor { flex: none; height: min(60dvh, 28rem); }
         .playground-app #preview { height: 22rem; }
+        .playground-app .terminal { margin-top: 0; }
+        .playground-app #status { margin-top: 0; }
 
-        /* Phone-sized hit areas, and a tree that does not eat the editor: it scrolls inside a capped height. */
-        .playground-app #file-tree { max-height: 9rem; overflow: auto; }
+        /* Phone-sized hit areas. */
+        .playground-app #file-tree { margin: 0; }
         .playground-app #file-tree [role='treeitem'] { height: 40px; }
         .playground-app #open-files [slot='tab'] { height: 40px; }
         .playground-app #open-files [slot='tab'] .close { width: 28px; height: 28px; opacity: 1; }
 
-        /* The bar: fixed, safe-area aware, four views in four columns, 56px touch targets plus its hairline. */
+        /* The bar: fixed, safe-area aware, four parts in four columns, 56px touch targets plus its hairline. */
         .mobile-tabs {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1866,6 +2015,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       }
 
       @media (prefers-reduced-motion: reduce) {
+        /* The portal scrolls the page smoothly; asked for reduced motion, a jump to a part is instant. */
+        html { scroll-behavior: auto; }
         .playground-app *,
         .playground-app *::before,
         .playground-app *::after,
