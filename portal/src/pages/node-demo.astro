@@ -213,7 +213,11 @@ const sandboxBaseUrl =
         element.prepend(icon);
       };
 
-      const renderTree = (mount, files) => {
+      // The files sit under one root folder named for the project, so the tree reads as structure — a folder,
+      // indented children, a disclosure — and not as a second row of tabs. Lion's menu system makes a folder row
+      // the invoker of the group after it but does not open or close it here (its disclosure wiring is not in
+      // this mixin), so the page owns that: `aria-expanded` on the row, `hidden` on the group.
+      const renderTree = (mount, files, rootName) => {
         const root = { children: new Map() };
         for (const name of Object.keys(files)) {
           const parts = name.split('/');
@@ -226,28 +230,45 @@ const sandboxBaseUrl =
         }
         const next = document.createElement('demo-tree');
         next.id = mount.id;
-        const append = (parent, node) => {
+        const treeItem = (parent, name, iconName) => {
+          const item = document.createElement('div');
+          item.setAttribute('role', 'treeitem');
+          const label = document.createElement('span');
+          label.textContent = name;
+          item.append(label);
+          withIcon(item, iconName);
+          parent.appendChild(item);
+          return item;
+        };
+        const folder = (parent, name, node) => {
+          const item = treeItem(parent, name, 'folder_open');
+          item.dataset.folder = '';
+          item.setAttribute('aria-expanded', 'true');
+          const group = document.createElement('demo-tree');
+          append(group, node);
+          parent.appendChild(group);
+          item.addEventListener('click', () => {
+            const open = item.getAttribute('aria-expanded') !== 'true';
+            item.setAttribute('aria-expanded', String(open));
+            item.querySelector('.material-symbols-outlined').textContent = open ? 'folder_open' : 'folder';
+            group.hidden = !open;
+          });
+        };
+        function append(parent, node) {
           for (const [part, child] of node.children) {
-            const item = document.createElement('div');
-            item.setAttribute('role', 'treeitem');
-            const label = document.createElement('span');
-            label.textContent = part;
-            item.append(label);
-            withIcon(item, child.file ? iconForFile(part) : 'folder');
-            parent.appendChild(item);
             if (child.file) {
+              const item = treeItem(parent, part, iconForFile(part));
               item.dataset.file = child.file;
               item.addEventListener('click', () => {
                 openFile(child.file);
               });
             } else if (child.children.size) {
-              const group = document.createElement('demo-tree');
-              append(group, child);
-              parent.appendChild(group);
+              folder(parent, part, child);
             }
           }
-        };
-        append(next, root);
+        }
+        if (rootName) folder(next, rootName, root);
+        else append(next, root);
         mount.replaceWith(next);
         return next;
       };
@@ -275,7 +296,7 @@ const sandboxBaseUrl =
           close.type = 'button';
           close.className = 'close';
           close.setAttribute('aria-label', `Close ${name}`);
-          close.textContent = '×';
+          withIcon(close, 'close');
           close.addEventListener('click', event => {
             event.stopPropagation();
             closeOpenFile(name);
@@ -455,11 +476,41 @@ window.parent.postMessage(
 await import(${JSON.stringify(engineUrl)});
 `;
 
+      // The preview canvas, shared by all three modes. It renders somebody else's document, so it stays light, but
+      // it is an off-white rather than a white so it sits in the dark shell instead of glaring out of it, and it has
+      // the room a canvas needs: 28px / 32px of padding, a heading with weight, and a form that does not stretch to
+      // the full width of the frame. The preview element paints the same value behind it (see the stylesheet), so
+      // the canvas and its frame agree while the document loads.
+      const canvasStyles = `:root {
+  color-scheme: light;
+}
+body {
+  font-family: system-ui, sans-serif;
+  background: #f3f3f4;
+  color: #1c1c20;
+  line-height: 1.5;
+  padding: 28px 32px;
+  margin: 0;
+}
+h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 1rem;
+}
+lion-input, lion-button {
+  display: block;
+  max-width: 24rem;
+  margin-bottom: 0.75rem;
+}
+`;
+
       const modes = {
         browser: {
           note: 'Browser mode: index.html is the document and main.js is its module. There is no filesystem to write to — the demo is the page.',
           files: {
             'index.html': [
+              '<link rel="stylesheet" href="./styles.css">',
               '<h1>A Lion component, in browser mode</h1>',
               '<lion-input label="Your name"></lion-input>',
               '<lion-button>Save</lion-button>',
@@ -468,6 +519,7 @@ await import(${JSON.stringify(engineUrl)});
               '<script type="module" src="./main.js"><\/script>',
               '',
             ].join('\n'),
+            'styles.css': canvasStyles,
             'main.js': `import '@lion/ui/define/lion-input.js';
 import '@lion/ui/define/lion-button.js';
 
@@ -512,30 +564,12 @@ console.log('files here:', readdirSync('/').join(', '));
   "action": "Save"
 }
 `,
-            'styles.css': `body {
-  font-family: system-ui, sans-serif;
-  /* The preview is a light canvas: the demo paints its own surface so it never inherits the app's darkness.
-     Matched to the preview shell's own value, so the canvas and its content agree. */
-  background: #f7f7f8;
-  color: #111;
-  padding: 16px 18px;
-  margin: 0;
-}
-h1 {
-  font-size: 1rem;
-  margin: 0 0 0.75rem;
-  letter-spacing: -0.01em;
-}
-lion-input, lion-button {
-  display: block;
-  margin-bottom: 0.6rem;
-}
-`,
+            'styles.css': canvasStyles,
           },
         },
         ssr: {
           note: 'SSR mode: the same Node layer renders a Lion component to a string with @lit-labs/ssr — no document, no mount, a string — and then the browser adopts exactly that string and lets the components hydrate in place. The string is printed below, so you can read what the server sent.',
-          names: ['server.js', 'data.json'],
+          names: ['server.js', 'styles.css', 'data.json'],
           entry: '/server.js',
           files: {
             'index.html': '<script type="module" src="./boot.js"><\/script>\n',
@@ -574,6 +608,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
   "action": "Save"
 }
 `,
+            'styles.css': canvasStyles,
           },
         },
       };
@@ -650,6 +685,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         report.files = data.files || {};
         showReport();
         status.textContent = `Finished with exit code ${report.exitCode}.`;
+        status.dataset.state = report.exitCode === 0 ? 'ok' : 'error';
       });
 
       const applyMode = async name => {
@@ -660,6 +696,8 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         modeNote.textContent = modes[name].note;
         nodePanes.hidden = name === 'browser';
         status.textContent = 'Not run yet.';
+        // The state drives the dot beside the status text (see the stylesheet); the text stays the message.
+        status.dataset.state = 'running';
         busy.hidden = false;
         report.log = [];
         report.files = {};
@@ -692,6 +730,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         if (!decision.allow) {
           ide.config = { importMap: { imports: {} }, files: {} };
           status.textContent = decision.reason;
+          status.dataset.state = 'error';
           return;
         }
 
@@ -710,7 +749,7 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         if (modes[name].entry) {
           projectFiles['boot.js'] = bootSourceFor({ names: modes[name].names, entry: modes[name].entry });
         }
-        fileTree = renderTree(fileTree, projectFiles);
+        fileTree = renderTree(fileTree, projectFiles, `${name}-demo`);
 
         project.config = {
           importMap,
@@ -730,6 +769,8 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         activeFile = editor.filename;
         renderOpenFiles();
         status.textContent = 'Served by the worker; the preview runs it.';
+        // Browser mode is done here; the node modes stay "running" until their report arrives.
+        status.dataset.state = modes[name].entry ? 'running' : 'ok';
         // Browser mode posts no report — nothing but the preview runs there — so the wait ends when the config is
         // in place rather than when a message arrives, or the indicator would spin forever.
         busy.hidden = true;
@@ -740,11 +781,20 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         tab.type = 'button';
         tab.setAttribute('role', 'tab');
         tab.dataset.mode = name;
-        tab.textContent = {
-          browser: 'browser (html + js)',
-          node: 'node (modules + fs)',
-          ssr: 'ssr (server render + hydrate)',
+        // The mode is the label and what it runs is a quieter hint beside it; the space between the two spans is
+        // a real text node so the accessible name reads "node modules + fs", not "nodemodules + fs".
+        const [label, hint] = {
+          browser: ['browser', 'html + js'],
+          node: ['node', 'modules + fs'],
+          ssr: ['ssr', 'server render + hydrate'],
         }[name];
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'mode-name';
+        labelSpan.textContent = label;
+        const hintSpan = document.createElement('span');
+        hintSpan.className = 'mode-hint';
+        hintSpan.textContent = hint;
+        tab.append(labelSpan, ' ', hintSpan);
         tab.addEventListener('click', () => applyMode(name));
         modeTabs.appendChild(tab);
       }
@@ -772,94 +822,220 @@ console.log('hydrated; the button in the document is', document.querySelector('l
     </script>
 
     <style is:global>
+      /* One stylesheet, one design language. The block is `is:global` because almost everything it styles is
+         global from Astro's point of view — the portal header (TopNav), Lion's tree and tabs, the playground
+         elements' parts and custom properties, the items the script creates at runtime — and a page's styles
+         only load on that page, so "global" here still means this page.
+
+         The language, measured from StackBlitz's own stylesheet and kept in this page's dark family:
+         - type: Inter for the UI at 400 / 500 / 600 (headings 600), JetBrains Mono for every code surface;
+         - motion: 0.1s for state changes, 0.16s for movement, `ease`, nothing that bounces;
+         - surfaces: three greys (page, panel, inset) separated by a hairline ring and one soft shadow — not a
+           border on every box;
+         - radius: 8px panels, 6px insets and controls, 4px for small things;
+         - colour: one accent (their blue) for selection and focus, mint for success, red for failure. */
+      :root {
+        --pg-ui: Inter, system-ui, sans-serif;
+        --pg-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+        /* The page around the app follows the portal's theme switch (light-dark() resolves the portal's
+           `color-scheme`, which theme.css sets for light, dark and auto alike); the app itself is dark in both. */
+        --pg-page: light-dark(#f4f4f5, #0b0b0d);
+        --pg-page-fg: light-dark(#18181b, #ededef);
+        --pg-page-muted: light-dark(#5f5f67, hsl(0 0% 62%));
+        --pg-page-chip: light-dark(rgb(0 0 0 / 0.06), rgb(255 255 255 / 0.07));
+
+        --pg-chrome: #0b0b0d; /* header and the phone's bottom bar */
+        --pg-surface: #161618; /* panels and the rail */
+        --pg-inset: #101012; /* editor, console, the mode control */
+        --pg-strip: #131315; /* the tab strip and the preview toolbar */
+        --pg-hover: rgb(255 255 255 / 0.05);
+        --pg-selected: #26262b;
+        --pg-line: rgb(255 255 255 / 0.07);
+        --pg-line-strong: rgb(255 255 255 / 0.12);
+
+        --pg-fg: #ededef;
+        --pg-fg-2: #c2c2c8;
+        --pg-muted: hsl(0 0% 62%);
+        --pg-faint: #6c6c74;
+
+        --pg-accent: rgb(0 168 219);
+        --pg-ok: rgb(51 255 204);
+        --pg-error: rgb(237 94 106);
+
+        --pg-shadow: 0 0 0 1px var(--pg-line), 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+        --pg-r-lg: 8px;
+        --pg-r: 6px;
+        --pg-r-sm: 4px;
+        --pg-fast: 0.1s ease;
+        --pg-med: 0.16s ease;
+      }
+
+      html body { background-color: var(--pg-page); }
+
       main {
         margin: 0 auto;
         max-width: 84rem;
-        padding: 1.5rem 1.25rem 4rem;
-        font-family: system-ui, sans-serif;
+        /* 48px fixed header + 24px: the content clears the bar by the same 24px it keeps from the sides. */
+        padding: 72px 24px 24px;
+        font-family: var(--pg-ui);
         line-height: 1.5;
+        color: var(--pg-page-fg);
       }
-      header { text-align: center; }
-      header h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
-      .lede { color: #555; max-width: 78ch; margin: 0 auto 1rem; font-size: 0.92rem; }
+      [hidden] { display: none !important; }
 
-      .toolbar {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+      /* --- the header ------------------------------------------------------------------------------------------
+         The header is `header.site-header`, and the portal's own rule for it wins over `body > header`,
+         `header.site-header` and `html body header.site-header` alike — it carries `!important`, so there is no
+         specificity left that wins. This page therefore marks `!important` on exactly the properties it changes:
+         a 48px bar, fixed at the top, on the app's chrome colour with a hairline under it, the theme switch
+         staying inside the navigation where TopNav renders it. Page-scoped: the docs site keeps its own header. */
+      html body header.site-header {
+        background: var(--pg-chrome) !important;
+        backdrop-filter: none !important;
+        border-bottom: 1px solid var(--pg-line) !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        max-height: 48px !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 50 !important;
+        /* The wordmark's first half is `fill="currentColor"`, so it inherits this — setting the header's own
+           colour is what keeps it light on the dark bar; targeting a/span/li never would. */
+        color: var(--pg-fg);
       }
-      #modes { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+      html body header.site-header a,
+      html body header.site-header span,
+      html body header.site-header li,
+      html body header.site-header button { color: var(--pg-muted); transition: color var(--pg-fast); }
+      html body header.site-header a:hover,
+      html body header.site-header button:hover { color: var(--pg-fg); }
+      html body header.site-header .theme-switch label {
+        color: var(--pg-muted); background: transparent; transition: color var(--pg-fast);
+      }
+      html body header.site-header .theme-switch [type='radio']:checked + label {
+        color: var(--pg-fg); background: transparent;
+      }
+
+      /* The wordmark: both halves at weight 400 and the accent half in grey, so the mark reads as one quiet word.
+         The component sets 600 on `.wordmark-glyphs`, so the selector matches that specificity and wins on order.
+         Page-scoped on purpose: on the docs site the yellow and the heavier weight are deliberate. */
+      .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
+      .logo-text-svg text.wordmark-accent { fill: var(--pg-muted); stroke: none; }
+
+      /* --- the intro: type on the page, not another box ------------------------------------------------------ */
+      main > header { margin: 0 0 16px; text-align: left; }
+      main > header h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.3;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        color: var(--pg-page-fg);
+      }
+      .lede {
+        margin: 6px 0 0;
+        max-width: 76ch;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--pg-page-muted);
+      }
+      .lede strong { font-weight: 500; color: var(--pg-page-fg); }
+      .lede code {
+        font-family: var(--pg-mono);
+        font-size: 12.5px;
+        padding: 1px 3px;
+        border-radius: var(--pg-r-sm);
+        background: var(--pg-page-chip);
+        color: inherit;
+      }
+
+      /* --- focus: one ring for every control in the app -----------------------------------------------------
+         The portal's global rule draws a dotted outline; the app replaces it with the accent, solid. */
+      .playground-app :is(button, summary, [role='tab'], [role='treeitem']):focus-visible,
+      .mobile-tabs button:focus-visible {
+        outline: 2px solid var(--pg-accent);
+        outline-offset: 2px;
+      }
+
+      /* --- the toolbar: the mode switch is a segmented control ---------------------------------------------- */
+      .toolbar.playground-app {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 16px;
+      }
+      #modes {
+        display: inline-flex;
+        gap: 2px;
+        padding: 3px;
+        border-radius: 8px;
+        background: var(--pg-inset);
+        box-shadow: 0 0 0 1px var(--pg-line);
+      }
       #modes [role='tab'] {
-        font: inherit; font-size: 0.9rem; padding: 0.35rem 0.9rem; cursor: pointer;
-        border: 1px solid #888; border-radius: 999px; background: transparent; color: inherit;
+        display: inline-flex;
+        align-items: baseline;
+        gap: 6px;
+        height: 30px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: var(--pg-r);
+        background: transparent;
+        color: var(--pg-muted);
+        font: 500 13px/30px var(--pg-ui);
+        white-space: nowrap;
+        cursor: pointer;
+        transition: color var(--pg-fast), background-color var(--pg-fast), box-shadow var(--pg-fast);
       }
-      #modes [role='tab'][aria-selected='true'] { background: #2f2e41; color: #fff; border-color: #2f2e41; }
+      #modes .mode-hint { font-weight: 400; color: var(--pg-faint); transition: color var(--pg-fast); }
+      #modes [role='tab']:hover { color: var(--pg-fg); background: var(--pg-hover); }
+      #modes [role='tab'][aria-selected='true'] {
+        color: var(--pg-fg);
+        background: var(--pg-selected);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.5);
+      }
+      #modes [role='tab'][aria-selected='true'] .mode-hint { color: var(--pg-muted); }
+      #modes [role='tab']:active { background: var(--pg-selected); }
 
-      /* Two columns, the way the providence playground lays out: the project on the left, what it does on the right. */
-      .playground {
-        display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-        gap: 1.5rem; align-items: stretch;
+      /* --- the app grid: rail, project, run — all three stretched to one bottom edge ------------------------- */
+      .playground.playground-app {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 24px;
+        align-items: stretch;
       }
-      @media (max-width: 60rem) { .playground { grid-template-columns: 1fr; } }
-      .pane { min-width: 0; }
-      .pane h2 {
-        font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #666;
-        margin: 0 0 0.5rem; border-bottom: 1px solid #ddd; padding-bottom: 0.25rem;
-      }
-      #file-tree { display: block; margin-bottom: 0.5rem; }
-      #file-tree [role='treeitem'] {
-        cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem;
-        font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
-      }
-      #file-tree [role='treeitem']:hover { background: #e8e8e8; }
-      #file-tree demo-tree { display: block; margin-left: 0.85rem; }
-      html[data-theme='dark'] #file-tree [role='treeitem']:hover { background: #2a2a30; }
-      #editor { display: block; height: 28rem; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
-      #preview { display: block; height: 16rem; margin-bottom: 0.75rem; }
-      html[data-theme='dark'] #editor { border-color: #3a3a3a; }
 
-      #open-files { display: block; position: relative; z-index: 1; }
-      #open-files [slot='tab'] {
-        display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; user-select: none;
-        font-size: 0.8rem; font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
-        padding: 0.2rem 0.35rem 0.2rem 0.6rem; margin-right: 2px; border: 1px solid #ccc;
-        border-bottom: none; border-radius: 4px 4px 0 0; background: #f4f4f4;
-      }
-      #open-files [slot='tab'][selected] { background: #fff; font-weight: 600; }
-      #open-files [slot='tab'].dragging { opacity: 0.4; }
-      #open-files [slot='tab'] .close {
-        border: none; background: transparent; cursor: pointer; padding: 0 0.15rem; line-height: 1;
-        font-size: 0.9rem; color: #666; border-radius: 3px;
-      }
-      #open-files [slot='tab'] .close:hover { background: #ddd; color: #000; }
-      /* Lion's tabs require a panel per tab; the editor is the panel here, so the empty ones take no space. */
-      #open-files [slot='panel'] { display: none !important; }
-      html[data-theme='dark'] #open-files [slot='tab'] { background: #26262c; border-color: #3a3a3a; color: #ddd; }
-      html[data-theme='dark'] #open-files [slot='tab'][selected] { background: #16161a; color: #fff; }
-      html[data-theme='dark'] #open-files [slot='tab'] .close { color: #aaa; }
-      html[data-theme='dark'] #open-files [slot='tab'] .close:hover { background: #3a3a42; color: #fff; }
-
-      /* --- StackBlitz look, assigned through the design tokens playground-elements itself ships ---------------
-         `playground-styles.css` is deliberately rewritten upstream to expose `--playground-code-*` and friends, so
-         the editor's palette is configuration rather than a hack on internals. The app surface stays dark whatever
-         the portal theme does; only the page around it follows the header's switch. */
+      /* The editor's look, assigned through the custom properties playground-elements ships for exactly this —
+         the palette is configuration, never a reach into its shadow DOM. */
       .playground-app {
-        --playground-code-background: #141416;
+        --playground-code-background: var(--pg-inset);
         --playground-code-default-color: #d4d4d8;
-        --playground-code-font-family: Menlo, Cascadia Code, Consolas, 'Liberation Mono', monospace;
-        --playground-code-font-size: 13px;
-        --playground-code-line-height: 1.55;
-        --playground-code-padding: 10px 0;
-        --playground-code-gutter-border-right: 1px solid #2a2a30;
+        --playground-code-font-family: var(--pg-mono);
+        --playground-code-font-size: 13.5px;
+        --playground-code-line-height: 1.7;
+        --playground-code-padding: 12px 0;
+        --playground-code-line-padding: 0 16px 0 12px;
+        --playground-code-gutter-background: var(--pg-inset);
+        --playground-code-gutter-border-right: 0;
         --playground-code-gutter-box-shadow: none;
-        --playground-code-linenumber-color: #565662;
-        --playground-code-cursor-color: #7dd3fc;
-        --playground-code-selection-background: #26456b;
-        --playground-highlight-color: #26456b;
+        --playground-code-linenumber-color: #4b4b53;
+        --playground-code-cursor-color: var(--pg-accent);
+        --playground-code-selection-background: #1d3b52;
+        --playground-highlight-color: #1d3b52;
         --playground-code-comment-color: #6b7280;
         --playground-code-keyword-color: #c586c0;
         --playground-code-string-color: #ce9178;
+        --playground-code-string-2-color: #d7ba7d;
         --playground-code-number-color: #b5cea8;
         --playground-code-variable-color: #9cdcfe;
+        --playground-code-variable-2-color: #9cdcfe;
+        --playground-code-variable-3-color: #4ec9b0;
         --playground-code-def-color: #dcdcaa;
         --playground-code-type-color: #4ec9b0;
         --playground-code-tag-color: #569cd6;
@@ -871,210 +1047,94 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         --playground-code-builtin-color: #4ec9b0;
         --playground-code-callee-color: #dcdcaa;
         --playground-code-qualifier-color: #dcdcaa;
-        --playground-border: 1px solid #2a2a30;
-        --playground-bar-height: 28px;
-        --playground-preview-toolbar-background: #1b1b1e;
-        --playground-preview-toolbar-foreground-color: #b9b9c0;
-        --playground-tab-bar-background: #1b1b1e;
-        --playground-tab-bar-foreground-color: #b9b9c0;
-        --playground-tab-bar-active-background: #141416;
+        --playground-border: 1px solid var(--pg-line);
+        --playground-bar-height: 36px;
+        --playground-floating-controls-color: var(--pg-muted);
+        --playground-preview-toolbar-background: var(--pg-strip);
+        --playground-preview-toolbar-foreground-color: var(--pg-muted);
+        --playground-tab-bar-background: var(--pg-strip);
+        --playground-tab-bar-foreground-color: var(--pg-muted);
+        --playground-tab-bar-active-color: var(--pg-fg);
+        --playground-tab-bar-active-background: var(--pg-inset);
         --playground-tab-bar-font-size: 12px;
       }
-      #preview::part(preview-toolbar) { border-bottom: 1px solid #2a2a30; }
-      #preview::part(preview-reload-button) { color: #b9b9c0; }
 
-      /* The panels of the app: flat, tight, layered dark greys — a work surface, not a card. */
-      .playground-app .pane h2 {
-        color: #9aa0a6; border-bottom-color: #2a2a30; letter-spacing: 0.08em;
+      /* --- the view rail: an activity bar, full height ------------------------------------------------------- */
+      .view-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        width: 48px;
+        padding: 6px 0;
+        align-self: stretch;
+        background: var(--pg-surface);
+        border-radius: var(--pg-r-lg);
+        box-shadow: var(--pg-shadow);
       }
-      .playground-app #open-files [slot='tab'] {
-        background: #0d0d0f; border-color: #232329; color: #8b8b95; margin-right: 0;
-        border-radius: 0; border-left: none; font-size: 12px; padding: 0.3rem 0.4rem 0.3rem 0.7rem;
+      .view-rail button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: var(--pg-r);
+        background: transparent;
+        color: var(--pg-faint);
+        cursor: pointer;
+        transition: color var(--pg-fast), background-color var(--pg-fast);
       }
-      .playground-app #open-files [slot='tab']:first-child { border-left: 1px solid #232329; }
-      .playground-app #open-files [slot='tab'][selected] {
-        background: #141416; color: #f4f4f5; border-top: 2px solid #1389fd; padding-top: 0.15rem;
+      .view-rail button:hover { color: var(--pg-fg-2); background: var(--pg-hover); }
+      .view-rail button.is-active { color: var(--pg-fg); background: var(--pg-selected); }
+      /* The active marker sits on the rail's edge, the way an activity bar marks the open view. */
+      .view-rail button::before {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 9px;
+        bottom: 9px;
+        width: 2px;
+        border-radius: 0 2px 2px 0;
+        background: var(--pg-accent);
+        opacity: 0;
+        transform: scaleY(0.4);
+        transition: opacity var(--pg-med), transform var(--pg-med);
       }
-      .playground-app #open-files [slot='tab'] .close { color: #8b8b95; }
-      .playground-app #open-files [slot='tab'] .close:hover { background: #3a3a42; color: #fff; }
-      .playground-app #file-tree [role='treeitem'] { color: #c3c3cb; border-radius: 3px; }
-      .playground-app #file-tree [role='treeitem']:hover { background: #26262c; }
-      .playground-app #editor {
-        border: 1px solid #2a2a30; border-radius: 0 4px 4px 4px; background: #141416; height: 30rem;
-      }
-      .playground-app #preview {
-        border: 1px solid #2a2a30; border-radius: 4px; background: #141416; height: 18rem;
-      }
-      .playground-app .terminal {
-        background: #101012; border: 1px solid #2a2a30; border-radius: 4px; color: #d4d4d8;
-      }
-      .playground-app .status { color: #b9b9c0; }
-      .playground-app .note { color: #8b8b95; }
-      .playground-app code { color: #ce9178; }
+      .view-rail button.is-active::before { opacity: 1; transform: none; }
+      .view-rail button.is-active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 
-      /* The output pane is the app's status bar: monospace, one line of state, always at hand. */
-      .playground-app .pane { background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 6px; padding: 0.85rem; }
-
-      /* The preview is a light canvas inside dark chrome: the served document is somebody else's page and renders on
-         white, and a transparent iframe shows the host through — which is what made it dark-on-dark. */
-      .playground-app #preview { background: #fff; }
-      /* The active tab is the ARIA state this page owns (Lion does not decorate tabs it did not add), so the
-         highlight follows `aria-selected` rather than a `selected` attribute that never lands. */
-      .playground-app #open-files [slot='tab'][aria-selected='true'] {
-        background: #141416; color: #f4f4f5; border-top: 2px solid #1389fd; padding-top: 0.15rem;
-      }
-      /* The invoker is a bare `<button>` slotted into Lion's accordion, and a bare button is exactly what it looks
-         like — the white box in the corner. Style the element this page owns, not Lion's internals. */
-      .playground-app lion-accordion [slot='invoker'] button {
-        font: inherit; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
-        color: #9aa0a6; background: transparent; border: none; padding: 0.2rem 0; cursor: pointer;
-      }
-      .playground-app lion-accordion [slot='content'] { color: #b9b9c0; font-size: 0.82rem; }
-      .playground-app lion-accordion [slot='content'] h3 { color: #9aa0a6; font-size: 0.78rem; }
-      /* The checks disclosure is this page's own (see the markup comment for why it is not Lion's accordion). */
-      .playground-app .checks {
-        background: #1b1b1e; border: 1px solid #2a2a30; border-radius: 4px;
-        padding: 0.45rem 0.6rem; margin: 0.5rem 0;
-      }
-      .playground-app .checks summary {
-        cursor: pointer; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: #9aa0a6;
-      }
-      .playground-app .checks summary:hover { color: #d4d4d8; }
-      .playground-app .checks h3 { color: #9aa0a6; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
-      .playground-app .checks code { color: #ce9178; }
-      /* The file that is open is marked in the tree too, so the tree and the tabs agree. */
-      .playground-app #file-tree [role='treeitem'][aria-current] { background: #26262c; color: #f4f4f5; }
-      /* Polish from reading the render back: no browser defaults anywhere in an app surface. */
-      .playground-app #files { list-style: none; padding-left: 0; }
-      .playground-app #files li { color: #8b8b95; font-family: Menlo, Cascadia Code, Consolas, monospace; }
-      .playground-app #output { border-radius: 4px; }
-      .playground-app #findings { color: #8b8b95; }
-
-      /* --- runware.ai-informed polish, with this page's own palette ---------------------------------------------
-         What is borrowed is structure, not colour: a 64px header (measured on runware), ghost buttons with a 1px
-         border and a 6px radius, a three-tier grey system where 1px borders — not shadows — define containers, rows
-         of 14px labels in a medium grey that brightens on hover, tighter tracking on headings, and the framed feel
-         of a 24px page inset with generous padding inside the panels. The greys stay this page's: #141416 behind,
-         #1b1b1e for surfaces, #2a2a30 for borders. */
-      main { padding: 24px; padding-top: 72px; }
-      .playground-app #modes { gap: 8px; }
-      .playground-app #modes [role='tab'] {
-        border: 1px solid #2a2a30; border-radius: 6px; background: transparent; color: #9aa0a6;
-        font-size: 14px; padding: 6px 14px; transition: color 0.15s ease, border-color 0.15s ease;
-      }
-      .playground-app #modes [role='tab']:hover { color: #f2f2f2; border-color: #454545; }
-      .playground-app #modes [role='tab'][aria-selected='true'] {
-        background: #1389fd; border-color: #1389fd; color: #fff;
-      }
-      .playground-app .playground > .pane,
+      /* --- panels ------------------------------------------------------------------------------------------- */
       .playground-app .pane {
-        border-radius: 16px; padding: 20px;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 0 16px 16px;
+        background: var(--pg-surface);
+        border-radius: var(--pg-r-lg);
+        box-shadow: var(--pg-shadow);
+        color: var(--pg-fg-2);
       }
-      .playground-app .pane h2 { font-weight: 500; letter-spacing: -0.01em; }
-      .playground-app .lede { font-size: 14px; color: #9aa0a6; }
-
-      /* Tabs scroll horizontally instead of wrapping, and the scroller is this page's own: Lion's tab group has no
-         reachable shadow root (measured: `shadowRoot` null, host `display: block`), so its internals cannot be
-         asked to scroll. The host grows to its content inside a scrolling wrapper, which works either way. */
-      .tab-scroller { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
-      .tab-scroller::-webkit-scrollbar { height: 6px; }
-      .tab-scroller::-webkit-scrollbar-thumb { background: #3a3a42; border-radius: 3px; }
-      .playground-app #open-files { display: block; width: max-content; min-width: 100%; }
-      .playground-app #open-files [slot='tab'] { flex: 0 0 auto; white-space: nowrap; color: #9aa0a6; }
-      .playground-app #open-files [slot='tab'][aria-selected='true'] { color: #f2f2f2; }
-
-      /* The wordmark: both halves grey-and-plain — the accent half in grey, and *both* at weight 400 so the mark reads
-         as one word at one weight. The component sets 600 on `.wordmark-glyphs`, so the selector has to match that
-         specificity and beat it on order. Page-scoped on purpose: the same component is the docs site's logo, where
-         the yellow and the heavier weight are deliberate. */
-      .logo-text-svg text.wordmark-glyphs { font-weight: 400; }
-      .logo-text-svg text.wordmark-accent { fill: #9aa0a6; stroke: none; }
-
-      /* --- second pass, from reading the render back ---------------------------------------------------------- */
-
-      /* One app surface. The portal header was a white bar above a dark application, which reads as a website
-         sitting on top of a tool. Here the header joins the app's background and switches its own text, so the page
-         is one object; the docs site keeps its own header, this is page-scoped. */
-      /* The header is `header.site-header`: a translucent sticky bar. `body > header` lost to it on specificity, a
-         plain `header.site-header` did too, and so did `html body header.site-header` — which means the portal's own
-         rule carries `!important`, there is no specificity left that wins. So this page overrides exactly the three
-         properties it is changing, and nothing else, on the one element it is changing them on. */
-      html body header.site-header {
-        background: #141416 !important;
-        backdrop-filter: none !important;
-        border-bottom: 1px solid #2a2a30 !important;
-        /* Narrow and fixed, the way runware's nav reads: a 48px bar that stays put, with the theme switch living in
-           it rather than floating somewhere of its own. */
-        display: flex !important;
-        align-items: center !important;
-        height: 48px !important;
-        min-height: 48px !important;
-        max-height: 48px !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 50 !important;
-        /* The wordmark's first half is `fill="currentColor"`, so it inherits this and went near-black on the new
-           dark bar. Setting the header's own colour is what fixes it — targeting a/span/li never would. */
-        color: #f2f2f2;
-      }
-      html body header.site-header a,
-      html body header.site-header span,
-      html body header.site-header li,
-      html body header.site-header button { color: #9aa0a6; }
-      html body header.site-header a:hover,
-      html body header.site-header button:hover { color: #f2f2f2; }
-      html body header.site-header .theme-switch label { color: #9aa0a6; background: transparent; }
-      html body header.site-header .theme-switch [type='radio']:checked + label {
-        color: #f2f2f2; background: transparent;
+      /* The panel title is a header row across the full panel, divided from the body by a hairline. */
+      .playground-app .pane h2 {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        margin: 0 -16px 12px;
+        padding: 0 16px;
+        box-shadow: inset 0 -1px 0 var(--pg-line);
+        font: 600 11.5px/1 var(--pg-ui);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pg-muted);
       }
 
-      /* The intro belongs to the app surface, not to the page: a white strip between a header and a dark tool is
-         the one thing left that still reads as two documents stapled together. */
-      main > header {
-        background: #141416; border: 1px solid #2a2a30; border-radius: 16px;
-        padding: 20px; margin: 0 0 16px; text-align: left;
+      /* The code surfaces, all in the editor's face, size and rhythm. */
+      .playground-app :is(#file-tree [role='treeitem'], #open-files [slot='tab'], .terminal, #files li) {
+        font-family: var(--pg-mono);
+        font-size: 13.5px;
+        line-height: 1.7;
       }
-      main > header h1 { margin: 0 0 6px; font-weight: 500; letter-spacing: -0.01em; color: #f2f2f2; }
-      main > header .lede { margin: 0; }
-
-      /* The preview canvas, softened off pure white so it sits inside the dark shell instead of punching a hole
-         through it. The served document paints the same value, so the canvas and its content agree. */
-      .playground-app #preview { background: #f7f7f8; }
-
-      /* One radius scale, borrowed from runware: 16 for the containers, 8 for the boxes inside them, 6 for
-         controls. Mixed radii are what makes an interface look assembled rather than designed. */
-      .playground-app .terminal,
-      .playground-app #output,
-      .playground-app #preview,
-      .playground-app #editor,
-      .playground-app .checks { border-radius: 8px; }
-      /* The scrollbars this page owns, not the browser's. */
-      .playground-app .terminal,
-      .tab-scroller { scrollbar-width: thin; scrollbar-color: #3a3a42 transparent; }
-      /* Inactive labels a step brighter: on #1b1b1e the old values sat too close to the background. */
-      .playground-app #open-files [slot='tab'] { color: #a8a8b0; }
-      .playground-app #open-files [slot='tab'] .close { color: #9aa0a6; }
-      .playground-app #file-tree [role='treeitem'] { color: #c3c3cb; padding: 0.2rem 0.35rem; }
-      .playground-app #files li { color: #9aa0a6; }
-      /* The status reads as a status row: label, state, indicator on one line. */
-      .playground-app #busy { display: flex; align-items: center; gap: 8px; margin: -4px 0 8px; }
-      .playground-app lion-progress-indicator { --lion-progress-indicator-size: 18px; }
-      /* The checks disclosure: a quiet row with a caret, not a heavy box. */
-      .playground-app .checks { border-width: 1px; }
-      .playground-app .checks summary { list-style: none; }
-      .playground-app .checks summary::after { content: '⌄'; float: right; opacity: 0.6; }
-      .playground-app .checks[open] summary::after { content: '⌃'; }
-
-      /* --- CodeSandbox's mobile shape -------------------------------------------------------------------------
-         Measured on their interface: the UI runs on Inter and draws its icons from Material Symbols Outlined, so
-         both are loaded and the glyphs are the real ones. The shell is one view at a time, switched from a fixed
-         bar at the bottom, with 44px touch targets — what a phone-width editor needs and what this page did not
-         have. The view is one attribute on <body>; no show/hide logic is duplicated in script. */
-      main,
-      .playground-app,
-      .mobile-tabs { font-family: Inter, system-ui, sans-serif; }
 
       /* Material Symbols turns ligature text into an icon: without these mechanics the words show up as words. */
       .material-symbols-outlined {
@@ -1090,46 +1150,299 @@ console.log('hydrated; the button in the document is', document.querySelector('l
         direction: ltr;
         display: inline-block;
         font-feature-settings: 'liga';
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'opsz' 20;
         -webkit-font-smoothing: antialiased;
       }
 
-      .mobile-tabs { display: none; }
-
-      /* --- the view rail, and the editors' font ---------------------------------------------------------------
-         The icons switch what the app shows, the way an activity bar does, and the same view model runs at every
-         width: the rail on a desktop, the bottom bar on a phone, one `<body>` attribute underneath. */
-      .playground-app { grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1fr); }
-      .view-rail {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        width: 44px;
-        padding: 8px 0;
-        /* Full height, the way an activity bar spans its window rather than floating as a pill beside it. */
-        align-self: stretch;
-        background: #141416;
-        border: 1px solid #2a2a30;
-        border-radius: 16px;
+      /* --- the file tree -------------------------------------------------------------------------------------
+         Padding 0 on the tree itself, so the tree, the tab strip and the editor start on one left edge.
+         The tree is structure, the tab strip below it is open documents, and the two must not look alike: the tree
+         is a vertical outline — full-width rows, a disclosure chevron on folders, children indented under a
+         hairline guide — with no strip, no separators and no accent edge. Those belong to the tabs. */
+      .playground-app #file-tree { display: block; padding: 0; margin: 0 0 12px; }
+      /* A nested level: indented under its folder, the guide running down from the folder's chevron. */
+      .playground-app #file-tree demo-tree {
+        display: block;
+        margin-left: 11px;
+        padding-left: 4px;
+        box-shadow: inset 1px 0 0 var(--pg-line);
       }
-      .view-rail button {
+      .playground-app #file-tree [role='treeitem'] {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 26px;
+        padding: 0 8px 0 4px;
+        border-radius: var(--pg-r-sm);
+        color: var(--pg-muted);
+        cursor: pointer;
+        user-select: none;
+        transition: color var(--pg-fast), background-color var(--pg-fast);
+      }
+      /* The chevron column: a disclosure on folders, an empty slot of the same width on files, so names align. */
+      .playground-app #file-tree [role='treeitem']::before {
+        content: '';
+        flex: none;
+        width: 16px;
+        font: normal 16px/1 'Material Symbols Outlined';
+        font-feature-settings: 'liga';
+        letter-spacing: normal;
+        text-transform: none;
+        color: var(--pg-faint);
+        transition: transform var(--pg-med);
+      }
+      .playground-app #file-tree [role='treeitem'][data-folder]::before { content: 'expand_more'; }
+      .playground-app #file-tree [role='treeitem'][aria-expanded='false']::before { transform: rotate(-90deg); }
+      .playground-app #file-tree [role='treeitem'][data-folder] { color: var(--pg-fg-2); }
+      .playground-app #file-tree [role='treeitem']:hover { color: var(--pg-fg); background: var(--pg-hover); }
+      /* The file that is open is marked in the tree too, so the tree and the tabs agree — as a quiet row
+         highlight, not as a second selected tab. */
+      .playground-app #file-tree [role='treeitem'][aria-current] { color: var(--pg-fg); background: var(--pg-hover); }
+      .playground-app #file-tree [role='treeitem'] .material-symbols-outlined { font-size: 18px; color: var(--pg-faint); }
+      .playground-app #file-tree [role='treeitem'][aria-current] .material-symbols-outlined { color: var(--pg-accent); }
+
+      /* --- open files: a tab strip that sits on the editor ---------------------------------------------------
+         Tabs scroll horizontally instead of wrapping, and the scroller is this page's own: Lion's tab group has no
+         reachable shadow root (measured: `shadowRoot` null, host `display: block`), so its internals cannot be
+         asked to scroll. The host grows to its content inside a scrolling wrapper, which works either way. */
+      .tab-scroller {
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: #3a3a42 transparent;
+        background: var(--pg-strip);
+        border-radius: var(--pg-r) var(--pg-r) 0 0;
+        /* A hairline on all four sides; the selected tab paints over the bottom one with the editor's background,
+           so the tab and the editor read as one sheet. */
+        box-shadow: inset 0 1px 0 var(--pg-line), inset 1px 0 0 var(--pg-line), inset -1px 0 0 var(--pg-line),
+          inset 0 -1px 0 var(--pg-line);
+      }
+      .tab-scroller::-webkit-scrollbar { height: 6px; }
+      .tab-scroller::-webkit-scrollbar-thumb { background: #3a3a42; border-radius: 3px; }
+      .playground-app #open-files { display: block; position: relative; z-index: 1; width: max-content; min-width: 100%; margin: 0; }
+      .playground-app #open-files [slot='tab'] {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+        padding: 0 6px 0 12px;
+        white-space: nowrap;
+        user-select: none;
+        cursor: pointer;
+        color: var(--pg-muted);
+        background: transparent;
+        box-shadow: inset -1px 0 0 var(--pg-line);
+        transition: color var(--pg-fast), background-color var(--pg-fast);
+      }
+      .playground-app #open-files [slot='tab']:first-child { border-top-left-radius: var(--pg-r); }
+      .playground-app #open-files [slot='tab']:hover { color: var(--pg-fg-2); background: var(--pg-hover); }
+      /* The active tab is the ARIA state this page owns (Lion does not decorate tabs it did not add), so the
+         highlight follows `aria-selected`. It takes the editor's background, so tab and editor read as one sheet. */
+      .playground-app #open-files [slot='tab'][aria-selected='true'] {
+        color: var(--pg-fg);
+        background: var(--pg-inset);
+        box-shadow: inset 0 2px 0 var(--pg-accent), inset -1px 0 0 var(--pg-line);
+      }
+      .playground-app #open-files [slot='tab'].dragging { opacity: 0.4; }
+      .playground-app #open-files [slot='tab'] > .material-symbols-outlined { font-size: 18px; color: var(--pg-faint); }
+      .playground-app #open-files [slot='tab'] .close {
         display: grid;
         place-items: center;
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 8px;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        border: 0;
+        border-radius: var(--pg-r-sm);
         background: transparent;
-        color: #8b8b95;
+        color: var(--pg-muted);
         cursor: pointer;
+        opacity: 0;
+        transition: opacity var(--pg-fast), color var(--pg-fast), background-color var(--pg-fast);
       }
-      .view-rail button:hover { color: #f2f2f2; background: #1b1b1e; }
-      .view-rail button.is-active { color: #1389fd; background: #1b1b1e; }
-      .view-rail button .material-symbols-outlined { font-size: 20px; }
+      .playground-app #open-files [slot='tab'] .close .material-symbols-outlined { font-size: 16px; }
+      .playground-app #open-files [slot='tab']:is(:hover, [aria-selected='true']) .close,
+      .playground-app #open-files [slot='tab'] .close:focus-visible { opacity: 1; }
+      .playground-app #open-files [slot='tab'] .close:hover { color: var(--pg-fg); background: var(--pg-line-strong); }
+      .playground-app #open-files [slot='tab']:focus-visible { outline-offset: -2px; }
+      /* Lion's tabs require a panel per tab; the editor is the panel here, so the empty ones take no space. */
+      #open-files [slot='panel'] { display: none !important; }
 
-      /* The view rules, at every width. `files` is the full layout — the rail switches focus, not the editor out of
-         existence, which is how an activity bar behaves and the only sane default for a playground: open it and the
-         code is there. `code` is that same view with the tree folded away, and the last two are the run pane alone. */
+      /* --- the editor: fills what is left of the panel, so the panel never ends in dead space ----------------- */
+      .playground-app #editor {
+        display: block;
+        flex: 1 0 30rem;
+        min-height: 0;
+        overflow: hidden;
+        background: var(--pg-inset);
+        border: 1px solid var(--pg-line);
+        border-top: 0;
+        border-radius: 0 0 var(--pg-r) var(--pg-r);
+      }
+
+      /* --- the run panel ------------------------------------------------------------------------------------- */
+      /* The status is a row: a state dot and one line of text. The dot follows `data-state`, set by the script. */
+      .playground-app .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--pg-fg-2);
+      }
+      .playground-app #status::before {
+        content: '';
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--pg-faint);
+        transition: background-color var(--pg-med), box-shadow var(--pg-med);
+      }
+      .playground-app #status[data-state='running']::before { background: var(--pg-accent); box-shadow: 0 0 0 3px rgb(0 168 219 / 0.18); }
+      .playground-app #status[data-state='ok']::before { background: var(--pg-ok); box-shadow: 0 0 0 3px rgb(51 255 204 / 0.14); }
+      .playground-app #status[data-state='error']::before { background: var(--pg-error); box-shadow: 0 0 0 3px rgb(237 94 106 / 0.16); }
+
+      .playground-app #busy { display: flex; align-items: center; gap: 8px; margin: -4px 0 12px; }
+      .playground-app lion-progress-indicator { --lion-progress-indicator-size: 16px; }
+
+      /* The preview is a light canvas inside dark chrome: the served document is somebody else's page and renders
+         on white, and a transparent iframe shows the host through. It sits *in* the shell rather than glaring out of
+         it: an off-white (#f3f3f4, the value the demos' shared styles.css paints too), a slightly stronger hairline
+         edge than the dark wells get, and a soft inner shadow under the toolbar so the canvas reads as recessed. */
+      /* No `display` here: the element's own `:host` is a flex column whose `#content` takes `flex: 1`, and that
+         is what sizes the iframe to the frame. Forcing `display: block` (as this page used to) leaves the iframe at
+         the browser's default 150px, and anything below that line in the canvas is cut off. */
+      .playground-app #preview {
+        position: relative;
+        height: 18rem;
+        overflow: hidden;
+        background: #f3f3f4;
+        /* padding-box: the border is a translucent hairline, and the light canvas under it would show as a halo. */
+        background-clip: padding-box;
+        border: 1px solid var(--pg-line-strong);
+        border-radius: var(--pg-r);
+      }
+      /* Drawn over the iframe, below the toolbar, and never in the way of the pointer. */
+      .playground-app #preview::after {
+        content: '';
+        position: absolute;
+        inset: var(--playground-bar-height) 0 0;
+        pointer-events: none;
+        border-radius: 0 0 5px 5px;
+        box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.14), inset 0 0 0 1px rgb(0 0 0 / 0.05);
+      }
+      #preview::part(preview-toolbar) { border-bottom: 1px solid var(--pg-line); font-family: var(--pg-ui); font-size: 12px; }
+      #preview::part(preview-reload-button) { color: var(--pg-muted); transition: color var(--pg-fast); }
+      #preview::part(preview-reload-button):hover { color: var(--pg-fg); }
+
+      /* The console: an inset well. Empty, it says what will appear in it rather than being a blank box. */
+      .playground-app .terminal {
+        margin: 12px 0 0;
+        padding: 10px 12px;
+        min-height: 3rem;
+        max-height: 16rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        background: var(--pg-inset);
+        color: var(--pg-fg-2);
+        border: 1px solid var(--pg-line);
+        border-radius: var(--pg-r);
+        scrollbar-width: thin;
+        scrollbar-color: #3a3a42 transparent;
+      }
+      .playground-app .terminal:empty::before {
+        content: 'Console output appears here when the program runs.';
+        font-family: var(--pg-ui);
+        font-size: 13px;
+        color: var(--pg-faint);
+      }
+      /* The files the program wrote are the console's footer, in the same well: one box, one text column. */
+      .playground-app .terminal:has(+ #files:not(:empty)) { border-radius: var(--pg-r) var(--pg-r) 0 0; }
+      .playground-app #files {
+        list-style: none;
+        margin: 0;
+        padding: 8px 12px 10px;
+        background: var(--pg-inset);
+        border: 1px solid var(--pg-line);
+        border-top: 0;
+        border-radius: 0 0 var(--pg-r) var(--pg-r);
+      }
+      .playground-app #files:empty { display: none; }
+      .playground-app #files li { color: var(--pg-muted); }
+
+      /* The checks disclosure is this page's own: Lion's accordion cannot be themed (see the markup comment). It is
+         the same kind of well as the console above it — same surface, same hairline, same 12px inner edge — so its
+         label and its content start on the console's text column instead of floating as a box of its own. */
+      .playground-app .checks {
+        margin: 12px 0 0;
+        background: var(--pg-inset);
+        border: 1px solid var(--pg-line);
+        border-radius: var(--pg-r);
+        font-size: 13px;
+        color: var(--pg-fg-2);
+      }
+      .playground-app .checks summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 36px;
+        padding: 0 10px 0 12px;
+        border-radius: var(--pg-r);
+        list-style: none;
+        cursor: pointer;
+        font: 600 11.5px/1 var(--pg-ui);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pg-muted);
+        transition: color var(--pg-fast), background-color var(--pg-fast);
+      }
+      .playground-app .checks summary::-webkit-details-marker { display: none; }
+      .playground-app .checks summary:hover { color: var(--pg-fg-2); background: var(--pg-hover); }
+      .playground-app .checks summary::after {
+        content: 'expand_more';
+        font: normal 18px/1 'Material Symbols Outlined';
+        font-feature-settings: 'liga';
+        letter-spacing: normal;
+        text-transform: none;
+        transition: transform var(--pg-med);
+      }
+      .playground-app .checks[open] summary::after { transform: rotate(180deg); }
+      .playground-app .checks[open] summary { border-radius: var(--pg-r) var(--pg-r) 0 0; box-shadow: inset 0 -1px 0 var(--pg-line); }
+      .playground-app .checks > :not(summary) { margin-left: 12px; margin-right: 12px; }
+      .playground-app .checks > p:first-of-type { margin-top: 12px; }
+      .playground-app .checks > :last-child { margin-bottom: 12px; }
+      .playground-app .checks .status { display: block; margin-bottom: 8px; font-size: 13px; }
+      .playground-app #governance[data-consistent='false'] { color: var(--pg-error); }
+      .playground-app .checks h3 {
+        margin-top: 16px;
+        margin-bottom: 8px;
+        font: 600 11.5px/1 var(--pg-ui);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--pg-muted);
+      }
+      .playground-app #findings { margin-top: 0; margin-bottom: 8px; padding-left: 0; list-style: none; font-family: var(--pg-mono); font-size: 12.5px; color: var(--pg-muted); }
+      .playground-app #packages { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0; margin-bottom: 0; padding: 0; list-style: none; }
+      .playground-app #packages li {
+        padding: 1px 6px;
+        border-radius: var(--pg-r-sm);
+        background: var(--pg-hover);
+        font-family: var(--pg-mono);
+        font-size: 12px;
+        color: var(--pg-fg-2);
+      }
+      .playground-app .checks .note { margin-top: 12px; }
+
+      .playground-app .note { margin: 12px 0 0; max-width: 68ch; font-size: 13px; line-height: 1.6; color: var(--pg-muted); }
+      .playground-app code { font-family: var(--pg-mono); font-size: 12.5px; color: #ce9178; }
+
+      /* --- the view model -------------------------------------------------------------------------------------
+         One attribute on <body>, driven by the rail on a desktop and the bottom bar on a phone; show/hide lives
+         here so there is one source of truth. `files` is the full layout — the rail switches focus, not the editor
+         out of existence, which is how an activity bar behaves. `code` is that view with the tree folded away, and
+         the last two are the run pane alone. */
       body[data-view='code'] #file-tree,
       body[data-view='code'] #pane-run { display: none; }
       body[data-view='preview'] #pane-project,
@@ -1141,145 +1454,107 @@ console.log('hydrated; the button in the document is', document.querySelector('l
       /* A focused view gets the whole width beside the rail, not a narrow column. */
       body[data-view='preview'] #pane-run,
       body[data-view='output'] #pane-run { grid-column: 2 / -1; }
+      /* With the preview gone, the console is the view: it starts at the top of the panel. */
+      body[data-view='output'] .playground-app .terminal { margin-top: 0; }
 
-      /* The editors, exactly as runware's: their <pre> measures JetBrains Mono at 13.5px on a 1.8 line-height, and
-         the console reads in the same face — which is what was asked for. */
-      .playground-app {
-        --playground-code-font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        --playground-code-font-size: 13.5px;
-        --playground-code-line-height: 1.7;
-      }
-      .playground-app .terminal,
-      .playground-app #files li,
-      .playground-app #file-tree [role='treeitem'],
-      .playground-app #open-files [slot='tab'] {
-        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-      }
-      .playground-app .terminal { font-size: 13px; line-height: 1.7; }
+      .mobile-tabs { display: none; }
 
-      /* File-type icons in the tree and the tabs, from the same set as the bar. */
-      .playground-app #file-tree [role='treeitem'],
-      .playground-app #open-files [slot='tab'] { display: inline-flex; align-items: center; gap: 6px; }
-      .playground-app #file-tree [role='treeitem'] .material-symbols-outlined,
-      .playground-app #open-files [slot='tab'] .material-symbols-outlined { font-size: 16px; color: #8b8b95; }
-
+      /* --- a phone: one view at a time, switched from a fixed bar at the bottom ------------------------------- */
       @media (max-width: 48rem) {
-        main { padding: 12px 12px 84px; padding-top: 60px; }
-        main > header { padding: 14px 16px; border-radius: 12px; }
+        /* 48px header + 12px on top; the 57px bar + 27px underneath, so the last line is never under the bar. */
+        main { padding: 60px 16px 84px; }
+        main > header h1 { font-size: 18px; }
         main > header .lede { display: none; }
-        .playground-app .playground,
-        .playground.playground-app { grid-template-columns: 1fr; gap: 12px; }
-        .playground-app .toolbar,
-        .toolbar.playground-app { min-height: 0; padding: 10px 12px; border-radius: 12px; }
-        /* The mode buttons wrap on a phone — nothing cut off. Horizontal scrolling belongs to the file tabs, which
-           is what it was asked for; a control that is half off-screen reads as broken. */
-        .playground-app #modes { flex-wrap: wrap; overflow-x: visible; }
-        .playground-app #modes [role='tab'] { min-height: 40px; white-space: normal; }
-        .playground-app .pane { border-radius: 12px; padding: 14px; }
-        .playground-app #editor { height: 22rem; }
+
+        .toolbar.playground-app { display: block; }
+        #modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+        #modes [role='tab'] { justify-content: center; height: 40px; line-height: 40px; padding: 0 8px; }
+        #modes .mode-hint { display: none; }
+
+        .playground.playground-app { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+        .view-rail { display: none; }
+        /* The focused views span "column 2 to the end" beside the rail; with no rail and one column that would
+           invent an implicit second column and push the run pane off to the right. */
+        body[data-view] #pane-run { grid-column: auto; }
+
+        .playground-app .pane { padding: 0 12px 12px; }
+        .playground-app .pane h2 { margin: 0 -12px 12px; padding: 0 12px; }
+        /* The editor takes the rest of the screen above the bar (never less than 22rem), so the code view is the
+           whole phone rather than a box with empty page beneath it. */
+        .playground-app #editor { flex-basis: max(22rem, calc(100dvh - 360px)); }
         .playground-app #preview { height: 22rem; }
 
-        /* One view at a time; the rail is replaced by the bar at this width. */
-        .view-rail { display: none; }
+        /* Phone-sized hit areas, and a tree that does not eat the editor: it scrolls inside a capped height. */
+        .playground-app #file-tree { max-height: 9rem; overflow: auto; }
+        .playground-app #file-tree [role='treeitem'] { height: 40px; }
+        .playground-app #open-files [slot='tab'] { height: 40px; }
+        .playground-app #open-files [slot='tab'] .close { width: 28px; height: 28px; opacity: 1; }
 
-        /* The bar: fixed, safe-area aware, one icon and one word per view. */
+        /* The bar: fixed, safe-area aware, four views in four columns, 56px touch targets plus its hairline. */
         .mobile-tabs {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           position: fixed;
           left: 0;
           right: 0;
           bottom: 0;
           z-index: 20;
-          background: #141416;
-          border-top: 1px solid #2a2a30;
+          font-family: var(--pg-ui);
+          background: var(--pg-chrome);
+          border-top: 1px solid var(--pg-line);
           padding-bottom: env(safe-area-inset-bottom, 0);
         }
         .mobile-tabs button {
+          position: relative;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 2px;
+          gap: 3px;
           min-height: 56px;
           padding: 6px 0;
-          border: none;
+          border: 0;
           background: transparent;
-          color: #9aa0a6;
-          font: inherit;
-          font-size: 11px;
+          color: var(--pg-muted);
+          font: 500 11px/1.2 var(--pg-ui);
+          letter-spacing: 0.01em;
           cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+          transition: color var(--pg-fast), background-color var(--pg-fast);
         }
         .mobile-tabs button .material-symbols-outlined { font-size: 22px; }
-        .mobile-tabs button.is-active { color: #1389fd; }
-        .mobile-tabs button:active { background: #1b1b1e; }
+        .mobile-tabs button.is-active { color: var(--pg-fg); }
+        .mobile-tabs button.is-active .material-symbols-outlined { color: var(--pg-accent); font-variation-settings: 'FILL' 1; }
+        .mobile-tabs button::before {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: 50%;
+          width: 24px;
+          height: 2px;
+          margin-left: -12px;
+          border-radius: 0 0 2px 2px;
+          background: var(--pg-accent);
+          opacity: 0;
+          transition: opacity var(--pg-med);
+        }
+        .mobile-tabs button.is-active::before { opacity: 1; }
+        .mobile-tabs button:active { background: var(--pg-hover); }
+        .mobile-tabs button:focus-visible { outline-offset: -4px; }
+      }
 
-        /* Phone-sized hit areas, and a tree that does not eat the editor: it scrolls inside a capped height, since
-           a phone shows one view at a time and the code is what it is showing. */
-        .playground-app #file-tree { max-height: 9rem; overflow: auto; }
-        .playground-app #file-tree [role='treeitem'] { min-height: 40px; font-size: 13px; }
-        .playground-app #open-files [slot='tab'] { min-height: 40px; }
-        .playground-app #open-files [slot='tab'] .close { min-width: 28px; min-height: 28px; font-size: 16px; }
+      /* On a touch screen there is no hover to reveal a tab's close button, so it is always there. */
+      @media (hover: none) {
+        .playground-app #open-files [slot='tab'] .close { opacity: 1; }
       }
-      /* Breathing room, and one left edge for everything in the run pane. */
-      .playground-app .pane h2 { margin-bottom: 0.6rem; padding-bottom: 0.35rem; }
-      .playground-app .lede { margin-bottom: 1.25rem; }
-      /* The tree's own padding goes to zero so its rows start on the same x as the tabs above them — measured 113 vs
-         116.2 with the 0.2rem it carried. The margin below it stays the 8px that separates the two. */
-      .playground-app #file-tree { padding: 0; margin-bottom: 8px; }
-      .playground-app #file-tree [role='treeitem'] { padding: 0.15rem 0.35rem; }
-      .playground-app #open-files { margin-bottom: 0; }
-      .playground-app #files { padding-left: 1.1rem; margin-top: 0; }
 
-      /* One toolbar rule, px only: two blocks were both claiming this element and rem values won by order
-         (measured paddingTop 8.8px against the panels' 20px). */
-      .playground-app .toolbar,
-      .toolbar.playground-app {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-height: 52px;
-        padding: 0 20px;
-        margin-bottom: 16px;
-        background: #1b1b1e;
-        border: 1px solid #2a2a30;
-        border-radius: 16px;
+      @media (prefers-reduced-motion: reduce) {
+        .playground-app *,
+        .playground-app *::before,
+        .playground-app *::after,
+        .mobile-tabs *,
+        .mobile-tabs *::before { transition: none !important; }
       }
-      .playground-app #modes [role='tab'] { color: #b9b9c0; border-color: #3a3a42; }
-      .playground-app #modes [role='tab'][aria-selected='true'] {
-        background: #1389fd; border-color: #1389fd; color: #fff;
-      }
-      html[data-theme='dark'] .toolbar.playground-app { border-color: #2a2a30; }
-      .terminal {
-        margin: 0 0 0.75rem; padding: 0.5rem 0.75rem; min-height: 3rem; max-height: 16rem;
-        overflow: auto; white-space: pre-wrap; background: #101014; color: #eaeaea;
-        border-radius: 4px; font-family: Menlo, Cascadia Code, Consolas, Liberation Mono, monospace;
-        font-size: 0.8rem; line-height: 1.35;
-      }
-      pre, ul, code, .status { font-size: 0.8rem; }
-      ul { margin: 0 0 0.75rem; padding-left: 1.1rem; }
-      .status { margin: 0 0 0.5rem; }
-      .note { color: #555; font-size: 0.85rem; max-width: 64ch; }
-      #busy { margin: 0 0 0.5rem; }
-      [hidden] { display: none !important; }
-
-      /* Dark mode is the portal's own mechanism — data-theme on <html>, mapped here the way theme.css does it. */
-      html[data-theme='dark'] { color-scheme: dark; }
-      html[data-theme='dark'] main { color: #ececec; }
-      html[data-theme='dark'] .lede,
-      html[data-theme='dark'] .note,
-      html[data-theme='dark'] .pane h2 { color: #a8a8a8; }
-      html[data-theme='dark'] .pane h2 { border-bottom-color: #3a3a3a; }
-      html[data-theme='dark'] #ide { border-color: #3a3a3a; }
-      html[data-theme='dark'] #modes [role='tab'] { border-color: #6a6a6a; }
-      html[data-theme='dark'] #modes [role='tab'][aria-selected='true'] {
-        background: #ececec; color: #16161a; border-color: #ececec;
-      }
-      /* The app surface is dark in both themes, so the header's switch must not lighten its panels. */
-      .playground-app .pane h2,
-      .playground-app .status,
-      .playground-app .note { color: #9aa0a6; }
-      .playground-app #editor { border-color: #2a2a30; background: #141416; }
     </style>
   </body>
 </html>
