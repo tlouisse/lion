@@ -37,7 +37,7 @@ const sandboxBaseUrl =
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@400;500&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -1217,8 +1217,11 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       // plus the text's own advance length; vertically the layout box was already right (measured slack 8.9 / 10.1).
       // Measured after the webfont is ready: the geometry below is read from the rendered glyphs, and measuring before
       // the font settles gives the fallback face's metrics instead. Measured: the run box came out 39.5 units tall on one
-      // load and 35.9 on the next, which moved the dot's alignment with the l by two pixels depending on timing.
-      document.fonts.ready.then(() => {
+      // load and 35.9 on the next, which moved the dot's alignment with the l by two pixels depending on timing. The
+      // logo's own face is loaded explicitly as well, because it is the face every number below depends on.
+      (async () => {
+        await document.fonts.load(`${getComputedStyle(document.querySelector('.logo svg text')).fontWeight} 32px 'Playfair Display'`, 'lıon').catch(() => {});
+        await document.fonts.ready;
         const mark = document.querySelector('.logo svg');
         const lion = mark?.querySelector('text.wordmark-glyphs');
         if (!mark || !lion) return;
@@ -1243,27 +1246,91 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         // put a 15%-grey dot on black in light mode and lose it.
         const em = parseFloat(getComputedStyle(lion).fontSize) || 32;
         const style = getComputedStyle(lion);
-        const measurer = document.createElement('canvas').getContext('2d');
-        measurer.font = `${style.fontWeight} ${em}px ${style.fontFamily}`;
-        const ell = measurer.measureText('l');
-        const ascender = ell.actualBoundingBoxAscent || em * 0.72;
+        const font = `${style.fontWeight} ${em}px ${style.fontFamily}`;
         const baseline = Number(lion.getAttribute('y') ?? 28);
-        const side = Math.round(em * 0.15 * 100) / 100;
-        // The dot is centred on the stem, not on the glyph's advance box: measured, the advance centre put it 0.67px to
-        // one side of the painted stem, because the glyph carries side bearings. The ink's own centre is the midpoint of
-        // the canvas metrics' left and right bounding boxes, measured from the glyph's own origin.
-        const iota = measurer.measureText('ı');
-        const inkCentre = (iota.actualBoundingBoxRight - iota.actualBoundingBoxLeft) / 2;
+
+        // The dot has to be level with the l and nearly as wide as the stem, and no box reports either: measured across
+        // two faces, getBBox()/getExtentOfChar() return layout boxes, and a canvas TextMetrics ascent — ink, but measured
+        // on a canvas copy of the text — still came out 1.33px higher than the same letter rendered by the SVG, because
+        // the two do not resolve the face identically. So the ink is read from the SVG's own rendering: the mark is
+        // serialized (with its font and colours pinned, which a clone does not inherit) and painted into a canvas, and
+        // the pixels are scanned for the l's ink top and the stem's width. That is the only measurement that cannot be
+        // argued with, and it keeps working when the face changes.
+        const markBox = mark.getBoundingClientRect();
+        const factor = 12;
+        const cloneForInk = mark.cloneNode(true);
+        cloneForInk.querySelectorAll('text').forEach(text => {
+          text.setAttribute('fill', '#ffffff');
+          text.setAttribute('font-size', String(em));
+          text.setAttribute('font-family', style.fontFamily);
+          text.setAttribute('font-weight', style.fontWeight);
+        });
+        cloneForInk.querySelectorAll('[data-creative-dot]').forEach(dot => dot.remove());
+        cloneForInk.setAttribute('width', String(markBox.width));
+        cloneForInk.setAttribute('height', String(markBox.height));
+        cloneForInk.removeAttribute('style');
+        const image = new Image();
+        await new Promise(resolve => {
+          image.onload = resolve;
+          image.onerror = resolve;
+          image.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(new XMLSerializer().serializeToString(cloneForInk))))}`;
+        });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(markBox.width * factor);
+        canvas.height = Math.round(markBox.height * factor);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const inked = (x, y) => data[(y * canvas.width + x) * 4 + 3] > 100;
+        const columnsIn = y => {
+          const columns = [];
+          for (let x = 0; x < canvas.width; x++) if (inked(x, y)) columns.push(x);
+          return columns;
+        };
+        // In device pixels of the ink render, then converted back through the viewBox: one CSS px of the element is
+        // viewBox.width / markBox.width of the SVG's own units.
+        const unitsPerPx = parseFloat((mark.getAttribute('width') || markBox.width)) / markBox.width;
+        const viewBox = mark.getAttribute('viewBox').split(/\s+/).map(Number);
+        const rows = [];
+        for (let y = 0; y < canvas.height; y++) rows.push(columnsIn(y));
+        const firstInkRow = rows.findIndex(columns => columns.length);
+        // The l's column band is the leftmost ink; its top row is the ink top of the ascender.
+        const firstColumns = rows[firstInkRow] || [];
+        const lBand = [firstColumns[0] ?? 0, (firstColumns[0] ?? 0) + Math.round(factor * 3)];
+        const inkTopUnits = viewBox[1] + (firstInkRow / factor) * unitsPerPx;
+        // The stem: the narrowest inked run of the ı over the lower half of its body, inside the glyph's own column band —
+        // a wider window catches the neighbouring letters and reports a "stem" three times too thick, which is how the dot
+        // overshot to 4.67px wide once. The band comes from the glyph's own origin and advance, in device pixels.
+        const iotaOrigin = lion.getStartPositionOfChar(1).x;
+        const iotaWidth = lion.getExtentOfChar(1).width;
+        const bandFrom = ((iotaOrigin - viewBox[0]) / unitsPerPx) * factor;
+        const bandTo = ((iotaOrigin + iotaWidth - viewBox[0]) / unitsPerPx) * factor;
+        const stemRows = rows
+          .map((columns, y) => ({ y, columns: columns.filter(x => x >= bandFrom && x <= bandTo) }))
+          .filter(entry => entry.columns.length);
+        const inkBottomRow = rows.length - 1 - [...rows].reverse().findIndex(columns => columns.length);
+        const widths = stemRows
+          .filter(entry => entry.y > firstInkRow + Math.round((inkBottomRow - firstInkRow) * 0.4))
+          .map(entry => ((entry.columns[entry.columns.length - 1] - entry.columns[0] + 1) / factor) * unitsPerPx);
+        widths.sort((a, b) => a - b);
+        const stemWidth = widths[Math.floor(widths.length / 2)] || em * 0.1;
+
+        const side = Math.round(stemWidth * 1.15 * 100) / 100;
+        // Centred on the glyph's ink, not its advance box: the advance carries side bearings (measured 0.67px off).
+        const iota = document.createElement('canvas').getContext('2d');
+        iota.font = font;
+        const metrics = iota.measureText('ı');
+        const inkCentre = (metrics.actualBoundingBoxRight - metrics.actualBoundingBoxLeft) / 2;
         const centre = lion.getStartPositionOfChar(1).x + inkCentre;
         const dot = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         dot.setAttribute('x', String(Math.round((centre - side / 2) * 100) / 100));
-        dot.setAttribute('y', String(Math.round((baseline - ascender) * 100) / 100));
+        dot.setAttribute('y', String(Math.round(inkTopUnits * 100) / 100));
         dot.setAttribute('width', String(side));
         dot.setAttribute('height', String(side));
         dot.setAttribute('fill', '#9aa0a6');
         dot.setAttribute('data-creative-dot', 'i');
         mark.append(dot);
-      });
+      })();
     </script>
 
     <style is:global>
@@ -1411,6 +1478,19 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          `!important` for the same measured reason as the size above: the portal's `.logo[data-astro-cid-…]` rule sets
          the colour too, and it wins on specificity. Measured without it: in light mode the plate stayed black while the
          glyphs took the portal's `rgb(24, 24, 27)` — a black word on a black plate, i.e. invisible. */
+      /* The wordmark on this page is set in a newspaper face — a serif with the weight and contrast of a masthead — rather
+         than the site's grotesque. Page-scoped on purpose: the same component is the site's logo, where the house face is
+         deliberate. The selector names the component's class as well, because Astro scopes the component's own rule to
+         `.wordmark-glyphs[data-astro-cid-…]` — two class-level selectors, measured as the winner against a plain
+         `.logo svg text` — and this is one class more, so it wins without `!important`. Measured after: computed family
+         Playfair Display at weight 400.
+         Below it the frame: `0.5px` is literally thinner on a 2x display and rounds to the same 1px line elsewhere, so
+         the white is also held at three-quarter opacity, which reads as a lighter hairline on either. */
+      .logo svg text.wordmark-glyphs {
+        font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+        font-weight: 400;
+      }
+
       .logo {
         display: grid !important;
         place-items: center;
@@ -1418,7 +1498,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         height: 36px;
         background: #000;
         color: #fff !important;
-        border: 1px solid #fff;
+        border: 0.5px solid rgb(255 255 255 / 0.75);
         border-radius: 4px;
         padding: 0;
         line-height: 0;
