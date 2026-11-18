@@ -63,8 +63,8 @@ const sandboxBaseUrl =
       </div>
 
       <div class="playground playground-app">
-        <!-- The view rail: the icons switch what the desktop shows, the way an activity bar does — one view model,
-             driven from one attribute. A phone has no rail: its bar at the bottom drives the accordion instead. -->
+        <!-- The view rail: the icons switch which sections the desktop shows, the way an activity bar does — one view
+             model, driven from one attribute. A phone has no rail: its bar at the bottom drives the accordion instead. -->
         <nav class="view-rail" aria-label="Views">
           <button type="button" data-view="files" class="is-active" title="Files" aria-label="Files">
             <span class="material-symbols-outlined" aria-hidden="true">folder</span>
@@ -79,38 +79,33 @@ const sandboxBaseUrl =
             <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
           </button>
         </nav>
-        <!-- The four parts — project, code, preview, output — are native disclosures. On a phone they are the
-             accordion the bottom bar drives: each is independent, so several may be open at once, and the bar shows
-             the one in view rather than "the open one". Above the breakpoint they are `display: contents` with their
-             summaries hidden, so the two columns lay out exactly as they do without them. They wrap the content where
-             it already is: the editor cannot be moved to another parent without CodeMirror re-initialising.
-             `<details>`, not lion-accordion: see the checks. -->
-        <section class="pane" id="pane-project">
-          <h2>project</h2>
-          <details class="part" id="part-files" data-part="files" open>
-            <summary class="part-head">
-              <span class="material-symbols-outlined" aria-hidden="true">folder</span><span class="part-label">project</span>
-            </summary>
+        <!-- The four parts — project, code, preview, output — are one lion-accordion, through the page's extension of
+             it (`ui-portal-section-accordion`, in src/components): on a phone they are disclosures the bottom bar drives,
+             several open at once; from the desktop breakpoint up they are a column of sections whose headers are plain
+             text. Each part is an invoker (an <h2> whose first child is the element the accordion wires as its control)
+             and a content element, both light DOM: Lion moves neither, it only reassigns their `slot`, so the editor
+             inside the code part is never re-parented. The bar reads `data-part` from the headers. -->
+        <ui-portal-section-accordion class="parts" id="parts">
+          <h2 slot="invoker" class="part-head" data-part="files">
+            <span class="part-trigger"><span class="material-symbols-outlined" aria-hidden="true">folder</span><span class="part-label">project</span></span>
+          </h2>
+          <div slot="content" class="part-body" data-part-body="files">
             <demo-tree id="file-tree"></demo-tree>
-          </details>
-          <details class="part" id="part-code" data-part="code" open>
-            <summary class="part-head">
-              <span class="material-symbols-outlined" aria-hidden="true">code</span><span class="part-label">code</span>
-            </summary>
+          </div>
+          <h2 slot="invoker" class="part-head" data-part="code">
+            <span class="part-trigger"><span class="material-symbols-outlined" aria-hidden="true">code</span><span class="part-label">code</span></span>
+          </h2>
+          <div slot="content" class="part-body" data-part-body="code">
             <div class="tab-scroller">
               <lion-tabs id="open-files"></lion-tabs>
             </div>
             <playground-project id="project" sandbox-base-url={sandboxBaseUrl}></playground-project>
             <playground-file-editor id="editor"></playground-file-editor>
-          </details>
-        </section>
-
-        <section class="pane" id="pane-run">
-          <h2>run</h2>
-          <details class="part" id="part-preview" data-part="preview" open>
-            <summary class="part-head">
-              <span class="material-symbols-outlined" aria-hidden="true">smartphone</span><span class="part-label">preview</span>
-            </summary>
+          </div>
+          <h2 slot="invoker" class="part-head" data-part="preview">
+            <span class="part-trigger"><span class="material-symbols-outlined" aria-hidden="true">smartphone</span><span class="part-label">preview</span></span>
+          </h2>
+          <div slot="content" class="part-body" data-part-body="preview">
             <p id="status" class="status" role="status">Not run yet.</p>
             <playground-preview id="preview"></playground-preview>
             <!-- A server has no page. In server mode the preview still runs the harness — it is where the server code
@@ -120,40 +115,39 @@ const sandboxBaseUrl =
               <p>A server has no page. What it did is in the console: its stdout, the files it wrote and its worker.</p>
             </div>
             <div id="busy" hidden><lion-progress-indicator indeterminate label="Running"></lion-progress-indicator></div>
-          </details>
-          <details class="part" id="part-output" data-part="output" open>
-            <summary class="part-head">
-              <span class="material-symbols-outlined" aria-hidden="true">terminal</span><span class="part-label">output</span>
-            </summary>
-          <div id="node-panes">
-            <pre id="output" class="terminal" aria-label="Program output"></pre>
-            <ul id="files" aria-label="Files the run wrote"></ul>
           </div>
-          <!-- Lion's accordion cannot be themed: measured no `--lion-*` tokens, no `::part` and no `:host`
-               background in the component, so it paints its own light chrome on a dark surface. A native
-               `<details>` is a disclosure this page owns and can style; the Lion components stay where they can
-               carry the look — the tree (the menu system), the tabs, the busy indicator. -->
-          <details class="checks">
-            <summary>checks</summary>
-            <p id="content-check" class="status"></p>
-            <ul id="findings" aria-label="Content check findings"></ul>
-            <p id="boundary" class="status" aria-label="Client/server boundary"></p>
-            <p id="governance" class="status" aria-label="Governance check"></p>
-            <h3>packages you can import</h3>
-            <ul id="packages" aria-label="Importable packages"></ul>
-            <p class="note">
-              A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
-              <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
-              boundary, not a bug: those need a real runtime.
-            </p>
-          </details>
-          <p class="note" id="mode-note"></p>
-          </details>
-        </section>
+          <h2 slot="invoker" class="part-head" data-part="output">
+            <span class="part-trigger"><span class="material-symbols-outlined" aria-hidden="true">terminal</span><span class="part-label">output</span></span>
+          </h2>
+          <div slot="content" class="part-body" data-part-body="output">
+            <div id="node-panes">
+              <pre id="output" class="terminal" aria-label="Program output"></pre>
+              <ul id="files" aria-label="Files the run wrote"></ul>
+            </div>
+            <!-- One disclosure on its own, with nothing to coordinate, is what a native `<details>` is for; the accordion is
+                 the set of four parts above. (Not a question of theming: lion-accordion's invokers and content are this
+                 page's own light DOM and take its styles.) -->
+            <details class="checks">
+              <summary>checks</summary>
+              <p id="content-check" class="status"></p>
+              <ul id="findings" aria-label="Content check findings"></ul>
+              <p id="boundary" class="status" aria-label="Client/server boundary"></p>
+              <p id="governance" class="status" aria-label="Governance check"></p>
+              <h3>packages you can import</h3>
+              <ul id="packages" aria-label="Importable packages"></ul>
+              <p class="note">
+                A builtin the layer does not answer — <code>module</code>, <code>child_process</code>,
+                <code>http</code> — fails with <em>Failed to resolve module specifier</em>. That is the honest
+                boundary, not a bug: those need a real runtime.
+              </p>
+            </details>
+            <p class="note" id="mode-note"></p>
+          </div>
+        </ui-portal-section-accordion>
       </div>
 
       <!-- The phone's bar: it drives the accordion above — a tap opens that part and scrolls it into view — and it
-           shows which part is open. The icons are Material Symbols Outlined over Inter, the same set as the rail. -->
+           shows the part in view. The icons are Material Symbols Outlined over Inter, the same set as the rail. -->
       <nav class="mobile-tabs" aria-label="View">
         <button type="button" data-view="files">
           <span class="material-symbols-outlined" aria-hidden="true">folder</span>
@@ -182,10 +176,11 @@ const sandboxBaseUrl =
       // `docs/components/menu/src/DemoTree.js` — a `MultiLevelListMixin` host with `role="tree"` — which is the
       // configuration the menu system's own docs and migration guide point at.
       import { DemoTree } from '../../../docs/components/menu/src/DemoTree.js';
-      // The chrome is Lion's where it can carry the look: the tree is the menu system, the tabs are Lion's, the busy
-      // state is Lion's progress indicator. The accordion is not here — it has no theming surface (see the markup
-      // comment). Dark mode is the portal header's, not this page's: see ThemeInit and TopNav.
+      // The chrome is Lion's: the tree is the menu system, the tabs are Lion's, the busy state is Lion's progress
+      // indicator, and the four parts are Lion's accordion, extended to render plain section headers on a desktop (see
+      // the component). Dark mode is the portal header's, not this page's: see ThemeInit and TopNav.
       import '@lion/ui/define/lion-progress-indicator.js';
+      import '../components/ui-portal-section-accordion.js';
 
       void DemoTree;
 
@@ -1084,10 +1079,11 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         modeTabs.appendChild(tab);
       }
 
-      // Two arrangements of the same four parts, one per width.
+      // Two arrangements of the same four parts, one per width. The accordion itself switches between them (sections
+      // on a desktop, disclosures on a phone); the page adds what each width drives them with.
       //
-      // Desktop: the view model. One attribute on <body>, driven by the rail; show/hide lives in CSS, so there is one
-      // source of truth, and the parts are laid out as if they were not there (see the stylesheet).
+      // Desktop: the view model. One attribute on <body>, driven by the rail; which sections show lives in CSS, so
+      // there is one source of truth.
       const railButtons = [...document.querySelectorAll('.view-rail button')];
       const setView = view => {
         document.body.dataset.view = view;
@@ -1102,12 +1098,13 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       setView('files');
 
       // Phone: the parts are an accordion, and the bottom bar drives it. A tap on the bar opens that part and scrolls
-      // it into view. The parts are **independent** — several may be open at once — so the bar cannot mean "the open
-      // one": it shows the part that is in view, which is what a reader is looking at and what a tap would move.
-      // Nothing sets the `name` attribute here, because that is native exclusivity and it was explicitly not wanted.
-      // Smooth scrolling, unless the user asked for reduced motion: then the jump is instant ('instant', not 'auto' —
-      // 'auto' defers to the CSS `scroll-behavior`, which the portal sets smooth).
-      const parts = [...document.querySelectorAll('details.part')];
+      // it into view. The parts are **independent** — several may be open at once (the accordion is not `exclusive`)
+      // — so the bar cannot mean "the open one": it shows the part that is in view, which is what a reader is looking
+      // at and what a tap would move. A part is its header: that is what scrolls into view and what carries
+      // `data-part`. Smooth scrolling, unless the user asked for reduced motion: then the jump is instant ('instant',
+      // not 'auto' — 'auto' defers to the CSS `scroll-behavior`, which the portal sets smooth).
+      const accordion = document.querySelector('#parts');
+      const parts = [...accordion.querySelectorAll(':scope > .part-head[data-part]')];
       const barButtons = [...document.querySelectorAll('.mobile-tabs button')];
       const phone = window.matchMedia('(max-width: 48rem)');
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -1131,21 +1128,26 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       };
 
       const openPart = view => {
-        const part = parts.find(candidate => candidate.dataset.part === view);
-        if (!part) return;
-        part.open = true;
+        const index = parts.findIndex(candidate => candidate.dataset.part === view);
+        if (index === -1) return;
+        if (!accordion.expanded.includes(index)) accordion.expanded = [...accordion.expanded, index];
         updateBar();
-        revealPart(part);
+        revealPart(parts[index]);
       };
 
-      for (const part of parts) {
-        part.addEventListener('toggle', () => {
-          if (!phone.matches || !part.open) return;
-          // Opened from its own header: keep it in view if opening another part above moved its header off screen.
-          const top = part.getBoundingClientRect().top;
-          if (top < 48 || top > window.innerHeight - 57) revealPart(part);
-        });
-      }
+      // Opened from its own header: keep it in view if opening another part above moved its header off screen. The
+      // accordion reports a change of its `expanded` indices, not which one changed, so the newly opened ones are the
+      // difference with the previous set.
+      let wasExpanded = [];
+      accordion.addEventListener('expanded-changed', () => {
+        const opened = accordion.expanded.filter(index => !wasExpanded.includes(index));
+        wasExpanded = [...accordion.expanded];
+        if (!phone.matches) return;
+        for (const index of opened) {
+          const top = parts[index].getBoundingClientRect().top;
+          if (top < 48 || top > window.innerHeight - 57) revealPart(parts[index]);
+        }
+      });
 
       // Which part is in view. The rule is the last part whose top has passed the line a revealed part comes to rest
       // at — "which section fills the viewport" — rather than the topmost of those intersecting a band: with long
@@ -1190,21 +1192,25 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         if (button && phone.matches) openPart(button.dataset.view);
       });
 
-      // Entering a width sets its arrangement: on a phone the code is open and the rest are closed — closed only as a
-      // default, not enforced, so opening several is fine. Above the breakpoint every part is open, because the
-      // desktop lays them out side by side.
+      // Entering the phone width sets its default: the code is open and the rest are closed — closed only as a
+      // default, not enforced, so opening several is fine. Above the breakpoint the accordion shows every part as a
+      // section by itself, whatever `expanded` holds, so there is nothing to set there.
       const applyLayout = () => {
         if (phone.matches) {
-          const keep = parts.find(part => part.dataset.part === 'code');
-          for (const part of parts) part.open = part === keep;
-        } else {
-          for (const part of parts) part.open = true;
+          // Recorded as already open before it is set, so the "keep it in view" handler does not treat a default as a
+          // tap — measured without this: the page loaded scrolled to y=33, towards a header the store had not yet laid out.
+          wasExpanded = [parts.findIndex(part => part.dataset.part === 'code')];
+          accordion.expanded = [...wasExpanded];
         }
         revealLine = parts.length ? parseFloat(getComputedStyle(parts[0]).scrollMarginTop) || 0 : 0;
         syncPartInView();
       };
       phone.addEventListener('change', applyLayout);
       applyLayout();
+      // The part in view also changes without a scroll: when the accordion first lays its parts out (before that every
+      // header measures top 0, measured as the bar naming "output" at the top of the page) and whenever opening or
+      // closing a part moves the ones below it. Its size changes in every one of those cases.
+      new ResizeObserver(() => syncPartInView()).observe(accordion);
 
       applyMode('client');
 
@@ -1525,7 +1531,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       /* --- focus: one ring for every control in the app -----------------------------------------------------
          The portal's global rule draws a dotted outline; the app replaces it with the accent, solid. */
-      .playground-app :is(button, summary, [role='tab'], [role='treeitem']):focus-visible,
+      .playground-app :is(button, summary, [role='button'], [role='tab'], [role='treeitem']):focus-visible,
       .mobile-tabs button:focus-visible {
         outline: 2px solid var(--pg-accent);
         outline-offset: 2px;
@@ -1568,10 +1574,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       #modes [role='tab'][aria-selected='true'] .mode-hint { color: var(--pg-muted); }
       #modes [role='tab']:active { background: var(--pg-selected); }
 
-      /* --- the app grid: rail, project, run — all three stretched to one bottom edge ------------------------- */
+      /* --- the app grid: the rail, and one column of sections beside it ---------------------------------------- */
       .playground.playground-app {
         display: grid;
-        grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1fr);
+        grid-template-columns: auto minmax(0, 1fr);
         gap: 24px;
         align-items: stretch;
       }
@@ -1627,7 +1633,7 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         --playground-tab-bar-font-size: 12px;
       }
 
-      /* --- the view rail: an activity bar, full height, on the page — the panel beside it draws the divider ---- */
+      /* --- the view rail: an activity bar, full height, on the page beside the column of sections ------------- */
       .view-rail {
         display: flex;
         flex-direction: column;
@@ -1669,31 +1675,39 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .view-rail button.is-active::before { opacity: 1; transform: none; }
       .view-rail button.is-active .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 
-      /* --- sections ----------------------------------------------------------------------------------------- *
-         Not cards: no surface, no radius, no shadow. Each column is a section of the page, divided from the one
-         before it by a hairline down its left edge — the one divider the columns genuinely need. The 16px inset
-         stays, so the tree, the tabs and the editor keep their measured left edge (40 + 48 rail + 24 + 16 = 128). */
-      .playground-app .pane {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        padding: 0 16px 16px;
-        box-shadow: inset 1px 0 0 var(--pg-line);
-        color: var(--pg-fg-2);
-      }
-      /* The section title is a header row across the full section, divided from the body by a hairline rule. */
-      .playground-app .pane h2 {
+      /* --- the parts: lion-accordion, through the page's extension -------------------------------------------- *
+         Not cards: no surface, no radius, no shadow. The invokers (`.part-head`) and contents (`.part-body`) are this
+         page's own light DOM, so they take these rules directly. What the page does not reach is the accordion's
+         internal wrapper — a flex column in its shadow root, which paints nothing — and the rule that shows or hides a
+         content element, `::slotted(.content[expanded])`, which the page leaves to the component: nothing here sets
+         `display` on a `.part-body` except the desktop view model, which hides whole sections on purpose. */
+      .parts { display: block; min-width: 0; color: var(--pg-fg-2); }
+      /* A header is an icon and a small, quiet, lowercase label on a 48px row, with a hairline rule above it — no arrow.
+         An uppercase name was read out letter by letter by some screen readers (the tree exposed "P R O J E C T"), and
+         at this size capitals shout anyway; the icon is `aria-hidden`, so the header's name is the visible word, once. */
+      .part-head {
         display: flex;
         align-items: center;
-        height: 40px;
-        margin: 0 -16px 12px;
-        padding: 0 16px;
-        box-shadow: inset 0 -1px 0 var(--pg-line);
-        font: 600 11.5px/1 var(--pg-ui);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--pg-muted);
+        min-height: 48px;
+        margin: 0;
+        border-top: 1px solid var(--pg-line);
+        font: 500 11px/1 var(--pg-ui);
       }
+      .part-head:first-child { border-top: 0; }
+      .part-trigger {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: 10px;
+        min-height: 48px;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .part-head .material-symbols-outlined { font-size: 20px; color: var(--pg-faint); transition: color var(--pg-fast); }
+      .part-head .part-label { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; color: var(--pg-faint); }
+      .part-body { padding-bottom: 16px; }
+      /* As a disclosure (a phone): the control is a button, and an open part says so by its icon taking the accent. */
+      .parts:not([sections]) .part-trigger { cursor: pointer; }
+      .parts:not([sections]) .part-head[expanded] .material-symbols-outlined { color: var(--pg-accent); }
 
       /* The code surfaces, all in the editor's face, size and rhythm. */
       .playground-app :is(#file-tree [role='treeitem'], #open-files [slot='tab'], .terminal, #files li) {
@@ -1851,16 +1865,15 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       /* Lion's tabs require a panel per tab; the editor is the panel here, so the empty ones take no space. */
       #open-files [slot='panel'] { display: none !important; }
 
-      /* --- the editor: bare code, filling what is left of the section so it never ends in dead space -------- */
+      /* --- the editor: bare code, a fixed working height in its section ------------------------------------- */
       .playground-app #editor {
         display: block;
-        flex: 1 0 30rem;
-        min-height: 0;
+        height: 30rem;
         overflow: hidden;
         background: var(--pg-inset);
       }
 
-      /* --- the run panel ------------------------------------------------------------------------------------- */
+      /* --- the preview and output sections ------------------------------------------------------------------- */
       /* The status is a row: a state dot and one line of text. The dot follows `data-state`, set by the script. */
       .playground-app .status {
         display: flex;
@@ -1975,8 +1988,8 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .playground-app #files:empty { display: none; }
       .playground-app #files li { color: var(--pg-muted); }
 
-      /* The checks disclosure is this page's own: Lion's accordion cannot be themed (see the markup comment). It is a
-         section, not a box: a hairline rule above it, and its label and content on the section's own text column —
+      /* The checks disclosure is one native `<details>` (see the markup comment for why that and not the accordion). It
+         is a section, not a box: a hairline rule above it, and its label and content on the section's own text column —
          the column the status line and the notes use. */
       .playground-app .checks {
         margin: 16px 0 0;
@@ -2036,41 +2049,15 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       .playground-app .note { margin: 12px 0 0; max-width: 68ch; font-size: 13px; line-height: 1.6; color: var(--pg-muted); }
       .playground-app code { font-family: var(--pg-mono); font-size: 12px; color: light-dark(#a31515, #ce9178); }
 
-      /* --- the parts ------------------------------------------------------------------------------------------
-         Four native disclosures wrap the content (see the markup). Their two arrangements follow. */
-      .part-head { list-style: none; }
-      .part-head::-webkit-details-marker { display: none; }
-
-      /* --- desktop: two columns and the view model ---------------------------------------------------------------
-         The parts are not boxes here: `display: contents` on the disclosure and on its content slot makes their
-         children lay out as children of the column, exactly as without them, and the summaries are not shown — the
-         rail is how a desktop switches. (`::details-content` is its own rule: a browser without it drops only that
-         rule, and still gets the hidden summaries and the open parts.) */
+      /* --- desktop: the view model ------------------------------------------------------------------------------
+         The accordion renders its parts as sections here by itself (see the component). The rail picks which of them
+         show: one attribute on <body>, one source of truth. `files` is all four; the others narrow to their part. A
+         hidden section takes its header with it, so a header never stands over nothing. */
       @media (min-width: 48.01rem) {
-        .part { display: contents; }
-        .part > summary { display: none; }
-
-        /* The view model: one attribute on <body>, driven by the rail; show/hide lives here so there is one source
-           of truth. `files` is the full layout — the rail switches focus, not the editor out of existence, which is
-           how an activity bar behaves. `code` is that view with the tree folded away, and the last two are the run
-           pane alone. */
-        body[data-view='code'] #file-tree,
-        body[data-view='code'] #pane-run { display: none; }
-        body[data-view='preview'] #pane-project,
-        body[data-view='output'] #pane-project { display: none; }
-        body[data-view='preview'] #node-panes,
-        body[data-view='preview'] .checks,
-        body[data-view='preview'] #mode-note { display: none; }
-        body[data-view='output'] #preview,
-        body[data-view='output'] .no-page { display: none !important; }
-        /* A focused view gets the whole width beside the rail, not a narrow column. */
-        body[data-view='preview'] #pane-run,
-        body[data-view='output'] #pane-run { grid-column: 2 / -1; }
-        /* With the preview gone, the console is the view: it starts at the top of the section. */
-        body[data-view='output'] .playground-app .terminal { margin-top: 0; }
-      }
-      @media (min-width: 48.01rem) {
-        .part::details-content { display: contents; }
+        body[data-view='code'] .parts > :not([data-part='code'], [data-part-body='code']),
+        body[data-view='preview'] .parts > :not([data-part='preview'], [data-part-body='preview']),
+        body[data-view='output'] .parts > :not([data-part='output'], [data-part-body='output']) { display: none; }
+        body[data-view]:not([data-view='files']) .parts > .part-head { border-top: 0; }
       }
 
       .mobile-tabs { display: none; }
@@ -2086,62 +2073,19 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         #modes [role='tab'] { justify-content: center; height: 40px; line-height: 40px; padding: 0 8px; }
         #modes .mode-hint { display: none; }
 
-        /* One column of parts, one after the other: no columns, no section titles (each part has its own header),
-           no column divider. */
+        /* One column of parts and no rail: the bar at the bottom is what drives them here. */
         .playground.playground-app { grid-template-columns: minmax(0, 1fr); gap: 0; }
         .view-rail { display: none; }
-        .playground-app .pane { padding: 0; box-shadow: none; }
-        .playground-app .pane h2 { display: none; }
 
-        /* No disclosure arrow on the accordion headers: the native marker was the arrow on project, code, preview and
-           output (`list-style` covers the standard `::marker`, the pseudo-element covers WebKit's own). The checks
-           disclosure keeps its own drawn chevron — it is a different element that was not part of the ask. */
-        .part > summary {
-          list-style: none;
-        }
-        .part > summary::-webkit-details-marker {
-          display: none;
-        }
-
-        .part { scroll-margin-top: 56px; border-top: 1px solid var(--pg-line); }
-        #pane-run .part:last-child { border-bottom: 1px solid var(--pg-line); }
-        .part-head {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          min-height: 48px;
-          cursor: pointer;
-          font: 600 12px/1 var(--pg-ui);
-          color: var(--pg-muted);
-          -webkit-tap-highlight-color: transparent;
-          transition: color var(--pg-fast);
-        }
-        /* No `text-transform` and no letter-spacing here any more. The header is an icon plus a visually hidden label,
-           and an accessible name that has been uppercased by CSS is read out letter by letter by some screen readers
-           (the tree exposed "P R O J E C T"); with nothing visible to capitalise, the plain lowercase label is both
-           what the markup says and what is announced. Measured after: the four disclosure triangles are named
-           "project", "code", "preview" and "output". */
-        /* The label is back in the header, but quiet: smaller than the icon's own row, the faintest ink on the page, and
-           lowercase — an uppercase name was read out letter by letter by some screen readers (the tree exposed
-           "P R O J E C T"), and at this size capitals shout anyway. The icon stays `aria-hidden`, so the header's name is
-           the visible word, once. */
-        .part-head .part-label {
-          font-size: 11px;
-          font-weight: 500;
-          letter-spacing: 0.04em;
-          color: var(--pg-faint);
-          transition: color var(--pg-fast);
-        }
-        .part-head .material-symbols-outlined { font-size: 20px; color: var(--pg-faint); }
-        /* No arrow on these headers: the `expand_more` glyph and its rotation are gone. The header still reads as
-           open or closed — the label brightens and its icon takes the accent — which is the state, not a widget. */
-        .part[open] > .part-head { color: var(--pg-fg); }
-        .part[open] > .part-head .part-label { color: var(--pg-muted); }
-        .part[open] > .part-head .material-symbols-outlined { color: var(--pg-accent); }
-        .part[open] { padding-bottom: 16px; }
+        /* Where a revealed part comes to rest: its header clears the fixed site header (48px) with 8px to spare. The
+           bar's "part in view" reads this same value, so the two cannot drift apart. The headers have no arrow; the
+           checks disclosure inside output keeps its own chevron — a different element. */
+        .part-head { scroll-margin-top: 56px; border-top: 1px solid var(--pg-line); }
+        .part-head:first-child { border-top: 1px solid var(--pg-line); }
+        .parts { border-bottom: 1px solid var(--pg-line); }
 
         /* The code, bare and full width, a screenful tall at most so the next part's header stays reachable. */
-        .playground-app #editor { flex: none; height: min(60dvh, 28rem); }
+        .playground-app #editor { height: min(60dvh, 28rem); }
         .playground-app #preview { height: 22rem; }
         .playground-app .terminal { margin-top: 0; }
         .playground-app #status { margin-top: 0; }
