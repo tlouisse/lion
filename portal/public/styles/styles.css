@@ -194,26 +194,28 @@ body {
 
 /* Header
  *
- * Sticky, not fixed, and that is a measured choice rather than a preference: shadcn's header — the reference this bar is
- * being brought in line with — computes to `position: sticky; top: 0; z-index: 50; width: 100%` with an opaque
- * background and no backdrop blur, and reads identically at scrollY 0 and scrollY 600. There is no scroll treatment to
- * copy, which is why none is added here.
+ * The bar is the playground page's bar, moved to the site so every page is the same: a fixed 48px flex row with no
+ * backdrop-filter, a hairline underneath, and the mark and nav type sized to match. Measured on that page before
+ * porting: height/min/max 48px, display flex with align-items center, backdrop-filter none, border-bottom 1px,
+ * z-index 50.
  *
- * `main` below then loses its 85px: a fixed bar is out of flow, so the content had to be pushed down to clear it; a
- * sticky bar holds that space itself, and keeping both would open an 85px hole under the bar. */
+ * One deliberate difference: sticky, not fixed. Fixed takes the bar out of flow, so every layout needed a top padding
+ * to clear it (this file carried `main { padding-top: 85px }` for that); sticky holds that space itself and still pins to
+ * the top, and it is what was asked for earlier when the menu was brought in line with shadcn's.
+ *
+ * That is also why `main` below no longer carries the 85px: the sticky bar occupies it. */
 .site-header {
-    padding: 24px 0;
     position: sticky;
     top: 0;
     width: 100%;
-    z-index: 100;
+    z-index: 50;
     background: var(--header-bg);
-    /* 20px smeared glyph shapes into grey clouds; saturate(180%) amplified the colour showing
-     * through (116 distinct colours behind the bar on /components/ dark). */
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
     border-bottom: 1px solid var(--header-border);
-    min-height: 85px;
+    display: flex;
+    align-items: center;
+    height: 48px;
+    min-height: 48px;
+    max-height: 48px;
 }
 
 main {

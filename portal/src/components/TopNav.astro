@@ -327,14 +327,12 @@ const { variant } = Astro.props;
 
   .site-header :global(.logo svg) {
     /*
-     * The mark's proportions against the bar, matched to StackBlitz's rather than its size: their logo is 44px in a
-     * 72px bar (61%), while ours was 36px in a 48px bar (73%) — measured, and it is the difference that makes ours
-     * read as heavy rather than as small. 30px in a 48px bar is 63%, and it is applied to the SVG so the mark scales
-     * as a whole: setting a font-size instead shrinks the glyphs while the two halves keep their authored x
-     * coordinates, which opens the gap between them.
+     * The mark at the playground page's size, so the two headers are the same mark: 65x27.08 in a 48px bar (56%),
+     * against 72x30 before. Applied to the SVG rather than as a font-size, which would shrink only the glyphs and leave
+     * the second half at its authored x, opening the gap between the halves.
      */
-    width: 72px;
-    height: 30px;
+    width: 65px;
+    height: 27.08px;
   }
 
   :global(.site-header ui-portal-main-nav) {
@@ -352,7 +350,7 @@ const { variant } = Astro.props;
    * gap to "ui" where the docs site has 2px. That gap is closed in the page's own stylesheet, on the accent half.
    */
   .site-nav {
-    font-size: 0.875rem;
+    font-size: 0.9375rem;
   }
 
 </style>

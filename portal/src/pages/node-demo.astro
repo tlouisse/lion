@@ -1299,35 +1299,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
       [hidden] { display: none !important; }
 
       /* --- the header ------------------------------------------------------------------------------------------
-         The header is `header.site-header`, and the portal's own rule for it wins over `body > header`,
-         `header.site-header` and `html body header.site-header` alike — it carries `!important`, so there is no
-         specificity left that wins. This page therefore marks `!important` on exactly the properties it changes:
-         a 48px bar, fixed at the top, on the app's chrome colour with a hairline under it, the theme switch
-         staying inside the navigation where TopNav renders it. Page-scoped: the docs site keeps its own header. */
-      html body header.site-header {
-        background: var(--pg-chrome) !important;
-        backdrop-filter: none !important;
-        border-bottom: 1px solid var(--pg-line) !important;
-        display: flex !important;
-        align-items: center !important;
-        height: 48px !important;
-        min-height: 48px !important;
-        max-height: 48px !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        z-index: 50 !important;
-      /* The header's own colour: the nav's links and buttons inherit it, and the logo beside them is an image now. Setting
-         it here rather than on a/span/li is what keeps the bar's type light on the dark surface. */
-        color: var(--pg-fg);
-      }
-      html body header.site-header a,
-      html body header.site-header span,
-      html body header.site-header li,
-      html body header.site-header button { color: var(--pg-muted); transition: color var(--pg-fast); }
-      html body header.site-header a:hover,
-      html body header.site-header button:hover { color: var(--pg-fg); }
+         Nothing here any more. The 48px bar, the mark's size and the nav's type moved into the site's own header
+         (styles.css and TopNav.astro), so every page has the same bar instead of this page keeping a copy of it. The
+         only deliberate difference that remains is the bar's stickiness: the site's is sticky, this page's was fixed. */
       html body header.site-header .theme-switch label {
         color: var(--pg-muted); background: transparent; transition: color var(--pg-fast);
       }
@@ -1341,14 +1315,10 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          Nothing here sets the logo's size or alignment: the portal's own rule sizes the mark (72x30) and the header
          container's padding puts it on the page's content edge, which is measured at x=40 here and x=24 on a phone, the
          same edge the page's own intro uses. */
-      /* The accent half's grey lives in LionWordmark.astro now, so the page no longer overrides it: it was #9aa0a6 here
-         and is #9aa0a6 everywhere, which is how the logo reads the same on every page. */
-      html body header.site-header .logo svg { width: 65px !important; height: 27.08px !important; }
 
       /* The bar's type one step up: 14px to 15px. Page-scoped, because the same nav is every other page's too, and this
          asks for this page's header. The nav renders into a shadow root, and the nav's own items inherit from this
          wrapper, which is why the size goes here rather than on the items. */
-      html body header.site-header .site-nav { font-size: 0.9375rem; }
 
       /* --- the intro: type on the page, not another box ------------------------------------------------------ */
       main > header { margin: 0 0 16px; text-align: left; }
