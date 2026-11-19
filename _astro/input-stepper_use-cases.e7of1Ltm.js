@@ -4,18 +4,18 @@ import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
 import '@lion/ui/define/lion-input-stepper.js';
 loadDefaultFeedbackMessages();
 /** stories code **/
-export const HtmlStory16 = () => html\`<lion-input-stepper name="year">
+export const HtmlStory22 = () => html\`<lion-input-stepper name="year">
   <label slot="label">How old is the existence?</label>
   <div slot="after" data-description>In Billion Years</div>
 </lion-input-stepper>\`;
-export const HtmlStory17 = () => html\`<lion-input-stepper
+export const HtmlStory23 = () => html\`<lion-input-stepper
   label="Amount of oranges"
   min="100"
   step="100"
   name="value"
   value="200"
 ></lion-input-stepper>\`;
-export const HtmlStory18 = () => html\`<lion-input-stepper
+export const HtmlStory24 = () => html\`<lion-input-stepper
   label="Amount of oranges"
   min="200"
   max="500"
@@ -60,7 +60,7 @@ export const formatting = () => {
     ></lion-input-stepper>
   \`;
 };
-export const HtmlStory19 = () => html\`<lion-input-stepper
+export const HtmlStory25 = () => html\`<lion-input-stepper
   label="Amount of oranges"
   min="1"
   max="100"
@@ -69,17 +69,17 @@ export const HtmlStory19 = () => html\`<lion-input-stepper
   alignToStep
   value="55"
 ></lion-input-stepper>\`;
-export const HtmlStory20 = () => html\`<lion-input-stepper name="year" disabled value="10">
+export const HtmlStory26 = () => html\`<lion-input-stepper name="year" disabled value="10">
   <label slot="label">How old is the existence?</label>
   <div slot="after" data-description>In Billion Years</div>
 </lion-input-stepper>\`;
-export const HtmlStory21 = () => html\`<lion-input-stepper name="year" readonly value="10">
+export const HtmlStory27 = () => html\`<lion-input-stepper name="year" readonly value="10">
   <label slot="label">How old is the existence?</label>
   <div slot="after" data-description>In Billion Years</div>
 </lion-input-stepper>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory16', story: HtmlStory16 }, { key: 'HtmlStory17', story: HtmlStory17 }, { key: 'HtmlStory18', story: HtmlStory18 }, { key: 'valueTextMapping', story: valueTextMapping }, { key: 'formatting', story: formatting }, { key: 'HtmlStory19', story: HtmlStory19 }, { key: 'HtmlStory20', story: HtmlStory20 }, { key: 'HtmlStory21', story: HtmlStory21 }];
+const stories = [{ key: 'HtmlStory22', story: HtmlStory22 }, { key: 'HtmlStory23', story: HtmlStory23 }, { key: 'HtmlStory24', story: HtmlStory24 }, { key: 'valueTextMapping', story: valueTextMapping }, { key: 'formatting', story: formatting }, { key: 'HtmlStory25', story: HtmlStory25 }, { key: 'HtmlStory26', story: HtmlStory26 }, { key: 'HtmlStory27', story: HtmlStory27 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

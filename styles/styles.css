@@ -17,16 +17,16 @@
      * --highlight-color keeps its name and every former fill site; the former ink sites now name
      * --accent-on-surface, which is why no rule paints brown text on the light surface any more.
      */
-    /* The accent is the brand yellow's own lightness with its saturation removed, not a pair of greys for the two
-     * themes: #FFC107 is hsl(45 94.7% 51.4%), so this is hsl(45 0% 51.4%) = #838383. Measured, not eyeballed — the
-     * lightness is identical to the yellow's, which is what keeps the accent sitting at the same weight on the page.
+    /* The brand yellow's hue removed and its lightness lifted one measured step: #FFC107 is hsl(45 94.7% 51.4%), this
+     * is hsl(45 0% 62%) = #9e9e9e. The first pass kept the yellow's own lightness (51.4%, #838383) and read too dark for
+     * an accent, so it moved up 10.6 points. Ask for another step and it is one number here.
      * The name is historical: it was #FFC107, and renaming it would touch every consumer in the portal. */
-    --accent-yellow: #838383;
+    --accent-yellow: #9e9e9e;
     --accent-ink: light-dark(#111111, #111111);
     --accent-on-surface: light-dark(#111111, #f4f4f5);
     --accent-chip-surface: #111111;
     /* Same grey as --accent-yellow above, and the same note applies: the name is historical. */
-    --highlight-color: #838383;
+    --highlight-color: #9e9e9e;
     --highlight-color-hover: color-mix(in srgb, var(--highlight-color) 85%, #ffffff);
     --on-highlight: var(--accent-ink); 
     --border-color: light-dark(#dcdcdc, #222222);
