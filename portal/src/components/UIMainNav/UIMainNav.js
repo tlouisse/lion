@@ -584,8 +584,10 @@ export class UIMainNav extends UIBaseElement {
             A place for a control that belongs to the navigation without being a nav item — the portal puts its theme
             switch here. It sits inside the level, so the same element renders in the row on a desktop and inside the
             drawer when the nav collapses to the hamburger: one slot, both layouts.
+            The wrapper is what makes "at the bottom of the drawer" possible: a slot is display: contents and cannot take
+            a margin, and ::slotted() from inside this root did not reach the control (measured — see the level-1 rule).
           -->
-          <slot name="level-${level}-after"></slot>
+          <div data-part="level-after" data-level="${level}"><slot name="level-${level}-after"></slot></div>
         </div>`;
     },
     navItem(context, { item, level }) {
@@ -1071,6 +1073,26 @@ UIMainNav.provideDesign({
             width: min(22rem, 90vw);
             padding: 2rem 1.5rem;
             overflow-y: auto;
+            /*
+             * A column, so a slotted control can take the drawer's remaining height. Measured before this: the portal's
+             * theme switch sat at y 296.8 in a 100vh drawer, because the drawer laid its children in normal flow and a
+             * slotted element's margin-top:auto had nothing to resolve against.
+             */
+            display: flex;
+            flex-direction: column;
+          }
+
+          /*
+           * The slotted control belongs at the bottom of the drawer, and this is done on the wrapper rather than on the
+           * control. Two facts, both measured, decided it: the control is light DOM, and every ::slotted() form tried
+           * here was inert — slot[name='level-1-after']::slotted(*), [data-level='1'] > ::slotted(*) and
+           * [data-level='1'] ::slotted(*) all left margin-top at 0px, and a hard margin-top: 200px did not move the box
+           * either, so the rule never reached the element. A slot itself is display: contents and takes no margin, but
+           * the div wrapping it in the template is an ordinary flex item of this column, and margin-top: auto on it
+           * absorbs the free space, which is what the drawer below now gives it.
+           */
+          [data-part='level-after'][data-level='1'] {
+            margin-top: auto;
           }
 
           /*
