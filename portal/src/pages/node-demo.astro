@@ -1343,6 +1343,14 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
          same edge the page's own intro uses. */
       html body header.site-header .logo svg text.wordmark-accent { fill: #9aa0a6; }
 
+      /* The mark one step down: 65x27.08 against the portal's own 72x30, the same ratio so nothing is distorted. The
+         `!important` is for the reason the wordmark work measured: the portal's rule is `.site-header[data-astro-cid-…]
+         .logo svg`, three class-level selectors against this rule's two, so it wins and sets 72x30.
+         This scales the SVG, never the font-size: a font-size shrink takes only the glyphs and leaves the second half at
+         its authored x, which was measured once as a 4.2px gap against the docs site's 2px. Sizing the element scales the
+         whole mark, geometry included. */
+      html body header.site-header .logo svg { width: 65px !important; height: 27.08px !important; }
+
       /* The bar's type one step up: 14px to 15px. Page-scoped, because the same nav is every other page's too, and this
          asks for this page's header. The nav renders into a shadow root, and the nav's own items inherit from this
          wrapper, which is why the size goes here rather than on the items. */
