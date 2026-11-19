@@ -1214,23 +1214,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
       applyMode('client');
 
-      // The header's logo is the exported badge: the vector the design work settled on — Inter 600 outlines, the o matched
-      // to the n's shoulder, the ı cut at the same angle as its dot, the n mirrored symmetric. It replaces the wordmark
-      // this page used to rebuild at runtime, and everything that block needed goes with it: the Playfair face, the
-      // viewBox narrowed to the painted run, the dot measured from the ink and the plate painted in CSS. A file that
-      // carries its own outlines needs none of it.
-      //
-      // The img carries the link's accessible name. Hiding the component's own svg from CSS instead would have taken
-      // that name out of the accessibility tree with it, which is why this is done in script rather than in a rule.
-      const brand = document.querySelector('header.site-header .logo');
-      if (brand) {
-        const badge = document.createElement('img');
-        badge.src = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/lion-badge.svg`;
-        badge.alt = 'lion';
-        badge.width = 36;
-        badge.height = 36;
-        brand.replaceChildren(badge);
-      }
+      // The header keeps the portal's own wordmark — "lıon uı" — so nothing here replaces it. An earlier version swapped
+      // in an exported badge (a black plate with the word inside), and the block that drew a dot on the dotless ı at
+      // runtime went with it; both are gone, and the only change left is the accent half's colour, in the stylesheet.
     </script>
 
     <style is:global>
@@ -1349,19 +1335,18 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
         color: var(--pg-fg); background: transparent;
       }
 
-      /* The logo is the exported badge, drawn by `lion-badge.svg`: 36px, aligned with the content edge like the page it
-         sits above. Nothing here paints the plate, the radius or the outline any more — those live in that file — and the
-         overrides the wordmark needed (the accent half hidden, the viewBox narrowed to the painted run, the dot measured
-         from the ink, the serif face, the plate CSS) went with the block that needed them. */
-      html body header.site-header .logo {
-        display: grid;
-        place-items: center;
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        line-height: 0;
-      }
-      html body header.site-header .logo img { display: block; width: 36px; height: 36px; }
+      /* The header's mark is the portal's own `LionWordmark`: "lıon" in the bar's ink and "uı" in this page's grey instead
+         of the brand's accent colour. Page-scoped on purpose — every other page keeps the accent, and this asks for this
+         page's header.
+         Nothing here sets the logo's size or alignment: the portal's own rule sizes the mark (72x30) and the header
+         container's padding puts it on the page's content edge, which is measured at x=40 here and x=24 on a phone, the
+         same edge the page's own intro uses. */
+      html body header.site-header .logo svg text.wordmark-accent { fill: #9aa0a6; }
+
+      /* The bar's type one step up: 14px to 15px. Page-scoped, because the same nav is every other page's too, and this
+         asks for this page's header. The nav renders into a shadow root, and the nav's own items inherit from this
+         wrapper, which is why the size goes here rather than on the items. */
+      html body header.site-header .site-nav { font-size: 0.9375rem; }
 
       /* --- the intro: type on the page, not another box ------------------------------------------------------ */
       main > header { margin: 0 0 16px; text-align: left; }
