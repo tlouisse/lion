@@ -5,7 +5,7 @@ import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
 import '@lion/ui/define/lion-select.js';
 loadDefaultFeedbackMessages();
 /** stories code **/
-export const HtmlStory45 = () => html\`<lion-select name="favoriteColor" label="Favorite color" .modelValue="\${'hotpink'}">
+export const HtmlStory36 = () => html\`<lion-select name="favoriteColor" label="Favorite color" .modelValue="\${'hotpink'}">
   <select slot="input">
     <option selected value>Please select</option>
     <option value="red">Red</option>
@@ -13,7 +13,7 @@ export const HtmlStory45 = () => html\`<lion-select name="favoriteColor" label="
     <option value="teal">Teal</option>
   </select>
 </lion-select>\`;
-export const HtmlStory46 = () => html\`<lion-select name="favoriteColor" label="Favorite color">
+export const HtmlStory37 = () => html\`<lion-select name="favoriteColor" label="Favorite color">
   <select slot="input">
     <option selected value>Please select</option>
     <option value="red">Red</option>
@@ -21,7 +21,7 @@ export const HtmlStory46 = () => html\`<lion-select name="favoriteColor" label="
     <option value="teal">Teal</option>
   </select>
 </lion-select>\`;
-export const HtmlStory47 = () => html\`<lion-select name="favoriteColor" label="Favorite color" disabled>
+export const HtmlStory38 = () => html\`<lion-select name="favoriteColor" label="Favorite color" disabled>
   <select slot="input">
     <option selected value>Please select</option>
     <option value="red">Red</option>
@@ -31,7 +31,7 @@ export const HtmlStory47 = () => html\`<lion-select name="favoriteColor" label="
 </lion-select>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory45', story: HtmlStory45 }, { key: 'HtmlStory46', story: HtmlStory46 }, { key: 'HtmlStory47', story: HtmlStory47 }];
+const stories = [{ key: 'HtmlStory36', story: HtmlStory36 }, { key: 'HtmlStory37', story: HtmlStory37 }, { key: 'HtmlStory38', story: HtmlStory38 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
