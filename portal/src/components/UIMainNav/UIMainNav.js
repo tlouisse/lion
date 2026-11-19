@@ -1083,16 +1083,16 @@ UIMainNav.provideDesign({
           }
 
           /*
-           * The slotted control belongs at the bottom of the drawer, and this is done on the wrapper rather than on the
-           * control. Two facts, both measured, decided it: the control is light DOM, and every ::slotted() form tried
-           * here was inert — slot[name='level-1-after']::slotted(*), [data-level='1'] > ::slotted(*) and
-           * [data-level='1'] ::slotted(*) all left margin-top at 0px, and a hard margin-top: 200px did not move the box
-           * either, so the rule never reached the element. A slot itself is display: contents and takes no margin, but
-           * the div wrapping it in the template is an ordinary flex item of this column, and margin-top: auto on it
-           * absorbs the free space, which is what the drawer below now gives it.
+           * The slotted control sits at the bottom of the drawer and stays visible there. margin-top: auto sinks it, and
+           * position: sticky keeps it pinned while the drawer scrolls: measured before this, the switch sat at y 780 in
+           * an 844px drawer, which is the bottom of the *content*, so a longer menu pushed it below the fold and it read
+           * as missing. This is done on the wrapper rather than on the control because a slot is display: contents and
+           * takes no margin, and ::slotted() from inside this root did not reach the control.
            */
           [data-part='level-after'][data-level='1'] {
             margin-top: auto;
+            position: sticky;
+            bottom: 0;
           }
 
           /*

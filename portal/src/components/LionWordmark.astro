@@ -20,7 +20,13 @@
   xmlns="http://www.w3.org/2000/svg"
 >
   <text x="0" y="28" class="wordmark-glyphs" fill="currentColor">lıon</text>
-  <text x="54" y="28" class="wordmark-glyphs wordmark-accent" fill="var(--accent-yellow)">uı</text>
+  <!--
+    The accent half carries its own grey rather than the accent token. It was var(--accent-yellow), and when that turned
+    grey the wordmark followed it — but the mark's grey is a fixed part of the logo, measured as rgb(154, 160, 166) =
+    #9aa0a6, and it reads the same on dark and light, which is the point of a literal here. Decoupled on purpose: the
+    accent can be tuned ("can be lighter") without repainting the logo.
+  -->
+  <text x="54" y="28" class="wordmark-glyphs wordmark-accent" fill="#9aa0a6">uı</text>
 </svg>
 
 <style>
@@ -38,18 +44,9 @@
   }
 
   /*
-   * Outline on the accent half only. "lion" is already #111111 on light chrome (16:1), so it needs
-   * nothing; "ui" is #FFC107, which is 1.63:1 and stops being readable as the bar gets lighter, so
-   * paint-order keeps the stroke behind the fill, so the letters stay yellow and the outline only
-   * separates them from the background. In dark mode the stroke is transparent - the accent there
-   * sits on near-black, where a dark outline would just blur it.
-   *
-   * light-dark() takes colours only: as a length the declaration is invalid and gets dropped.
+   * No stroke on the accent half any more. It existed for one measured reason: the accent was #FFC107, which is 1.63:1
+   * on the light bar and stops being readable as the chrome lightens, so a 1.5px 55%-black stroke sat behind the fill
+   * to separate the letters from the background. The accent half is #9aa0a6 now, which needs no such help, and the
+   * stroke was reading as an outline around the "ui" rather than as separation.
    */
-  .wordmark-accent {
-    paint-order: stroke fill;
-    stroke: light-dark(rgba(0, 0, 0, 0.55), transparent);
-    stroke-width: 1.5px;
-    stroke-linejoin: round;
-  }
 </style>
