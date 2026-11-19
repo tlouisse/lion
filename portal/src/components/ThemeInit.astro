@@ -40,6 +40,21 @@
     root.dataset.theme = choice;
 
     /*
+     * The canvas before the stylesheets arrive, which `color-scheme` alone does not cover: the portal's page background
+     * is its own token, darker than the browser's dark canvas, so until styles.css lands the page paints the default
+     * canvas — measured as `rgb(250, 250, 250)` for the first 116ms with dark stored, which is the light flash the
+     * theme appeared to have. These are the two values theme.css and styles.css paint moments later, applied inline
+     * here and before any sheet. `auto` writes neither, so nothing is pinned when the OS preference is in charge.
+     */
+    if (choice === 'dark') {
+      root.style.backgroundColor = '#0b0b0d';
+      root.style.colorScheme = 'dark';
+    } else if (choice === 'light') {
+      root.style.backgroundColor = '#fafafa';
+      root.style.colorScheme = 'light';
+    }
+
+    /*
      * The colour-scheme meta is what the browser is allowed to use for the canvas before any
      * stylesheet is parsed, and every layout ships it as "light dark". With the OS in dark mode that
      * let it paint the dark canvas on a page whose stored choice is light - the dark flash you see
