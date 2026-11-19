@@ -732,8 +732,8 @@ UIMainNav.provideDesign({
         color: var(--text-secondary);
         cursor: pointer;
         transition:
-          color 0.2s,
-          background-color 0.2s;
+          color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+          background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       [data-part='l1-invoker']:hover {
@@ -815,7 +815,7 @@ UIMainNav.provideDesign({
         border: none;
         background: transparent;
         cursor: pointer;
-        transition: color 0.2s ease;
+        transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         box-sizing: border-box;
         line-height: 1.5;
         text-transform: capitalize;

@@ -17,12 +17,20 @@
      * --highlight-color keeps its name and every former fill site; the former ink sites now name
      * --accent-on-surface, which is why no rule paints brown text on the light surface any more.
      */
-    --accent-yellow: #FFC107;
+    /* The site's accent is the grey the playground page settled on, measured there as `light-dark(hsl(0 0% 15%),
+     * hsl(0 0% 90%))` — 0% saturation, so it reads as structural rather than as a colour. This one token is the menu's
+     * accent everywhere it is used (the current page, the underline, the collapsed branch that holds the current page),
+     * which is how one value reaches every page.
+     *
+     * The name is historical and now inaccurate: it was #FFC107. Renaming it would touch every consumer across the
+     * portal, so the name stays and this note records what it holds. */
+    --accent-yellow: light-dark(hsl(0 0% 15%), hsl(0 0% 90%));
     --accent-ink: light-dark(#111111, #111111);
-    --accent-on-surface: light-dark(#111111, #FFC107);
+    --accent-on-surface: light-dark(#111111, #f4f4f5);
     --accent-chip-surface: #111111;
-    --highlight-color: #FFC107;
-    --highlight-color-hover: color-mix(in srgb, #FFC107 85%, #ffffff);
+    /* Same grey as --accent-yellow above, and the same note applies: the name is historical. */
+    --highlight-color: light-dark(hsl(0 0% 15%), hsl(0 0% 90%));
+    --highlight-color-hover: color-mix(in srgb, var(--highlight-color) 85%, #ffffff);
     --on-highlight: var(--accent-ink); 
     --border-color: light-dark(#dcdcdc, #222222);
     --card-bg: light-dark(#f6f6f6, #0a0a0a);
@@ -187,10 +195,18 @@ body {
     }
 }
 
-/* Header */
+/* Header
+ *
+ * Sticky, not fixed, and that is a measured choice rather than a preference: shadcn's header — the reference this bar is
+ * being brought in line with — computes to `position: sticky; top: 0; z-index: 50; width: 100%` with an opaque
+ * background and no backdrop blur, and reads identically at scrollY 0 and scrollY 600. There is no scroll treatment to
+ * copy, which is why none is added here.
+ *
+ * `main` below then loses its 85px: a fixed bar is out of flow, so the content had to be pushed down to clear it; a
+ * sticky bar holds that space itself, and keeping both would open an 85px hole under the bar. */
 .site-header {
     padding: 24px 0;
-    position: fixed;
+    position: sticky;
     top: 0;
     width: 100%;
     z-index: 100;
@@ -204,7 +220,8 @@ body {
 }
 
 main {
-    padding-top: 85px; /* To account for fixed header */
+    /* Was 85px, "to account for fixed header" — the bar is sticky now and holds its own space. */
+    padding-top: 0;
 }
 
 .site-header .container {
@@ -243,6 +260,15 @@ main {
     .site-header .container > .site-nav {
         order: 3;
     }
+
+    /*
+     * The theme switch should sit at the bottom of the opened drawer. It cannot be done from here: the switch is light
+     * DOM slotted into the nav, but the box that lays the drawer out is inside the nav's shadow root, and a slotted
+     * element's `margin-top: auto` resolves against that box. Measured: the switch's light-DOM parent is the
+     * `ui-main-nav` host itself (`display: inline`, its box the burger's 32x32), so `margin-top: auto` computed to
+     * `0px` and the switch stayed mid-drawer at y 296.8. This belongs in `UIMainNav.js`, where the drawer's own layout
+     * lives — it renders the slot after the level-1 list, and that list is not the drawer's last row.
+     */
 }
 
 .logo {
@@ -306,7 +332,7 @@ main {
     width: 40px;
     height: 40px;
     color: var(--text-secondary);
-    transition: color 0.2s ease, background-color 0.2s ease;
+    transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: var(--border-radius-default);
 }
 
