@@ -382,27 +382,50 @@
    Header Scroll Effects
    =========================================== */
 
+/*
+ * On a phone the bar gives its height back as the page is scrolled, driven by the document's own scroll
+ * position rather than by a listener: animation-timeline: scroll(root) is the platform's mechanism, the same
+ * family as the view() reveals, so nothing has to keep a class in sync with a scroll offset. The range is
+ * the first 140px; after that the bar holds its smaller size. min-height is animatable, and the wordmark
+ * keeps its proportion through a transform rather than a resize of the SVG.
+ *
+ * Replaces the earlier header-shrink, which animated padding and background for a rule that was left
+ * commented out; this is that intent, finished and scoped to where it belongs.
+ */
 @keyframes header-shrink {
     from {
-        padding-top: 24px;
-        padding-bottom: 24px;
-        background: rgba(0, 0, 0, 0.5);
+        min-height: 85px;
     }
     to {
-        padding-top: 16px;
-        padding-bottom: 16px;
-        background: rgba(0, 0, 0, 0.9);
+        min-height: 52px;
     }
 }
 
-/* Using scroll() for header - tied to document scroll */
-/* @supports (animation-timeline: scroll()) {
+@keyframes header-logo-shrink {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(0.76);
+    }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: no-preference) {
     .site-header {
         animation: header-shrink linear both;
-        animation-timeline: scroll();
-        animation-range: 0px 200px;
+        animation-timeline: scroll(root);
+        animation-range: 0 140px;
     }
-} */
+
+    .site-header .logo {
+        transform-origin: left center;
+        animation: header-logo-shrink linear both;
+        animation-timeline: scroll(root);
+        animation-range: 0 140px;
+    }
+}
+
+/* The header's scroll animation above is the finished version of this. */
 
 /* ===========================================
    Parallax-like scroll effects

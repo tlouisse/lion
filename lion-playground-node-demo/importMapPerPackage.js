@@ -796,6 +796,10 @@ export default {
     "./lib/popper-lite.js": "node_modules/@popperjs/core/lib/popper-lite.js",
     "./lib/popper.js": "node_modules/@popperjs/core/lib/popper.js",
     "./lib/types.js": "node_modules/@popperjs/core/lib/types.js",
+    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
+    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
+    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
+    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/esm/createPopper.js": "node_modules/@popperjs/core/dist/esm/createPopper.js",
     "./dist/esm/enums.js": "node_modules/@popperjs/core/dist/esm/enums.js",
     "./dist/esm/index.js": "node_modules/@popperjs/core/dist/esm/index.js",
@@ -803,10 +807,6 @@ export default {
     "./dist/esm/popper-lite.js": "node_modules/@popperjs/core/dist/esm/popper-lite.js",
     "./dist/esm/popper.js": "node_modules/@popperjs/core/dist/esm/popper.js",
     "./dist/esm/types.js": "node_modules/@popperjs/core/dist/esm/types.js",
-    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
-    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
-    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
-    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/umd/enums.js": "node_modules/@popperjs/core/dist/umd/enums.js",
     "./dist/umd/enums.min.js": "node_modules/@popperjs/core/dist/umd/enums.min.js",
     "./dist/umd/popper-base.js": "node_modules/@popperjs/core/dist/umd/popper-base.js",
@@ -869,16 +869,6 @@ export default {
     "./lib/utils/uniqueBy.js": "node_modules/@popperjs/core/lib/utils/uniqueBy.js",
     "./lib/utils/userAgent.js": "node_modules/@popperjs/core/lib/utils/userAgent.js",
     "./lib/utils/within.js": "node_modules/@popperjs/core/lib/utils/within.js",
-    "./dist/esm/modifiers/applyStyles.js": "node_modules/@popperjs/core/dist/esm/modifiers/applyStyles.js",
-    "./dist/esm/modifiers/arrow.js": "node_modules/@popperjs/core/dist/esm/modifiers/arrow.js",
-    "./dist/esm/modifiers/computeStyles.js": "node_modules/@popperjs/core/dist/esm/modifiers/computeStyles.js",
-    "./dist/esm/modifiers/eventListeners.js": "node_modules/@popperjs/core/dist/esm/modifiers/eventListeners.js",
-    "./dist/esm/modifiers/flip.js": "node_modules/@popperjs/core/dist/esm/modifiers/flip.js",
-    "./dist/esm/modifiers/hide.js": "node_modules/@popperjs/core/dist/esm/modifiers/hide.js",
-    "./dist/esm/modifiers/index.js": "node_modules/@popperjs/core/dist/esm/modifiers/index.js",
-    "./dist/esm/modifiers/offset.js": "node_modules/@popperjs/core/dist/esm/modifiers/offset.js",
-    "./dist/esm/modifiers/popperOffsets.js": "node_modules/@popperjs/core/dist/esm/modifiers/popperOffsets.js",
-    "./dist/esm/modifiers/preventOverflow.js": "node_modules/@popperjs/core/dist/esm/modifiers/preventOverflow.js",
     "./dist/esm/dom-utils/contains.js": "node_modules/@popperjs/core/dist/esm/dom-utils/contains.js",
     "./dist/esm/dom-utils/getBoundingClientRect.js": "node_modules/@popperjs/core/dist/esm/dom-utils/getBoundingClientRect.js",
     "./dist/esm/dom-utils/getClippingRect.js": "node_modules/@popperjs/core/dist/esm/dom-utils/getClippingRect.js",
@@ -902,6 +892,16 @@ export default {
     "./dist/esm/dom-utils/isScrollParent.js": "node_modules/@popperjs/core/dist/esm/dom-utils/isScrollParent.js",
     "./dist/esm/dom-utils/isTableElement.js": "node_modules/@popperjs/core/dist/esm/dom-utils/isTableElement.js",
     "./dist/esm/dom-utils/listScrollParents.js": "node_modules/@popperjs/core/dist/esm/dom-utils/listScrollParents.js",
+    "./dist/esm/modifiers/applyStyles.js": "node_modules/@popperjs/core/dist/esm/modifiers/applyStyles.js",
+    "./dist/esm/modifiers/arrow.js": "node_modules/@popperjs/core/dist/esm/modifiers/arrow.js",
+    "./dist/esm/modifiers/computeStyles.js": "node_modules/@popperjs/core/dist/esm/modifiers/computeStyles.js",
+    "./dist/esm/modifiers/eventListeners.js": "node_modules/@popperjs/core/dist/esm/modifiers/eventListeners.js",
+    "./dist/esm/modifiers/flip.js": "node_modules/@popperjs/core/dist/esm/modifiers/flip.js",
+    "./dist/esm/modifiers/hide.js": "node_modules/@popperjs/core/dist/esm/modifiers/hide.js",
+    "./dist/esm/modifiers/index.js": "node_modules/@popperjs/core/dist/esm/modifiers/index.js",
+    "./dist/esm/modifiers/offset.js": "node_modules/@popperjs/core/dist/esm/modifiers/offset.js",
+    "./dist/esm/modifiers/popperOffsets.js": "node_modules/@popperjs/core/dist/esm/modifiers/popperOffsets.js",
+    "./dist/esm/modifiers/preventOverflow.js": "node_modules/@popperjs/core/dist/esm/modifiers/preventOverflow.js",
     "./dist/esm/utils/computeAutoPlacement.js": "node_modules/@popperjs/core/dist/esm/utils/computeAutoPlacement.js",
     "./dist/esm/utils/computeOffsets.js": "node_modules/@popperjs/core/dist/esm/utils/computeOffsets.js",
     "./dist/esm/utils/debounce.js": "node_modules/@popperjs/core/dist/esm/utils/debounce.js",
@@ -925,10 +925,10 @@ export default {
     "./dist/esm/utils/within.js": "node_modules/@popperjs/core/dist/esm/utils/within.js"
   },
   "autosize": {
+    "./src/autosize.js": "node_modules/autosize/src/autosize.js",
     "./dist/autosize.esm.js": "node_modules/autosize/dist/autosize.esm.js",
     "./dist/autosize.js": "node_modules/autosize/dist/autosize.js",
-    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js",
-    "./src/autosize.js": "node_modules/autosize/src/autosize.js"
+    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js"
   },
   "ibantools": {
     ".": "node_modules/ibantools/jsnext/ibantools.js"
@@ -1001,8 +1001,8 @@ export default {
     "./lib/node/parentheses.js": "node_modules/@babel/generator/lib/node/parentheses.js"
   },
   "@babel/parser": {
-    "./lib/index.js": "node_modules/@babel/parser/lib/index.js",
-    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js"
+    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js",
+    "./lib/index.js": "node_modules/@babel/parser/lib/index.js"
   },
   "@babel/traverse": {
     "./lib/cache.js": "node_modules/@babel/traverse/lib/cache.js",
@@ -1046,6 +1046,7 @@ export default {
     "./lib/clone/cloneDeepWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneDeepWithoutLoc.js",
     "./lib/clone/cloneNode.js": "node_modules/@babel/types/lib/clone/cloneNode.js",
     "./lib/clone/cloneWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
+    "./lib/constants/index.js": "node_modules/@babel/types/lib/constants/index.js",
     "./lib/comments/addComment.js": "node_modules/@babel/types/lib/comments/addComment.js",
     "./lib/comments/addComments.js": "node_modules/@babel/types/lib/comments/addComments.js",
     "./lib/comments/inheritInnerComments.js": "node_modules/@babel/types/lib/comments/inheritInnerComments.js",
@@ -1053,7 +1054,6 @@ export default {
     "./lib/comments/inheritTrailingComments.js": "node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
     "./lib/comments/inheritsComments.js": "node_modules/@babel/types/lib/comments/inheritsComments.js",
     "./lib/comments/removeComments.js": "node_modules/@babel/types/lib/comments/removeComments.js",
-    "./lib/constants/index.js": "node_modules/@babel/types/lib/constants/index.js",
     "./lib/converters/ensureBlock.js": "node_modules/@babel/types/lib/converters/ensureBlock.js",
     "./lib/converters/gatherSequenceExpressions.js": "node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js",
     "./lib/converters/toBindingIdentifierName.js": "node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
