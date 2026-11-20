@@ -29,6 +29,9 @@ const mdjsSetupConfig = {
 
 // https://astro.build/config
 export default defineConfig({
+  build: {
+    assets: 'assets',
+  },
   base,
   trailingSlash: 'never',
   // The portal is its own (non-workspace) package, yet it renders the repository's own site:
