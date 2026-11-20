@@ -539,8 +539,9 @@ main {
     /* The one word in a different hand: a serif, so the door that opens reads as a different kind of thing than the
      * three that navigate — and in italic, like Everywhere. Everything else about the trigger stays the headline's own
      * type. EB Garamond's italic is a real one, loaded as such. */
-    font-family: "EB Garamond", Georgia, serif;
-    font-weight: 500;
+    font-family: "Cormorant Garamond", "EB Garamond", Georgia, serif;
+    /* Cormorant runs light, so 600 keeps the word's weight beside three 600 words at 80px. */
+    font-weight: 600;
     font-style: italic;
     font-size: inherit;
     font-weight: inherit;
