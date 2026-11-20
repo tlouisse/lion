@@ -2,6 +2,10 @@
 import HomeLayout from "../layouts/HomeLayout.astro";
 import { getEntry } from "astro:content";
 
+// Same convention as TopNav: BASE_URL without its trailing slash, so the headline's door links
+// resolve to /fundamentals/... on a root build and /lion/fundamentals/... under a base.
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+
 const entry = await getEntry('lionIndex', 'index');
 
 const {
@@ -124,7 +128,7 @@ const {
                           <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
                       </ul>
                   </span>
-                  <br>Robust.<br>User Interfaces.<br><br>Everywhere.
+                  <br><a class="hero-pill" href={`${base}/fundamentals/rationales/`}>Robust.</a><br><a class="hero-pill" href={`${base}/fundamentals/systems/`}>User Interfaces.</a><br><br><a class="hero-pill" href={`${base}/guides/principles/`}>Everywhere.</a>
               </h1>
               <p class="hero-subtitle">{slogan}</p>
               <div class="cta-group">
@@ -191,17 +195,19 @@ const {
       list.hidden = !expanded;
       if (expanded) options.find(option => option.getAttribute('aria-selected') === 'true')?.focus();
     };
-    const select = id => {
+    const select = (id, { moveFocus = true } = {}) => {
       document.documentElement.dataset.demoTheme = id;
       write(id);
       options.forEach(option => option.setAttribute('aria-selected', String(option.dataset.themeId === id)));
       open(false);
-      trigger.focus();
+      // Only when a person picked it: the initial call must not focus the trigger, or it would render in its
+      // focus-visible state on every page load (measured as a 12% fill against the resting 7%).
+      if (moveFocus) trigger.focus();
     };
 
     // The stored choice wins; without one the markup's own default (Lion) stands.
     const stored = read();
-    select(options.some(option => option.dataset.themeId === stored) ? stored : 'lion');
+    select(options.some(option => option.dataset.themeId === stored) ? stored : 'lion', { moveFocus: false });
 
     trigger.addEventListener('click', () => open(list.hidden));
     options.forEach((option, index) => {

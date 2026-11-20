@@ -520,7 +520,8 @@ main {
     display: inline-block;
 }
 
-.theme-picker__trigger {
+.theme-picker__trigger,
+.hero-pill {
     /* The headline clips its text with a gradient; a child with no fill of its own would be invisible. */
     -webkit-text-fill-color: currentColor;
     background: none;
@@ -543,9 +544,21 @@ main {
 }
 
 .theme-picker__trigger:hover,
-.theme-picker__trigger:focus-visible {
+.theme-picker__trigger:focus-visible,
+.hero-pill:hover,
+.hero-pill:focus-visible {
     background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
     border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+}
+
+/*
+ * The other three words are doors as well: Robust. links to the quality-engineering rationales, User Interfaces. to the
+ * systems, Everywhere. to the principles. They wear the same pill as the combobox — one shape for every door in the
+ * headline — and drop the browser's link styling, because the pill is the affordance rather than an underline.
+ */
+.hero-pill {
+    text-decoration: none;
+    color: var(--text-primary);
 }
 
 .theme-picker__caret {
