@@ -506,6 +506,108 @@ main {
     color: var(--text-primary);
 }
 
+/*
+ * The theme picker that sits inside the headline, and the reason it needs its own rules: .hero h1 paints its text with a
+ * gradient and clears the fill (-webkit-text-fill-color: transparent, plus background-clip: text), so anything inside it
+ * inherits an invisible fill. The trigger therefore restores its own fill first and then resets the type the headline
+ * gives it (5rem, weight 600, -0.04em) before applying its own.
+ *
+ * Shape taken from the reference header (StackBlitz's trigger family, measured): 13px at weight 500, an 8px radius, a
+ * translucent pill and a caret. The colours are the portal's tokens, so it follows light and dark by itself.
+ */
+.theme-picker {
+    position: relative;
+    display: inline-block;
+}
+
+.theme-picker__trigger {
+    /* The headline clips its text with a gradient; a child with no fill of its own would be invisible. */
+    -webkit-text-fill-color: currentColor;
+    background: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: normal;
+    line-height: 1.4;
+    background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
+    border-radius: 8px;
+    padding: 5px 12px 5px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-picker__trigger:hover,
+.theme-picker__trigger:focus-visible {
+    background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+}
+
+.theme-picker__caret {
+    width: 10px;
+    height: 6px;
+    flex: 0 0 auto;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-picker__trigger[aria-expanded='true'] .theme-picker__caret {
+    transform: rotate(180deg);
+}
+
+.theme-picker__list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 20;
+    min-width: 260px;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
+    -webkit-text-fill-color: currentColor;
+}
+
+.theme-picker__list[hidden] {
+    display: none;
+}
+
+.theme-picker__option {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: normal;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-picker__option:hover,
+.theme-picker__option:focus-visible {
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    outline: none;
+}
+
+.theme-picker__option[aria-selected='true'] {
+    background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.theme-picker__hint {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
 .hero-subtitle {
     font-size: 1.25rem;
     color: var(--text-secondary);
