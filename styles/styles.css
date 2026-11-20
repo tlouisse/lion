@@ -1339,3 +1339,175 @@ html {
         transition: none;
     }
 }
+
+
+/* ============================================================================
+   The phone's menu
+   ----------------------------------------------------------------------------
+   Our own panel rather than the nav's drawer, modelled on the shape shadcn uses for a small screen: it
+   covers the area under the bar at full width over a dimmed page, and its choices are rows that take a
+   fill and a bound radius on hover. The markup and the styling are ours; only the behaviour is borrowed,
+   which is the point.
+
+   The toggle is hidden from 1024px up, and the nav's own bar and drawer are hidden below it, so exactly
+   one navigation is present at each width.
+   ============================================================================ */
+.mobile-menu-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu-toggle:hover {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.mobile-menu {
+    /* A modal dialog: the top layer, so nothing the hero does can contain it. */
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    background: var(--header-bg);
+    color: var(--text-primary);
+    box-shadow: 0 18px 44px rgb(0 0 0 / 0.22);
+}
+
+.mobile-menu::backdrop {
+    background: rgb(0 0 0 / 0.4);
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    @starting-style {
+        opacity: 0;
+    }
+}
+
+.mobile-menu__list,
+.mobile-menu__sublist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mobile-menu__link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    text-align: left;
+    text-decoration: none;
+    text-transform: capitalize;
+    cursor: pointer;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu__link:hover,
+.mobile-menu__link:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.mobile-menu__sublink {
+    display: block;
+    padding: 8px 14px 8px 28px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-decoration: none;
+    text-transform: capitalize;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-menu__sublink:hover,
+.mobile-menu__sublink:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    color: var(--text-primary);
+}
+
+.mobile-menu nav {
+    padding: 12px calc(var(--page-gutter, 24px)) 4px;
+}
+
+.mobile-menu__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px var(--page-gutter, 24px) calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--header-border);
+    /* Pinned: the foot carries the theme switch, and the list above it can be long. */
+    position: sticky;
+    bottom: 0;
+    background: var(--header-bg);
+}
+
+.mobile-menu__foot-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+/* The foot's switch sits flush rather than at the row's 16px offset, which belongs to the bar. */
+.mobile-menu__foot .theme-switch {
+    margin-left: 0;
+}
+
+@media (max-width: 1023px) {
+    /* Exactly one navigation per width: ours below the breakpoint, the nav's above it. */
+    header.site-header ui-main-nav {
+        display: none;
+    }
+
+    .mobile-menu-toggle {
+        display: inline-flex;
+    }
+
+    .mobile-menu {
+        /* Under the bar, full width, sliding down from it. It may be taller than the screen — measured at
+         * 1240px of content on an 844px viewport, which put the foot's switch out of reach — so it scrolls
+         * inside itself and its foot sticks to the bottom, where the thumb is. */
+        position: fixed;
+        inset: var(--header-height, 85px) 0 auto 0;
+        max-height: calc(100dvh - var(--header-height, 85px));
+        overflow-y: auto;
+        transform: translateY(-12px);
+        opacity: 0;
+        transition: opacity 0.18s cubic-bezier(0.4, 0, 0.2, 1), transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+        @starting-style {
+            opacity: 0;
+            transform: translateY(-12px);
+        }
+    }
+
+    .mobile-menu[open] {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-menu,
+    .mobile-menu::backdrop {
+        transition: none;
+    }
+}

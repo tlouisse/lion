@@ -1,4 +1,4 @@
-import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from"./LionSelectRich.DNrB4nKm.js";class a extends u{static get styles(){return[...super.styles,t`
+import{i as s,b as t}from"./lit-element.BOikny4r.js";import{a,L as n}from"./LionSelectRich.DNrB4nKm.js";class i extends a{static get styles(){return[...super.styles,s`
         :host {
           display: inline-flex;
           align-items: center;
@@ -34,7 +34,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
           align-items: center;
           flex: 0 0 auto;
         }
-      `]}get slots(){return{...super.slots,after:()=>this.renderCaret()}}renderCaret(){const s=document.createElement("span");return s.setAttribute("slot","after"),s.setAttribute("aria-hidden","true"),s.innerHTML='<svg viewBox="0 0 10 6" width="16" height="10" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',s}_afterTemplate(){return r`<span id="after-wrapper"><slot name="after"></slot></span>`}}const d=t`
+      `]}get slots(){return{...super.slots,after:()=>this.renderCaret()}}renderCaret(){const r=document.createElement("span");return r.setAttribute("slot","after"),r.setAttribute("aria-hidden","true"),r.innerHTML='<svg viewBox="0 0 10 6" width="16" height="10" fill="none" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',r}_afterTemplate(){return t`<span id="after-wrapper"><slot name="after"></slot></span>`}}const o=s`
   :host {
     /* The surface: M3's surface-container, and the elevation-2 shadow from the menu spec. */
     --skin-surface: light-dark(#f3edf7, #211f26);
@@ -50,7 +50,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
     --skin-label-weight: 500;
     --skin-label-tracking: 0.1px;
   }
-`,k=t`
+`,l=s`
   :host {
     --skin-surface: light-dark(#ffffff, #1b1b1f);
     --skin-on-surface: light-dark(#1f2937, #e5e7eb);
@@ -64,7 +64,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
     --skin-label-weight: 400;
     --skin-label-tracking: normal;
   }
-`,h=t`
+`,c=s`
   :host {
     --skin-surface: transparent;
     --skin-on-surface: inherit;
@@ -78,7 +78,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
     --skin-label-weight: inherit;
     --skin-label-tracking: normal;
   }
-`;t`
+`;s`
   :host {
     background: var(--skin-surface);
     color: var(--skin-on-surface);
@@ -90,7 +90,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
   ::slotted(*) {
     border-radius: calc(var(--skin-radius) / 2);
   }
-`;class p extends a{static get styles(){return[...super.styles,d,t`
+`;class d extends i{static get styles(){return[...super.styles,o,s`
         :host {
           min-height: 56px;
           padding: 0 16px;
@@ -108,7 +108,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
           border-bottom-width: 2px;
           background: var(--skin-surface-variant);
         }
-      `]}}class f extends n{static get scopedElements(){return{...super.scopedElements,"material-select-invoker":p}}get slots(){return{...super.slots,invoker:()=>r`<material-select-invoker></material-select-invoker>`}}}class b extends a{static get styles(){return[...super.styles,k,t`
+      `]}}class k extends n{static get scopedElements(){return{...super.scopedElements,"material-select-invoker":d}}get slots(){return{...super.slots,invoker:()=>t`<material-select-invoker></material-select-invoker>`}}}class u extends i{static get styles(){return[...super.styles,l,s`
         :host {
           border: 1px solid color-mix(in srgb, var(--skin-on-surface) 20%, transparent);
           box-shadow: none;
@@ -123,7 +123,7 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
           outline: 2px solid color-mix(in srgb, var(--skin-on-surface) 20%, transparent);
           outline-offset: 1px;
         }
-      `]}}class v extends n{static get scopedElements(){return{...super.scopedElements,"shoelace-select-invoker":b}}get slots(){return{...super.slots,invoker:()=>r`<shoelace-select-invoker></shoelace-select-invoker>`}}}class g extends a{static get styles(){return[...super.styles,h,t`
+      `]}}class h extends n{static get scopedElements(){return{...super.scopedElements,"shoelace-select-invoker":u}}get slots(){return{...super.slots,invoker:()=>t`<shoelace-select-invoker></shoelace-select-invoker>`}}}class p extends i{static get styles(){return[...super.styles,c,s`
         :host {
           padding: 0 6px;
           border: 1px solid transparent;
@@ -134,4 +134,4 @@ import{i as t,b as r}from"./lit-element.BOikny4r.js";import{a as u,L as n}from".
           border-color: color-mix(in srgb, currentColor 30%, transparent);
           background: transparent;
         }
-      `]}}class m extends n{static get scopedElements(){return{...super.scopedElements,"baseui-select-invoker":g}}get slots(){return{...super.slots,invoker:()=>r`<baseui-select-invoker></baseui-select-invoker>`}}}customElements.define("lion-plain-select-rich",n);customElements.define("material-select-rich",f);customElements.define("shoelace-select-rich",v);customElements.define("baseui-select-rich",m);const x=[{value:"lion",label:"Lion — the design system"},{value:"material",label:"Material Design 3"},{value:"shoelace",label:"Shoelace"},{value:"baseui",label:"Base UI"}];for(const e of["skin-material","skin-shoelace","skin-baseui","skin-lion"]){const s=document.getElementById(e);if(!s)continue;for(const{value:l,label:c}of x){const i=document.createElement("lion-option");i.choiceValue=l,i.textContent=c,s.appendChild(i)}const o=s.querySelector("lion-option");o&&(o.selected=!0)}
+      `]}}class f extends n{static get scopedElements(){return{...super.scopedElements,"baseui-select-invoker":p}}get slots(){return{...super.slots,invoker:()=>t`<baseui-select-invoker></baseui-select-invoker>`}}}customElements.define("lion-plain-select-rich",n);customElements.define("material-select-rich",k);customElements.define("shoelace-select-rich",h);customElements.define("baseui-select-rich",f);for(const e of["skin-material","skin-shoelace","skin-baseui","skin-lion"]){const r=document.getElementById(e);r&&(r.modelValue="lion")}

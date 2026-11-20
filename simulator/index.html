@@ -55,8 +55,12 @@
     const syncRadios = () => {
       const choice = root.dataset.theme;
       if (!CHOICES.includes(choice)) return;
-      const radio = document.getElementById(`theme-${choice}`);
-      if (radio) radio.checked = true;
+      // Two copies of this control exist on a phone-width page (the bar's and the menu's), and both
+      // carry the same name and value; whichever is present gets the stored choice.
+      [`theme-${choice}`, `menu-theme-${choice}`].forEach(id => {
+        const radio = document.getElementById(id);
+        if (radio) radio.checked = true;
+      });
     };
 
     if (document.readyState === 'loading') {
