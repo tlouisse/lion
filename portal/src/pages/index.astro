@@ -12,8 +12,6 @@ const {
   title,
   slogan,
   callToActionItems,
-  reasonHeader,
-  reasons,
 } = entry.data;
 ---
 
@@ -110,25 +108,24 @@ const {
                     heading. The label is the sentence as it is meant to be read.
                 -->
               <h1 class="hero-headline" aria-label="Flexible. Robust. User Interfaces. Everywhere.">
-                  <span class="theme-picker">
+                  </li>
+                          <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
+                          <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
+                          <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
+                      </ul>
+                  </span>
+                  <br><a class="hero-pill" href={`${base}/fundamentals/rationales/`}>Robust.</a><br><span class="theme-picker">
                       <button type="button" id="theme-picker-trigger" class="theme-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="theme-picker-label">
                           <span id="theme-picker-label" class="theme-picker__value">Flexible.</span>
                           <svg class="theme-picker__caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
-                      <!--
-                        The panel lists the themes a demo can be rendered in. Choosing one stores it globally — on
-                        <html> as data-demo-theme and in localStorage — so a later skin, and later the components
-                        themselves, can read one value per document. It is deliberately NOT data-theme: that attribute
-                        is the light/dark choice (ThemeInit), and a component theme must not overwrite it.
-                      -->
                       <ul class="theme-picker__list" id="theme-picker-list" role="listbox" aria-labelledby="theme-picker-label" hidden>
                           <li role="option" class="theme-picker__option" id="theme-option-lion" data-theme-id="lion" aria-selected="true">Lion <span class="theme-picker__hint">the design system</span></li>
                           <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
                           <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
                           <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
                       </ul>
-                  </span>
-                  <br><a class="hero-pill" href={`${base}/fundamentals/rationales/`}>Robust.</a><br><a class="hero-pill" href={`${base}/fundamentals/systems/`}>User Interfaces.</a><br><br><a class="hero-pill" href={`${base}/guides/principles/`}>Everywhere.</a>
+                  </span><br><a class="hero-pill" href={`${base}/fundamentals/systems/`}>User Interfaces.</a><br><br><a class="hero-pill" href={`${base}/guides/principles/`}>Everywhere.</a>
               </h1>
               <p class="hero-subtitle">{slogan}</p>
               <div class="cta-group">
@@ -142,19 +139,63 @@ const {
       </div>
   </section>
 
-  <section class="features">
+  <!--
+    Four sections, one per word in the headline, replacing the old "Why Lion?" grid. The words in the hero are the doors
+    and these are what they lead to; each has its own background so the page reads as four chapters rather than one list.
+    The copy is the brief's own: headless before the term existed and seven years of hardening for Flexible; a11y, tests,
+    consuming projects and performance for Robust; systems, primitives and components for User Interfaces; web components
+    and framework-agnostic controllers for Everywhere.
+  -->
+  <section class="term term--robust">
       <div class="container">
-          <div class="section-header">
-              <h2>{reasonHeader}</h2>
-          </div>
-          <div class="features-grid">
-              {reasons.map((reason) => (
-                  <div class="feature-card">
-                      <h3>{reason.header}</h3>
-                      <p>{reason.text}</p>
-                  </div>
-              ))}
-          </div>
+          <p class="term__eyebrow">Robust.</p>
+          <h2>Quality you can inspect, not quality you are asked to trust.</h2>
+          <ul class="term__points">
+              <li><strong>Accessibility as a contract.</strong> Every component carries screen-reader tests, not a promise in a README.</li>
+              <li><strong>Unit tested, and consumed.</strong> Thousands of projects build on these components, so regressions surface early and loudly.</li>
+              <li><strong>Performance is checked.</strong> Bundle size and render behaviour are measured as part of the work, not after it.</li>
+          </ul>
+          <a class="term__link" href={`${base}/fundamentals/rationales/`}>How we engineer it →</a>
+      </div>
+  </section>
+
+  <section class="term term--flexible">
+      <div class="container">
+          <p class="term__eyebrow">Flexible.</p>
+          <h2>Headless before the term was even invented.</h2>
+          <p class="term__lede">Seven years of hardening, giving you the hardened, accessible abstractions you need.</p>
+          <ul class="term__points">
+              <li><strong>More than theming.</strong> Not a palette swap: the components carry a full visual identity, and you can replace every part of it.</li>
+              <li><strong>It fits what you already have.</strong> Whatever stack pre-existed — other CSS libraries, your own design system, a legacy application — it slots in beside it.</li>
+          </ul>
+          <a class="term__link" href={`${base}/fundamentals/systems/`}>What you can build with →</a>
+      </div>
+  </section>
+
+  <section class="term term--interfaces">
+      <div class="container">
+          <p class="term__eyebrow">User Interfaces.</p>
+          <h2>Systems, primitives and components.</h2>
+          <p class="term__lede">Three levels, one direction: start from a primitive when you need control, from a component when you need to ship.</p>
+          <ul class="term__points">
+              <li><strong>Systems.</strong> The behaviour that is hard to get right — forms, overlays, localisation, validation.</li>
+              <li><strong>Primitives.</strong> The small pieces those systems are built from, usable on their own.</li>
+              <li><strong>Components.</strong> The finished controls, accessible and styled, ready to drop in.</li>
+          </ul>
+          <a class="term__link" href={`${base}/components/`}>Browse the components →</a>
+      </div>
+  </section>
+
+  <section class="term term--everywhere">
+      <div class="container">
+          <p class="term__eyebrow">Everywhere.</p>
+          <h2>Framework agnostic, by construction.</h2>
+          <p class="term__lede">Web components and framework-agnostic controllers: the behaviour does not belong to a framework, so it does not leave with one.</p>
+          <ul class="term__points">
+              <li><strong>Web components.</strong> The components are custom elements, so any framework that renders HTML can use them.</li>
+              <li><strong>Framework-agnostic controllers.</strong> The logic underneath is reusable without the element, for teams writing their own rendering layer.</li>
+          </ul>
+          <a class="term__link" href={`${base}/guides/principles/`}>The principles →</a>
       </div>
   </section>
 </HomeLayout>

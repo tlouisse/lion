@@ -642,6 +642,111 @@ main {
     font-weight: 400;
 }
 
+/*
+ * The four term sections, one per word in the headline. Each has its own background so the page reads as four chapters:
+ * the page's own surface, then a raised panel, then an accent-tinted one, then the inverse — all from the existing tokens,
+ * so they follow light and dark by themselves rather than being four hard-coded colours.
+ */
+.term {
+    padding: 96px 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.term--robust {
+    /* The first section is the page's own surface, lifted by a hair so the four read as a sequence. */
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
+}
+
+.term--flexible {
+    background: var(--card-bg);
+}
+
+.term--interfaces {
+    background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--text-primary) 7%, transparent) 100%);
+}
+
+/* The fourth is the inverse: a fixed dark surface with light ink, in both themes. --white is the Lion layer's own token. */
+.term--everywhere {
+    background: var(--accent-chip-surface);
+    color: var(--white);
+}
+
+.term--everywhere .term__eyebrow {
+    color: color-mix(in srgb, var(--white) 70%, transparent);
+}
+
+.term--everywhere .term__points li {
+    color: color-mix(in srgb, var(--white) 80%, transparent);
+}
+
+.term--everywhere .term__link {
+    color: var(--white);
+    border-bottom-color: color-mix(in srgb, var(--white) 45%, transparent);
+}
+
+.term__eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 12px;
+}
+
+.term h2 {
+    font-family: Manrope, Inter, sans-serif;
+    font-size: clamp(1.75rem, 3.4vw, 3rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    max-width: 20ch;
+    margin: 0 0 20px;
+    color: inherit;
+}
+
+.term__lede {
+    font-size: 1.15rem;
+    font-weight: 300;
+    max-width: 62ch;
+    margin: 0 0 28px;
+    color: inherit;
+}
+
+.term__points {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 28px;
+    display: grid;
+    gap: 14px;
+    max-width: 78ch;
+}
+
+.term__points li {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.term__points strong {
+    color: inherit;
+    font-weight: 600;
+}
+
+.term__link {
+    display: inline-block;
+    font-size: 1rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-primary);
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 2px;
+    transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.term__link:hover {
+    opacity: 0.7;
+}
+
 .hero-subtitle {
     font-size: 1.25rem;
     color: var(--text-secondary);
