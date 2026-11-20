@@ -723,23 +723,38 @@ main {
     background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--text-primary) 7%, transparent) 100%);
 }
 
-/* The fourth is the inverse: a fixed dark surface with light ink, in both themes. --white is the Lion layer's own token. */
+/*
+ * The fourth is the inverse: a fixed dark surface with light ink, in both themes.
+ *
+ * Both halves have to be fixed for that to hold, and --white is not: it follows the theme, so in light mode the
+ * "white" ink came out rgb(17, 17, 17) on a rgb(17, 17, 17) surface — a measured contrast of 1.0, which is an
+ * invisible section. The ink is a literal here, on purpose, because the surface is a literal too.
+ */
 .term--everywhere {
+    --term-inverse-ink: #f4f4f5;
     background: var(--accent-chip-surface);
-    color: var(--white);
+    color: var(--term-inverse-ink);
 }
 
 .term--everywhere .term__eyebrow {
-    color: color-mix(in srgb, var(--white) 70%, transparent);
+    color: color-mix(in srgb, var(--term-inverse-ink) 72%, transparent);
+}
+
+.term--everywhere .term__lede {
+    color: color-mix(in srgb, var(--term-inverse-ink) 88%, transparent);
 }
 
 .term--everywhere .term__points li {
-    color: color-mix(in srgb, var(--white) 80%, transparent);
+    color: color-mix(in srgb, var(--term-inverse-ink) 84%, transparent);
+}
+
+.term--everywhere .term__points strong {
+    color: var(--term-inverse-ink);
 }
 
 .term--everywhere .term__link {
-    color: var(--white);
-    border-bottom-color: color-mix(in srgb, var(--white) 45%, transparent);
+    color: var(--term-inverse-ink);
+    border-bottom-color: color-mix(in srgb, var(--term-inverse-ink) 45%, transparent);
 }
 
 .term__eyebrow {
