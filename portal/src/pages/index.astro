@@ -100,7 +100,32 @@ const {
       <div class="container">
           <div class="hero-content">
               <div class="pill">v1.0 Available Soon</div>
-              <h1>Fundamental white label <br>web components.</h1>
+              <!--
+                    aria-label because the picker's listbox lives inside this heading: an accessible name is taken from the
+                    heading's contents, so without this a screen reader would announce the whole option list as part of the
+                    heading. The label is the sentence as it is meant to be read.
+                -->
+              <h1 class="hero-headline" aria-label="Flexible. Robust. User Interfaces. Everywhere.">
+                  <span class="theme-picker">
+                      <button type="button" id="theme-picker-trigger" class="theme-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="theme-picker-label">
+                          <span id="theme-picker-label" class="theme-picker__value">Flexible.</span>
+                          <svg class="theme-picker__caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      </button>
+                      <!--
+                        The panel lists the themes a demo can be rendered in. Choosing one stores it globally — on
+                        <html> as data-demo-theme and in localStorage — so a later skin, and later the components
+                        themselves, can read one value per document. It is deliberately NOT data-theme: that attribute
+                        is the light/dark choice (ThemeInit), and a component theme must not overwrite it.
+                      -->
+                      <ul class="theme-picker__list" id="theme-picker-list" role="listbox" aria-labelledby="theme-picker-label" hidden>
+                          <li role="option" class="theme-picker__option" id="theme-option-lion" data-theme-id="lion" aria-selected="true">Lion <span class="theme-picker__hint">the design system</span></li>
+                          <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
+                          <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
+                          <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
+                      </ul>
+                  </span>
+                  <br>Robust.<br>User Interfaces.<br><br>Everywhere.
+              </h1>
               <p class="hero-subtitle">{slogan}</p>
               <div class="cta-group">
                   {callToActionItems.map((callToAction, index) => (
@@ -129,3 +154,85 @@ const {
       </div>
   </section>
 </HomeLayout>
+
+<script>
+  /*
+   * The headline's theme picker. A listbox in the APG sense: a button that opens a list of options, closed by Escape or a
+   * click outside, walkable with the arrow keys. Choosing one stores it globally — data-demo-theme on <html> plus
+   * localStorage — so a later skin can read one value per document.
+   *
+   * The label in the headline stays "Flexible." because that is the sentence it belongs to; the choice is shown in the
+   * list itself (aria-selected on the option) and, for anything that reads it, on the document.
+   *
+   * Deliberately not data-theme: that is the light/dark choice, written by ThemeInit, and this must not fight it.
+   */
+  const KEY = 'lion-portal-demo-theme';
+  const trigger = document.getElementById('theme-picker-trigger');
+  const list = document.getElementById('theme-picker-list');
+
+  if (trigger && list) {
+    const options = [...list.querySelectorAll('[role="option"]')];
+    const read = () => {
+      try {
+        return localStorage.getItem(KEY);
+      } catch {
+        return null;
+      }
+    };
+    const write = id => {
+      try {
+        localStorage.setItem(KEY, id);
+      } catch {
+        /* the theme is a comfort setting, not a requirement */
+      }
+    };
+    const open = expanded => {
+      trigger.setAttribute('aria-expanded', String(expanded));
+      list.hidden = !expanded;
+      if (expanded) options.find(option => option.getAttribute('aria-selected') === 'true')?.focus();
+    };
+    const select = id => {
+      document.documentElement.dataset.demoTheme = id;
+      write(id);
+      options.forEach(option => option.setAttribute('aria-selected', String(option.dataset.themeId === id)));
+      open(false);
+      trigger.focus();
+    };
+
+    // The stored choice wins; without one the markup's own default (Lion) stands.
+    const stored = read();
+    select(options.some(option => option.dataset.themeId === stored) ? stored : 'lion');
+
+    trigger.addEventListener('click', () => open(list.hidden));
+    options.forEach((option, index) => {
+      option.tabIndex = -1;
+      option.addEventListener('click', () => select(option.dataset.themeId));
+      option.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          select(option.dataset.themeId);
+        } else if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          options[(index + 1) % options.length].focus();
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          options[(index - 1 + options.length) % options.length].focus();
+        }
+      });
+    });
+    trigger.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        open(true);
+      } else if (event.key === 'Escape') {
+        open(false);
+      }
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !list.hidden) open(false);
+    });
+    document.addEventListener('click', event => {
+      if (!list.hidden && !event.target.closest('.theme-picker')) open(false);
+    });
+  }
+</script>
