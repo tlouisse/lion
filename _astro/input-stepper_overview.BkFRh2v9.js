@@ -1,11 +1,16 @@
 const e=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
-import '@lion/ui/define/lion-input-range.js';
+import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
+import '@lion/ui/define/lion-input-stepper.js';
+loadDefaultFeedbackMessages();
 /** stories code **/
-export const HtmlStory12 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
+export const HtmlStory21 = () => html\`<lion-input-stepper max="5" min="0" name="count">
+  <label slot="label">RSVP</label>
+  <div slot="help-text">Max. 5 guests</div>
+</lion-input-stepper>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory12', story: HtmlStory12 }];
+const stories = [{ key: 'HtmlStory21', story: HtmlStory21 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

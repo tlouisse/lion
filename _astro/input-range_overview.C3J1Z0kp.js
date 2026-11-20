@@ -1,16 +1,11 @@
 const e=`/** script code **/
-import { LitElement, html } from '@mdjs/mdjs-preview';
-import '@lion/ui/define/lion-select-rich.js';
-import '@lion/ui/define/lion-option.js';
+import { html } from '@mdjs/mdjs-preview';
+import '@lion/ui/define/lion-input-range.js';
 /** stories code **/
-export const HtmlStory31 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color">
-  <lion-option .choiceValue="\${'red'}">Red</lion-option>
-  <lion-option .choiceValue="\${'hotpink'}">Hotpink</lion-option>
-  <lion-option .choiceValue="\${'blue'}">Blue</lion-option>
-</lion-select-rich>\`;
+export const HtmlStory15 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory31', story: HtmlStory31 }];
+const stories = [{ key: 'HtmlStory15', story: HtmlStory15 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

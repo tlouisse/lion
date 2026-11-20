@@ -7,7 +7,7 @@ import '@lion/ui/define/lion-listbox.js';
 import '@lion/ui/define/lion-option.js';
 loadDefaultFeedbackMessages();
 /** stories code **/
-export const HtmlStory20 = () => html\`<lion-listbox name="combo" label="Multiple" multiple-choice>
+export const HtmlStory30 = () => html\`<lion-listbox name="combo" label="Multiple" multiple-choice>
   <lion-option .choiceValue="\${'Apple'}">Apple</lion-option>
   <lion-option .choiceValue="\${'Artichoke'}">Artichoke</lion-option>
   <lion-option .choiceValue="\${'Asparagus'}">Asparagus</lion-option>
@@ -19,7 +19,7 @@ export const HtmlStory20 = () => html\`<lion-listbox name="combo" label="Multipl
   <lion-option .choiceValue="\${'Cabbage'}">Cabbage</lion-option>
   <lion-option .choiceValue="\${'Carrot'}">Carrot</lion-option>
 </lion-listbox>\`;
-export const HtmlStory21 = () => html\`<lion-listbox name="combo" label="Orientation horizontal" orientation="horizontal">
+export const HtmlStory31 = () => html\`<lion-listbox name="combo" label="Orientation horizontal" orientation="horizontal">
   <lion-option .choiceValue="\${'Apple'}">Apple</lion-option>
   <lion-option .choiceValue="\${'Artichoke'}">Artichoke</lion-option>
   <lion-option .choiceValue="\${'Asparagus'}">Asparagus</lion-option>
@@ -31,7 +31,7 @@ export const HtmlStory21 = () => html\`<lion-listbox name="combo" label="Orienta
   <lion-option .choiceValue="\${'Cabbage'}">Cabbage</lion-option>
   <lion-option .choiceValue="\${'Carrot'}">Carrot</lion-option>
 </lion-listbox>\`;
-export const HtmlStory22 = () => html\`<lion-listbox
+export const HtmlStory32 = () => html\`<lion-listbox
   name="combo"
   label="Orientation horizontal multiple"
   orientation="horizontal"
@@ -48,7 +48,7 @@ export const HtmlStory22 = () => html\`<lion-listbox
   <lion-option .choiceValue="\${'Cabbage'}">Cabbage</lion-option>
   <lion-option .choiceValue="\${'Carrot'}">Carrot</lion-option>
 </lion-listbox>\`;
-export const HtmlStory23 = () => html\`<lion-listbox name="combo" label="Selection follows focus" selection-follows-focus>
+export const HtmlStory33 = () => html\`<lion-listbox name="combo" label="Selection follows focus" selection-follows-focus>
   <lion-option .choiceValue="\${'Apple'}">Apple</lion-option>
   <lion-option .choiceValue="\${'Artichoke'}" disabled>Artichoke</lion-option>
   <lion-option .choiceValue="\${'Asparagus'}">Asparagus</lion-option>
@@ -60,7 +60,7 @@ export const HtmlStory23 = () => html\`<lion-listbox name="combo" label="Selecti
   <lion-option .choiceValue="\${'Cabbage'}">Cabbage</lion-option>
   <lion-option .choiceValue="\${'Carrot'}">Carrot</lion-option>
 </lion-listbox>\`;
-export const HtmlStory24 = () => html\`<lion-listbox name="combo" label="Rotate keyboard navigation" rotate-keyboard-navigation>
+export const HtmlStory34 = () => html\`<lion-listbox name="combo" label="Rotate keyboard navigation" rotate-keyboard-navigation>
   <lion-option .choiceValue="\${'Apple'}">Apple</lion-option>
   <lion-option .choiceValue="\${'Artichoke'}">Artichoke</lion-option>
   <lion-option .choiceValue="\${'Asparagus'}">Asparagus</lion-option>
@@ -72,7 +72,7 @@ export const HtmlStory24 = () => html\`<lion-listbox name="combo" label="Rotate 
   <lion-option .choiceValue="\${'Cabbage'}">Cabbage</lion-option>
   <lion-option .choiceValue="\${'Carrot'}">Carrot</lion-option>
 </lion-listbox>\`;
-export const HtmlStory25 = () => html\`<lion-listbox name="combo" label="Rotate with disabled options" rotate-keyboard-navigation>
+export const HtmlStory35 = () => html\`<lion-listbox name="combo" label="Rotate with disabled options" rotate-keyboard-navigation>
   <lion-option .choiceValue="\${'Apple'}">Apple</lion-option>
   <lion-option .choiceValue="\${'Artichoke'}" disabled>Artichoke</lion-option>
   <lion-option .choiceValue="\${'Asparagus'}">Asparagus</lion-option>
@@ -86,7 +86,7 @@ export const HtmlStory25 = () => html\`<lion-listbox name="combo" label="Rotate 
 </lion-listbox>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory20', story: HtmlStory20 }, { key: 'HtmlStory21', story: HtmlStory21 }, { key: 'HtmlStory22', story: HtmlStory22 }, { key: 'HtmlStory23', story: HtmlStory23 }, { key: 'HtmlStory24', story: HtmlStory24 }, { key: 'HtmlStory25', story: HtmlStory25 }];
+const stories = [{ key: 'HtmlStory30', story: HtmlStory30 }, { key: 'HtmlStory31', story: HtmlStory31 }, { key: 'HtmlStory32', story: HtmlStory32 }, { key: 'HtmlStory33', story: HtmlStory33 }, { key: 'HtmlStory34', story: HtmlStory34 }, { key: 'HtmlStory35', story: HtmlStory35 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

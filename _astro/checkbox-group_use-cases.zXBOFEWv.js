@@ -4,17 +4,17 @@ import '@lion/ui/define/lion-checkbox-group.js';
 import '@lion/ui/define/lion-checkbox-indeterminate.js';
 import '@lion/ui/define/lion-checkbox.js';
 /** stories code **/
-export const HtmlStory41 = () => html\`<lion-checkbox-group name="scientists" label="Favorite scientists">
+export const HtmlStory6 = () => html\`<lion-checkbox-group name="scientists" label="Favorite scientists">
   <lion-checkbox label="Archimedes" .choiceValue="\${'Archimedes'}"></lion-checkbox>
   <lion-checkbox label="Francis Bacon" .choiceValue="\${'Francis Bacon'}" checked></lion-checkbox>
   <lion-checkbox label="Marie Curie" .choiceValue="\${'Marie Curie'}"></lion-checkbox>
 </lion-checkbox-group>\`;
-export const HtmlStory42 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists" disabled>
+export const HtmlStory7 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists" disabled>
   <lion-checkbox label="Archimedes" .choiceValue="\${'Archimedes'}"></lion-checkbox>
   <lion-checkbox label="Francis Bacon" .choiceValue="\${'Francis Bacon'}"></lion-checkbox>
   <lion-checkbox label="Marie Curie" .choiceValue="\${'Marie Curie'}"></lion-checkbox>
 </lion-checkbox-group>\`;
-export const HtmlStory43 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory8 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox .choiceValue="\${'Archimedes'}">
     <label slot="label"><strong>Archimedes</strong></label>
   </lion-checkbox>
@@ -25,7 +25,7 @@ export const HtmlStory43 = () => html\`<lion-checkbox-group name="scientists[]" 
     <label slot="label"><strong>Marie Curie</strong></label>
   </lion-checkbox>
 </lion-checkbox-group>\`;
-export const HtmlStory44 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory9 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox
     label="Archimedes"
     .choiceValue="\${'Archimedes'}"
@@ -60,7 +60,7 @@ export const event = ({ shadowRoot }) => html\`
   <br />
   <span>Selected scientists: <strong id="selectedDinosaur">N/A</strong></span>
 \`;
-export const HtmlStory45 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory10 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox-indeterminate label="Old Greek scientists">
     <lion-checkbox label="Archimedes" .choiceValue="\${'Archimedes'}"></lion-checkbox>
     <lion-checkbox label="Plato" .choiceValue="\${'Plato'}"></lion-checkbox>
@@ -71,7 +71,7 @@ export const HtmlStory45 = () => html\`<lion-checkbox-group name="scientists[]" 
     <lion-checkbox label="Galileo Galilei" .choiceValue="\${'Galileo Galilei'}"></lion-checkbox>
   </lion-checkbox-indeterminate>
 </lion-checkbox-group>\`;
-export const HtmlStory46 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory11 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox-indeterminate label="Scientists">
     <lion-checkbox label="Isaac Newton" .choiceValue="\${'Isaac Newton'}"></lion-checkbox>
     <lion-checkbox label="Galileo Galilei" .choiceValue="\${'Galileo Galilei'}"></lion-checkbox>
@@ -82,7 +82,7 @@ export const HtmlStory46 = () => html\`<lion-checkbox-group name="scientists[]" 
     </lion-checkbox-indeterminate>
   </lion-checkbox-indeterminate>
 </lion-checkbox-group>\`;
-export const HtmlStory47 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory12 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox-indeterminate mixed-state label="Scientists">
     <lion-checkbox label="Isaac Newton" .choiceValue="\${'Isaac Newton'}"></lion-checkbox>
     <lion-checkbox label="Galileo Galilei" .choiceValue="\${'Galileo Galilei'}"></lion-checkbox>
@@ -95,7 +95,7 @@ export const HtmlStory47 = () => html\`<lion-checkbox-group name="scientists[]" 
 </lion-checkbox-group>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory41', story: HtmlStory41 }, { key: 'HtmlStory42', story: HtmlStory42 }, { key: 'HtmlStory43', story: HtmlStory43 }, { key: 'HtmlStory44', story: HtmlStory44 }, { key: 'event', story: event }, { key: 'HtmlStory45', story: HtmlStory45 }, { key: 'HtmlStory46', story: HtmlStory46 }, { key: 'HtmlStory47', story: HtmlStory47 }];
+const stories = [{ key: 'HtmlStory6', story: HtmlStory6 }, { key: 'HtmlStory7', story: HtmlStory7 }, { key: 'HtmlStory8', story: HtmlStory8 }, { key: 'HtmlStory9', story: HtmlStory9 }, { key: 'event', story: event }, { key: 'HtmlStory10', story: HtmlStory10 }, { key: 'HtmlStory11', story: HtmlStory11 }, { key: 'HtmlStory12', story: HtmlStory12 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

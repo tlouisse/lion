@@ -3,14 +3,14 @@ import { html } from '@mdjs/mdjs-preview';
 import '@lion/ui/define/lion-checkbox-group.js';
 import '@lion/ui/define/lion-checkbox.js';
 /** stories code **/
-export const HtmlStory40 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
+export const HtmlStory5 = () => html\`<lion-checkbox-group name="scientists[]" label="Favorite scientists">
   <lion-checkbox label="Archimedes" .choiceValue="\${'Archimedes'}"></lion-checkbox>
   <lion-checkbox label="Francis Bacon" .choiceValue="\${'Francis Bacon'}"></lion-checkbox>
   <lion-checkbox label="Marie Curie" .choiceValue="\${'Marie Curie'}"></lion-checkbox>
 </lion-checkbox-group>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory40', story: HtmlStory40 }];
+const stories = [{ key: 'HtmlStory5', story: HtmlStory5 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
