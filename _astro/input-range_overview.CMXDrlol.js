@@ -2,10 +2,10 @@ const e=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
 import '@lion/ui/define/lion-input-range.js';
 /** stories code **/
-export const HtmlStory20 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
+export const HtmlStory22 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory20', story: HtmlStory20 }];
+const stories = [{ key: 'HtmlStory22', story: HtmlStory22 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
