@@ -240,26 +240,33 @@ const navData = [
  */
 const esc = value => String(value ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-const menuTree = (items, level = 0) => {
-  const rows = items
+/*
+ * Every level of the nav, expanded, without a disclosure to operate: the tree is read, not driven. So the whole
+ * list is one markup block, indented a step per level, and nothing is hidden behind a control. The indent is what
+ * makes the levels legible — without it the children read as siblings of their parents.
+ *
+ * An item that is both a link and a parent (a section that has a landing page and pages beneath it) renders as a
+ * link with its children following, which is how the desktop nav treats the same data.
+ */
+const INDENT_STEP = 14;
+
+const menuTree = (items, level = 0) =>
+  items
     .map(item => {
       const label = esc(item.name);
-      if (item.children && item.children.length > 0) {
-        const head = item.url
-          ? `<a class="mobile-menu__section-link" href="${esc(item.url)}">${label}</a>`
-          : `<span>${label}</span>`;
-        return `<li><details class="mobile-menu__group"><summary class="mobile-menu__link mobile-menu__summary">${head}</summary>${menuTree(item.children, level + 1)}</details></li>`;
-      }
-      if (item.command) {
-        return `<li><button type="button" class="mobile-menu__link" data-command="${esc(item.command)}">${label}</button></li>`;
-      }
-      return `<li><a class="mobile-menu__link" href="${esc(item.url)}">${label}</a></li>`;
+      const indent = level > 0 ? ` style="--menu-indent:${level * INDENT_STEP}px"` : '';
+      const row = item.url
+        ? `<a class="mobile-menu__link" href="${esc(item.url)}" data-level="${level}"${indent}>${label}</a>`
+        : item.command
+          ? `<button type="button" class="mobile-menu__link" data-command="${esc(item.command)}" data-level="${level}"${indent}>${label}</button>`
+          : `<span class="mobile-menu__link" data-level="${level}"${indent}>${label}</span>`;
+      const children =
+        item.children && item.children.length > 0 ? menuTree(item.children, level + 1) : '';
+      return `<li>${row}${children}</li>`;
     })
     .join('');
-  return `<ul class="mobile-menu__list${level > 0 ? ' mobile-menu__sublist' : ''}" data-menu-level="${level}">${rows}</ul>`;
-};
 
-const menuHtml = menuTree(navData);
+const menuHtml = `<ul class="mobile-menu__list" data-menu-level="0">${menuTree(navData)}</ul>`;
 
 // Add search and github to navData
 navData.push(
@@ -402,10 +409,31 @@ const { variant } = Astro.props;
           The links come from the same navData array the desktop nav is built from, so the two cannot drift.
         -->
         <button type="button" class="mobile-menu-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open the menu">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></g></svg>
+          <span class="mobile-menu-toggle__icon mobile-menu-toggle__icon--menu" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="20" height="20" fill="currentColor">
+              <path d="M4 7C4 6.44771 4.44772 6 5 6H24C24.5523 6 25 6.44771 25 7C25 7.55229 24.5523 8 24 8H5C4.44772 8 4 7.55229 4 7Z" />
+              <path d="M4 13.9998C4 13.4475 4.44772 12.9997 5 12.9997L16 13C16.5523 13 17 13.4477 17 14C17 14.5523 16.5523 15 16 15L5 14.9998C4.44772 14.9998 4 14.552 4 13.9998Z" />
+              <path d="M5 19.9998C4.44772 19.9998 4 20.4475 4 20.9998C4 21.552 4.44772 21.9997 5 21.9997H22C22.5523 21.9997 23 21.552 23 20.9998C23 20.4475 22.5523 19.9998 22 19.9998H5Z" />
+            </svg>
+          </span>
+          <!-- The close sits in the same place, and the pair is the one thing the view transition morphs. -->
+          <span class="mobile-menu-toggle__icon mobile-menu-toggle__icon--close" aria-hidden="true">
+            <svg viewBox="0 0 28 28" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M8 8l12 12M20 8L8 20" />
+            </svg>
+          </span>
         </button>
 
         <dialog class="mobile-menu" id="mobile-menu" aria-label="Menu">
+          <!-- Our own mark at the head of our own menu, and the close control beside the tree. -->
+          <div class="mobile-menu__head">
+            <LionWordmark />
+            <button type="button" class="mobile-menu__close" aria-label="Close the menu">
+              <svg viewBox="0 0 28 28" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
+                <path d="M8 8l12 12M20 8L8 20" />
+              </svg>
+            </button>
+          </div>
           <nav aria-label="Main navigation">
             <Fragment set:html={menuHtml} />
           </nav>
@@ -482,7 +510,7 @@ const { variant } = Astro.props;
     const dialog = document.getElementById('mobile-menu');
     const toggle = document.querySelector('.mobile-menu-toggle');
     if (dialog && toggle) {
-      const setOpen = open => {
+      const swap = open => {
         if (open) {
           dialog.showModal();
         } else {
@@ -490,7 +518,22 @@ const { variant } = Astro.props;
         }
         toggle.setAttribute('aria-expanded', String(open));
       };
-      toggle.addEventListener('click', () => setOpen(true));
+      /*
+       * The icon goes from the menu mark to the close and back, and the pair is the one thing handed to a view
+       * transition: the button and its two glyphs are in the same place in both states, so the browser morphs
+       * them instead of swapping them. Only the icon carries a view-transition-name, so the sheet itself keeps
+       * its own entrance and the top layer is left out of the snapshot. Without startViewTransition the swap is
+       * instant, which is the whole fallback.
+       */
+      const setOpen = open => {
+        if (typeof document.startViewTransition === 'function') {
+          document.startViewTransition(() => swap(open));
+        } else {
+          swap(open);
+        }
+      };
+      toggle.addEventListener('click', () => setOpen(!dialog.open));
+      dialog.querySelector('.mobile-menu__close')?.addEventListener('click', () => setOpen(false));
       dialog.addEventListener('close', () => toggle.setAttribute('aria-expanded', 'false'));
       // A tap on the dimmed page closes it: the backdrop is part of the dialog's box, so a click that lands
       // outside the panel's own rect is a click on the backdrop.
