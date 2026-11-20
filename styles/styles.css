@@ -536,9 +536,11 @@ main {
 .theme-picker__trigger {
     -webkit-text-fill-color: currentColor;
     /* The one word in a different hand: a serif, so the door that opens reads as a different kind of thing than the
-     * three that navigate. Everything else about the trigger stays the headline's own type. */
+     * three that navigate — and in italic, like Everywhere. Everything else about the trigger stays the headline's own
+     * type. EB Garamond's italic is a real one, loaded as such. */
     font-family: "EB Garamond", Georgia, serif;
     font-weight: 500;
+    font-style: italic;
     font-size: inherit;
     font-weight: inherit;
     letter-spacing: inherit;
@@ -563,10 +565,10 @@ main {
     text-decoration: none;
 }
 
-/* Everywhere. is in the same cursive hand as Flexible.: the two words that talk about reach and fit, rather than the two
- * that name a discipline. It keeps everything else — the size, the weight, the gradient. */
-.hero-pill--cursive {
-    font-family: Caveat, cursive;
+/* Everywhere. is italic, like Flexible.: the two words that talk about reach and fit lean, while the two that name a
+ * discipline stand upright. Same font as the rest — no other family is involved, only the style. */
+.hero-pill--italic {
+    font-style: italic;
 }
 
 .hero-pill:hover,
