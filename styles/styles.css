@@ -1514,13 +1514,13 @@ html {
     }
 
     .mobile-menu {
-        /* Full screen: there is nothing behind it worth showing while a menu is open, and a full-height panel
-         * is where a thumb expects to find a long, nested list. A dialog's height is its content however the
-         * inset is set, so the cap is stated. */
+        /* Full width, and a step short of full height: it reads as a sheet rather than a takeover, and the foot's
+         * switch still lands on the sheet's own bottom edge. A dialog's height is its content however the inset
+         * is set, so the cap is stated. */
         position: fixed;
         inset: 0;
-        height: 100dvh;
-        max-height: 100dvh;
+        height: calc(100dvh - 32px);
+        max-height: calc(100dvh - 32px);
         overflow-y: auto;
         transform: translateY(-12px);
         opacity: 0;

@@ -796,10 +796,6 @@ export default {
     "./lib/popper-lite.js": "node_modules/@popperjs/core/lib/popper-lite.js",
     "./lib/popper.js": "node_modules/@popperjs/core/lib/popper.js",
     "./lib/types.js": "node_modules/@popperjs/core/lib/types.js",
-    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
-    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
-    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
-    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/esm/createPopper.js": "node_modules/@popperjs/core/dist/esm/createPopper.js",
     "./dist/esm/enums.js": "node_modules/@popperjs/core/dist/esm/enums.js",
     "./dist/esm/index.js": "node_modules/@popperjs/core/dist/esm/index.js",
@@ -807,6 +803,10 @@ export default {
     "./dist/esm/popper-lite.js": "node_modules/@popperjs/core/dist/esm/popper-lite.js",
     "./dist/esm/popper.js": "node_modules/@popperjs/core/dist/esm/popper.js",
     "./dist/esm/types.js": "node_modules/@popperjs/core/dist/esm/types.js",
+    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
+    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
+    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
+    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/umd/enums.js": "node_modules/@popperjs/core/dist/umd/enums.js",
     "./dist/umd/enums.min.js": "node_modules/@popperjs/core/dist/umd/enums.min.js",
     "./dist/umd/popper-base.js": "node_modules/@popperjs/core/dist/umd/popper-base.js",
@@ -925,10 +925,10 @@ export default {
     "./dist/esm/utils/within.js": "node_modules/@popperjs/core/dist/esm/utils/within.js"
   },
   "autosize": {
-    "./src/autosize.js": "node_modules/autosize/src/autosize.js",
     "./dist/autosize.esm.js": "node_modules/autosize/dist/autosize.esm.js",
     "./dist/autosize.js": "node_modules/autosize/dist/autosize.js",
-    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js"
+    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js",
+    "./src/autosize.js": "node_modules/autosize/src/autosize.js"
   },
   "ibantools": {
     ".": "node_modules/ibantools/jsnext/ibantools.js"
@@ -1001,8 +1001,8 @@ export default {
     "./lib/node/parentheses.js": "node_modules/@babel/generator/lib/node/parentheses.js"
   },
   "@babel/parser": {
-    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js",
-    "./lib/index.js": "node_modules/@babel/parser/lib/index.js"
+    "./lib/index.js": "node_modules/@babel/parser/lib/index.js",
+    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js"
   },
   "@babel/traverse": {
     "./lib/cache.js": "node_modules/@babel/traverse/lib/cache.js",
