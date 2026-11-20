@@ -1360,6 +1360,11 @@ html {
     height: 40px;
     padding: 0;
     border: 1px solid var(--border-color);
+    /* The logo keeps the left edge and this takes the free space, so the bar reads logo | ... | menu, which is
+     * the order it had before this menu existed. `order` rather than a move: the markup's order does not matter
+     * to a flex row, and this way no other rule has to change. */
+    order: 1;
+    margin-left: auto;
     border-radius: 8px;
     background: transparent;
     color: var(--text-primary);
@@ -1483,12 +1488,13 @@ html {
     }
 
     .mobile-menu {
-        /* Under the bar, full width, sliding down from it. It may be taller than the screen — measured at
-         * 1240px of content on an 844px viewport, which put the foot's switch out of reach — so it scrolls
-         * inside itself and its foot sticks to the bottom, where the thumb is. */
+        /* Full screen: there is nothing behind it worth showing while a menu is open, and a full-height panel
+         * is where a thumb expects to find a long, nested list. A dialog's height is its content however the
+         * inset is set, so the cap is stated. */
         position: fixed;
-        inset: var(--header-height, 85px) 0 auto 0;
-        max-height: calc(100dvh - var(--header-height, 85px));
+        inset: 0;
+        height: 100dvh;
+        max-height: 100dvh;
         overflow-y: auto;
         transform: translateY(-12px);
         opacity: 0;
@@ -1502,6 +1508,44 @@ html {
     .mobile-menu[open] {
         opacity: 1;
         transform: translateY(0);
+    }
+
+    /*
+     * The tree's disclosure: native <details>, so the keyboard and screen-reader behaviour comes with it, and no
+     * name attribute is set, so several sections can be open at once. The chevron is a rotated border rather than
+     * an icon, so it follows currentColor and needs no asset.
+     */
+    .mobile-menu__group > summary {
+        list-style: none;
+        justify-content: space-between;
+    }
+
+    .mobile-menu__group > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .mobile-menu__section-link {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .mobile-menu__group[open] > summary .mobile-menu__section-link {
+        color: var(--text-primary);
+    }
+
+    .mobile-menu__summary::after {
+        content: '';
+        width: 0.5rem;
+        height: 0.5rem;
+        margin-left: 8px;
+        border-right: 1.5px solid currentColor;
+        border-bottom: 1.5px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu__group[open] > summary::after {
+        transform: rotate(-135deg);
     }
 }
 

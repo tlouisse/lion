@@ -227,6 +227,40 @@ const navData = [
   },
 ];
 
+/**
+ * The phone menu's tree, built here rather than by a component that imports itself: Astro cannot render a
+ * self-referential component reliably (it failed the build with "value.then is not a function" on every page),
+ * so the recursion is plain JS in the frontmatter and the markup lands through set:html. Fragment is built in,
+ * so it needs no import.
+ *
+ * Each group is a native <details>, which brings keyboard support, screen-reader semantics and multiple-open
+ * behaviour with it, and no name attribute is set so opening one does not close another. Every level renders,
+ * which is the point: a page reachable only through the nav has to be reachable here too, and the flat list this
+ * replaces stopped at twelve children per section.
+ */
+const esc = value => String(value ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+const menuTree = (items, level = 0) => {
+  const rows = items
+    .map(item => {
+      const label = esc(item.name);
+      if (item.children && item.children.length > 0) {
+        const head = item.url
+          ? `<a class="mobile-menu__section-link" href="${esc(item.url)}">${label}</a>`
+          : `<span>${label}</span>`;
+        return `<li><details class="mobile-menu__group"><summary class="mobile-menu__link mobile-menu__summary">${head}</summary>${menuTree(item.children, level + 1)}</details></li>`;
+      }
+      if (item.command) {
+        return `<li><button type="button" class="mobile-menu__link" data-command="${esc(item.command)}">${label}</button></li>`;
+      }
+      return `<li><a class="mobile-menu__link" href="${esc(item.url)}">${label}</a></li>`;
+    })
+    .join('');
+  return `<ul class="mobile-menu__list${level > 0 ? ' mobile-menu__sublist' : ''}" data-menu-level="${level}">${rows}</ul>`;
+};
+
+const menuHtml = menuTree(navData);
+
 // Add search and github to navData
 navData.push(
   {
@@ -373,24 +407,7 @@ const { variant } = Astro.props;
 
         <dialog class="mobile-menu" id="mobile-menu" aria-label="Menu">
           <nav aria-label="Main navigation">
-            <ul class="mobile-menu__list">
-              {navData.map(item => (
-                <li>
-                  {item.command ? (
-                    <button type="button" class="mobile-menu__link mobile-menu__link--command" data-command={item.command}>{item.name}</button>
-                  ) : (
-                    <a class="mobile-menu__link" href={item.url} target={item.target} rel={item.rel}>{item.name}</a>
-                  )}
-                  {item.children && item.children.length > 0 && (
-                    <ul class="mobile-menu__sublist">
-                      {item.children.slice(0, 12).map(child => (
-                        <li><a class="mobile-menu__sublink" href={child.url || '#'}>{child.name || child.title}</a></li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <Fragment set:html={menuHtml} />
           </nav>
           <div class="mobile-menu__foot">
             <span class="mobile-menu__foot-label">Theme</span>
