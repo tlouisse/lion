@@ -374,21 +374,17 @@ main {
 }
 
 .blueprint-bg {
+    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
+     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
+     * paper. It never takes a pointer, so the pills above it stay clickable. */
     position: absolute;
-    top: 50%;
-    right: -10%;
-    left: auto;
-    width: 65%;
-    height: 120%;
-    transform: translateY(-50%) perspective(1000px) rotateY(-25deg) rotateX(10deg);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: color-mix(in srgb, var(--text-primary) 22%, transparent);
     z-index: 1;
-    pointer-events: auto;
+    pointer-events: none;
     opacity: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    mask-image: radial-gradient(circle at center, black 0%, black 70%, transparent 100%);
-    -webkit-mask-image: radial-gradient(circle at center, black 0%, black 70%, transparent 100%);
 }
 
 .blueprint-svg {
@@ -1000,13 +996,19 @@ main {
         justify-content: center;
     }
     
-    .blueprint-bg {
-        width: 100%;
-        right: 0;
-        left: 0;
-        opacity: 0.2;
-        transform: translateY(-50%) perspective(1000px) rotateX(20deg);
-    }
+.blueprint-bg {
+    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
+     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
+     * paper. It never takes a pointer, so the pills above it stay clickable. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 1;
+}
     
     .features-grid {
         grid-template-columns: 1fr;
@@ -1025,9 +1027,20 @@ main {
 
 /* Interactive Blueprint Styles */
 .blueprint-bg {
-    perspective: 1000px;
+    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
+     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
+     * paper. It never takes a pointer, so the pills above it stay clickable. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    color: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 1;
 }
 
+.blueprint-bg > svg,
 .blueprint-bg svg {
     width: 100%;
     height: auto;
