@@ -494,6 +494,10 @@ main {
 }
 
 .hero h1 {
+    /* The display face, the reference's own: StackBlitz's headline is Manrope at weight 600 with a negative tracking
+     * (measured: 94px, 600, -2px). Everything else about this rule is what it was — the size, the weight, the tracking
+     * and the gradient — so only the face is new. */
+    font-family: Manrope, Inter, sans-serif;
     font-size: 5rem;
     line-height: 1.05;
     font-weight: 600;
@@ -520,35 +524,52 @@ main {
     display: inline-block;
 }
 
-.theme-picker__trigger,
-.hero-pill {
-    /* The headline clips its text with a gradient; a child with no fill of its own would be invisible. */
+/*
+ * The combobox trigger is the headline's own type inside a box, which is the reference's treatment: on stackblitz.com the
+ * word "engineering" sits in a dark rounded container in the middle of a headline line — a pill, a fill a little lighter
+ * than the page, no visible border and a subtle shadow. So the trigger inherits the headline's face, size, weight,
+ * tracking and line-height rather than carrying a type of its own, and only the box is added.
+ *
+ * It keeps its own fill because the headline paints its text with a gradient and clears the fill: a child that inherited
+ * that would be invisible. That is the first declaration below.
+ */
+.theme-picker__trigger {
     -webkit-text-fill-color: currentColor;
-    background: none;
-    color: var(--text-primary);
     font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: normal;
-    line-height: 1.4;
-    background-color: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    border: 1px solid color-mix(in srgb, var(--text-primary) 14%, transparent);
-    border-radius: 8px;
-    padding: 5px 12px 5px 14px;
+    font-size: inherit;
+    font-weight: inherit;
+    letter-spacing: inherit;
+    line-height: inherit;
+    color: var(--text-primary);
+    background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    border: none;
+    border-radius: 0.28em;
+    padding: 0.04em 0.22em 0.06em;
+    box-shadow: 0 0.04em 0.18em rgb(0 0 0 / 0.10);
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 0.16em;
     cursor: pointer;
-    vertical-align: middle;
-    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    vertical-align: baseline;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The other three words keep the headline's gradient — only the one that opens gets a box. */
+.hero-pill {
+    color: inherit;
+    text-decoration: none;
+}
+
+.hero-pill:hover,
+.hero-pill:focus-visible {
+    text-decoration: underline;
+    text-decoration-thickness: 0.04em;
+    text-underline-offset: 0.12em;
 }
 
 .theme-picker__trigger:hover,
-.theme-picker__trigger:focus-visible,
-.hero-pill:hover,
-.hero-pill:focus-visible {
+.theme-picker__trigger:focus-visible {
     background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
-    border-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
 }
 
 /*
@@ -562,8 +583,8 @@ main {
 }
 
 .theme-picker__caret {
-    width: 10px;
-    height: 6px;
+    width: 0.16em;
+    height: 0.10em;
     flex: 0 0 auto;
     transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
