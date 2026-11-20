@@ -1,16 +1,16 @@
 const e=`/** script code **/
-import { html } from '@mdjs/mdjs-preview';
-import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
-import '@lion/ui/define/lion-input-stepper.js';
-loadDefaultFeedbackMessages();
+import { LitElement, html } from '@mdjs/mdjs-preview';
+import '@lion/ui/define/lion-select-rich.js';
+import '@lion/ui/define/lion-option.js';
 /** stories code **/
-export const HtmlStory27 = () => html\`<lion-input-stepper max="5" min="0" name="count">
-  <label slot="label">RSVP</label>
-  <div slot="help-text">Max. 5 guests</div>
-</lion-input-stepper>\`;
+export const HtmlStory36 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color">
+  <lion-option .choiceValue="\${'red'}">Red</lion-option>
+  <lion-option .choiceValue="\${'hotpink'}">Hotpink</lion-option>
+  <lion-option .choiceValue="\${'blue'}">Blue</lion-option>
+</lion-select-rich>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory27', story: HtmlStory27 }];
+const stories = [{ key: 'HtmlStory36', story: HtmlStory36 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
