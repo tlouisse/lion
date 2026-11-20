@@ -342,7 +342,8 @@ main {
 
 /* Hero */
 .hero {
-    padding: 160px 0 100px;
+    /* 104px: the hero sits 56px higher than it used to, while still clearing the 86.6px sticky bar. */
+    padding: 104px 0 100px;
     position: relative;
     overflow: hidden;
     min-height: 80vh;
@@ -568,7 +569,7 @@ main {
 /* Everywhere. sits a step down from the rest of the headline: the sentence ends there, so the last word lands a little
  * quieter. One number, so another step is a one-line change. */
 .hero-pill--smaller {
-    font-size: 72px;
+    font-size: 64px;
 }
 
 
