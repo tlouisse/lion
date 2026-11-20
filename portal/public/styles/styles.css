@@ -751,7 +751,8 @@ main {
     font-size: 1.25rem;
     color: var(--text-secondary);
     max-width: 540px;
-    margin: 0 0 40px 0;
+    /* A little air between the 80px headline and this line: it sat directly against the last headline line. */
+    margin: 16px 0 40px 0;
     font-weight: 300;
 }
 
@@ -925,7 +926,7 @@ main {
     }
     
     .hero-subtitle {
-        margin: 0 auto 40px;
+        margin: 16px auto 40px;
     }
     
     .cta-group {

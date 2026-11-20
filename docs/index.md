@@ -1,7 +1,7 @@
 ---
 title: Lion
 layout: layout-home
-slogan: Performant, accessible, and flexible foundation for your web applications. Build your design system without the bloat.
+slogan: Build your design system without the bloat.
 callToActionItems:
   [{ text: 'Get Started', href: '/guides/' }, { text: 'Documentation', href: '/components/' }]
 reasonHeader: Why Lion?
