@@ -1,0 +1,115 @@
+---
+// Same component, four design languages. Each skin is a subclass of LionSelectRich whose
+// `scopedElements` maps the `lion-select-invoker` tag onto its own invoker, so what changes between
+// these four columns is only which language's code is in the shadow — no page CSS touches any of it.
+//
+// Lion is white label (no ::part, no --lion-* tokens: audited 0 and 0), which is why a skin is code
+// and not a token sheet, and why none of this works by styling from this page.
+import ThemeInit from '../components/ThemeInit.astro';
+import TopNav from '../components/TopNav.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Select-rich skins · Lion</title>
+    <ThemeInit />
+    <link rel="stylesheet" href={`${base}/styles/theme.css`} />
+    <link rel="stylesheet" href={`${base}/styles/styles.css`} />
+    <style>
+      .skin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 32px;
+        padding: 40px var(--page-gutter, 40px) 96px;
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      .skin-grid h2 {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        margin: 0 0 12px;
+      }
+      .skin-grid p {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        margin: 12px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <TopNav />
+    <main>
+      <div class="skin-grid">
+        <section>
+          <h2>Material</h2>
+          <material-select-rich id="skin-material" label="Design system"></material-select-rich>
+          <p>A filled field: surface-container, 4px top corner, one hairline at the bottom.</p>
+        </section>
+        <section>
+          <h2>Shoelace</h2>
+          <shoelace-select-rich id="skin-shoelace" label="Design system"></shoelace-select-rich>
+          <p>A bordered input: 8px corner, hairline that darkens, no shadow.</p>
+        </section>
+        <section>
+          <h2>Base UI</h2>
+          <baseui-select-rich id="skin-baseui" label="Design system"></baseui-select-rich>
+          <p>Unstyled on purpose: a hairline on hover is the only affordance.</p>
+        </section>
+        <section>
+          <h2>Lion</h2>
+          <lion-plain-select-rich id="skin-lion" label="Design system"></lion-plain-select-rich>
+          <p>Lion itself, untouched — the white-label default these skins extend.</p>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      import '@lion/ui/select-rich.js';
+      import { LionSelectRich } from '@lion/ui/select-rich.js';
+      import {
+        MaterialSelectRich,
+        ShoelaceSelectRich,
+        BaseUISelectRich,
+      } from '@lion/select-rich-skin';
+
+      // Lion's own elements are never in the global registry — they are scoped inside a host — so
+      // the plain column needs the class defined, exactly as a consumer would.
+      customElements.define('lion-plain-select-rich', LionSelectRich);
+      customElements.define('material-select-rich', MaterialSelectRich);
+      customElements.define('shoelace-select-rich', ShoelaceSelectRich);
+      customElements.define('baseui-select-rich', BaseUISelectRich);
+
+      const choices = [
+        { value: 'lion', label: 'Lion — the design system' },
+        { value: 'material', label: 'Material Design 3' },
+        { value: 'shoelace', label: 'Shoelace' },
+        { value: 'baseui', label: 'Base UI' },
+      ];
+
+      for (const id of ['skin-material', 'skin-shoelace', 'skin-baseui', 'skin-lion']) {
+        const host = document.getElementById(id);
+        if (!host) continue;
+        for (const { value, label } of choices) {
+          const option = document.createElement('lion-option');
+          option.choiceValue = value;
+          option.textContent = label;
+          host.appendChild(option);
+        }
+        // After the options exist AND the element has upgraded: the invoker reads the selected option,
+        // and a custom element that upgrades late reads the property before its own options are known.
+        // `selected` on the option is what a listbox reads for its initial choice; `modelValue` alone
+        // arrived before the mixin had wrapped the options in `<lion-options>`.
+        const first = host.querySelector('lion-option');
+        if (first) first.selected = true;
+      }
+    </script>
+  </body>
+</html>

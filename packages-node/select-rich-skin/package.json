@@ -1,0 +1,30 @@
+{
+  "name": "@lion/select-rich-skin",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design-language skins for Lion's select-rich, as subclasses: the invoker (the closed control) and the listbox are restyled per design system, with no change to @lion/ui's published API.",
+  "license": "MIT",
+  "author": "ing-bank",
+  "homepage": "https://github.com/ing-bank/lion/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ing-bank/lion.git",
+    "directory": "packages-node/select-rich-skin"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./material.js": "./src/invokers/MaterialSelectInvoker.js",
+    "./shoelace.js": "./src/invokers/ShoelaceSelectInvoker.js",
+    "./baseui.js": "./src/invokers/BaseUISelectInvoker.js"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "lit": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@lion/ui": "*"
+  }
+}
