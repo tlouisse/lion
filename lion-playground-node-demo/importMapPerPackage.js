@@ -925,10 +925,10 @@ export default {
     "./dist/esm/utils/within.js": "node_modules/@popperjs/core/dist/esm/utils/within.js"
   },
   "autosize": {
+    "./src/autosize.js": "node_modules/autosize/src/autosize.js",
     "./dist/autosize.esm.js": "node_modules/autosize/dist/autosize.esm.js",
     "./dist/autosize.js": "node_modules/autosize/dist/autosize.js",
-    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js",
-    "./src/autosize.js": "node_modules/autosize/src/autosize.js"
+    "./dist/autosize.min.js": "node_modules/autosize/dist/autosize.min.js"
   },
   "ibantools": {
     ".": "node_modules/ibantools/jsnext/ibantools.js"
@@ -1041,12 +1041,6 @@ export default {
     "./lib/asserts/assertNode.js": "node_modules/@babel/types/lib/asserts/assertNode.js",
     "./lib/builders/productions.js": "node_modules/@babel/types/lib/builders/productions.js",
     "./lib/builders/validateNode.js": "node_modules/@babel/types/lib/builders/validateNode.js",
-    "./lib/clone/clone.js": "node_modules/@babel/types/lib/clone/clone.js",
-    "./lib/clone/cloneDeep.js": "node_modules/@babel/types/lib/clone/cloneDeep.js",
-    "./lib/clone/cloneDeepWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneDeepWithoutLoc.js",
-    "./lib/clone/cloneNode.js": "node_modules/@babel/types/lib/clone/cloneNode.js",
-    "./lib/clone/cloneWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
-    "./lib/constants/index.js": "node_modules/@babel/types/lib/constants/index.js",
     "./lib/comments/addComment.js": "node_modules/@babel/types/lib/comments/addComment.js",
     "./lib/comments/addComments.js": "node_modules/@babel/types/lib/comments/addComments.js",
     "./lib/comments/inheritInnerComments.js": "node_modules/@babel/types/lib/comments/inheritInnerComments.js",
@@ -1054,6 +1048,12 @@ export default {
     "./lib/comments/inheritTrailingComments.js": "node_modules/@babel/types/lib/comments/inheritTrailingComments.js",
     "./lib/comments/inheritsComments.js": "node_modules/@babel/types/lib/comments/inheritsComments.js",
     "./lib/comments/removeComments.js": "node_modules/@babel/types/lib/comments/removeComments.js",
+    "./lib/constants/index.js": "node_modules/@babel/types/lib/constants/index.js",
+    "./lib/clone/clone.js": "node_modules/@babel/types/lib/clone/clone.js",
+    "./lib/clone/cloneDeep.js": "node_modules/@babel/types/lib/clone/cloneDeep.js",
+    "./lib/clone/cloneDeepWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneDeepWithoutLoc.js",
+    "./lib/clone/cloneNode.js": "node_modules/@babel/types/lib/clone/cloneNode.js",
+    "./lib/clone/cloneWithoutLoc.js": "node_modules/@babel/types/lib/clone/cloneWithoutLoc.js",
     "./lib/converters/ensureBlock.js": "node_modules/@babel/types/lib/converters/ensureBlock.js",
     "./lib/converters/gatherSequenceExpressions.js": "node_modules/@babel/types/lib/converters/gatherSequenceExpressions.js",
     "./lib/converters/toBindingIdentifierName.js": "node_modules/@babel/types/lib/converters/toBindingIdentifierName.js",
@@ -1119,8 +1119,8 @@ export default {
     "./lib/constants/generated/index.js": "node_modules/@babel/types/lib/constants/generated/index.js",
     "./lib/modifications/flow/removeTypeDuplicates.js": "node_modules/@babel/types/lib/modifications/flow/removeTypeDuplicates.js",
     "./lib/modifications/typescript/removeTypeDuplicates.js": "node_modules/@babel/types/lib/modifications/typescript/removeTypeDuplicates.js",
-    "./lib/utils/react/cleanJSXElementLiteralChild.js": "node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
     "./lib/validators/generated/index.js": "node_modules/@babel/types/lib/validators/generated/index.js",
+    "./lib/utils/react/cleanJSXElementLiteralChild.js": "node_modules/@babel/types/lib/utils/react/cleanJSXElementLiteralChild.js",
     "./lib/validators/react/isCompatTag.js": "node_modules/@babel/types/lib/validators/react/isCompatTag.js",
     "./lib/validators/react/isReactComponent.js": "node_modules/@babel/types/lib/validators/react/isReactComponent.js"
   },

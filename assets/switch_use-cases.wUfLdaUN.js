@@ -5,7 +5,7 @@ import { LionSwitch } from '@lion/ui/switch.js';
 import '@lion/ui/define/lion-switch.js';
 import '@lion/ui/define-helpers/sb-action-logger.js';
 /** stories code **/
-export const HtmlStory39 = () => html\`<lion-switch label="Label" disabled></lion-switch>\`;
+export const HtmlStory47 = () => html\`<lion-switch label="Label" disabled></lion-switch>\`;
 class IsTrue extends Validator {
   static get validatorName() {
     return 'IsTrue';
@@ -53,7 +53,7 @@ export const handler = ({ shadowRoot }) => {
 };
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory39', story: HtmlStory39 }, { key: 'validation', story: validation }, { key: 'handler', story: handler }];
+const stories = [{ key: 'HtmlStory47', story: HtmlStory47 }, { key: 'validation', story: validation }, { key: 'handler', story: handler }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);

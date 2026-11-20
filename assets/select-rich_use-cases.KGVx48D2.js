@@ -3,7 +3,7 @@ import { LitElement, html } from '@mdjs/mdjs-preview';
 import '@lion/ui/define/lion-select-rich.js';
 import '@lion/ui/define/lion-option.js';
 /** stories code **/
-export const HtmlStory41 = () => html\`<lion-select-rich label="Favorite color" name="color">
+export const HtmlStory40 = () => html\`<lion-select-rich label="Favorite color" name="color">
   <lion-option .choiceValue="\${'red'}">
     <p style="color: red;">I am red</p>
     <p>and multi Line</p>
@@ -52,17 +52,17 @@ export const manyOptionsWithScrolling = () => {
   </lion-select-rich>
 \`;
 };
-export const HtmlStory42 = () => html\`<lion-select-rich label="Read-only select" readonly name="color">
+export const HtmlStory41 = () => html\`<lion-select-rich label="Read-only select" readonly name="color">
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
   <lion-option .choiceValue="\${'hotpink'}" checked>Hotpink</lion-option>
   <lion-option .choiceValue="\${'teal'}">Teal</lion-option>
 </lion-select-rich>\`;
-export const HtmlStory43 = () => html\`<lion-select-rich label="Disabled select" disabled name="color">
+export const HtmlStory42 = () => html\`<lion-select-rich label="Disabled select" disabled name="color">
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
   <lion-option .choiceValue="\${'hotpink'}" checked>Hotpink</lion-option>
   <lion-option .choiceValue="\${'teal'}">Teal</lion-option>
 </lion-select-rich>\`;
-export const HtmlStory44 = () => html\`<lion-select-rich label="Disabled options" name="color">
+export const HtmlStory43 = () => html\`<lion-select-rich label="Disabled options" name="color">
   <lion-option .choiceValue="\${'red'}" disabled>Red</lion-option>
   <lion-option .choiceValue="\${'blue'}">Blue</lion-option>
   <lion-option .choiceValue="\${'hotpink'}" disabled>Hotpink</lion-option>
@@ -89,7 +89,7 @@ export const renderOptions = ({ shadowRoot }) => {
     <pre id="demoRenderOutput"></pre>
   \`;
 };
-export const HtmlStory45 = () => html\`<lion-select-rich label="Mac mode" name="color" interaction-mode="mac">
+export const HtmlStory44 = () => html\`<lion-select-rich label="Mac mode" name="color" interaction-mode="mac">
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
   <lion-option .choiceValue="\${'hotpink'}" checked>Hotpink</lion-option>
   <lion-option .choiceValue="\${'teal'}">Teal</lion-option>
@@ -135,12 +135,12 @@ export const checkedIndexAndValue = ({ shadowRoot }) => html\`
     <lion-option .choiceValue="\${'teal'}">Teal</lion-option>
   </lion-select-rich>
 \`;
-export const HtmlStory46 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color" has-no-default-selected>
+export const HtmlStory45 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color" has-no-default-selected>
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
   <lion-option .choiceValue="\${'hotpink'}">Hotpink</lion-option>
   <lion-option .choiceValue="\${'teal'}">Teal</lion-option>
 </lion-select-rich>\`;
-export const HtmlStory47 = () => html\`<lion-select-rich label="Single Option" name="color">
+export const HtmlStory46 = () => html\`<lion-select-rich label="Single Option" name="color">
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
 </lion-select-rich>\`;
 class SingleOptionRemoveAdd extends LitElement {
@@ -191,7 +191,7 @@ export const singleOptionRemoveAdd = () => {
 };
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory41', story: HtmlStory41 }, { key: 'manyOptionsWithScrolling', story: manyOptionsWithScrolling }, { key: 'HtmlStory42', story: HtmlStory42 }, { key: 'HtmlStory43', story: HtmlStory43 }, { key: 'HtmlStory44', story: HtmlStory44 }, { key: 'renderOptions', story: renderOptions }, { key: 'HtmlStory45', story: HtmlStory45 }, { key: 'checkedIndexAndValue', story: checkedIndexAndValue }, { key: 'HtmlStory46', story: HtmlStory46 }, { key: 'HtmlStory47', story: HtmlStory47 }, { key: 'singleOptionRemoveAdd', story: singleOptionRemoveAdd }];
+const stories = [{ key: 'HtmlStory40', story: HtmlStory40 }, { key: 'manyOptionsWithScrolling', story: manyOptionsWithScrolling }, { key: 'HtmlStory41', story: HtmlStory41 }, { key: 'HtmlStory42', story: HtmlStory42 }, { key: 'HtmlStory43', story: HtmlStory43 }, { key: 'renderOptions', story: renderOptions }, { key: 'HtmlStory44', story: HtmlStory44 }, { key: 'checkedIndexAndValue', story: checkedIndexAndValue }, { key: 'HtmlStory45', story: HtmlStory45 }, { key: 'HtmlStory46', story: HtmlStory46 }, { key: 'singleOptionRemoveAdd', story: singleOptionRemoveAdd }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
