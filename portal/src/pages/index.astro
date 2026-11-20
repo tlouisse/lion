@@ -119,12 +119,22 @@ const {
                           <span id="theme-picker-label" class="theme-picker__value">Flexible.</span>
                           <svg class="theme-picker__caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       </button>
-                      <ul class="theme-picker__list" id="theme-picker-list" role="listbox" aria-labelledby="theme-picker-label" hidden>
-                          <li role="option" class="theme-picker__option" id="theme-option-lion" data-theme-id="lion" aria-selected="true">Lion <span class="theme-picker__hint">the design system</span></li>
-                          <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
-                          <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
-                          <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
-                      </ul>
+                      <!--
+                        The theme list is a modal dialog rather than a dropdown inside the headline. Reason, measured: the
+                        headline carries a scroll animation (filter: blur(0)) and .hero-content a transform, and both create a
+                        containing block — so a fixed element here anchored to the h1, not the viewport, and a bottom sheet
+                        came out the size of the heading. A modal dialog is promoted to the top layer and escapes all of
+                        that, and ::backdrop, Escape and focus handling come with it.
+                        On a phone it is a bottom sheet; on a wider screen the script places it under the word.
+                      -->
+                      <dialog class="theme-picker__sheet" id="theme-picker-list" aria-labelledby="theme-picker-label">
+                          <ul class="theme-picker__options" role="listbox" aria-labelledby="theme-picker-label">
+                              <li role="option" class="theme-picker__option" id="theme-option-lion" data-theme-id="lion" aria-selected="true">Lion <span class="theme-picker__hint">the design system</span></li>
+                              <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
+                              <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
+                              <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
+                          </ul>
+                      </dialog>
                   </span><br><a class="hero-pill" href="#user-interfaces">User Interfaces.</a><br><br><a class="hero-pill hero-pill--cursive" href="#everywhere">Everywhere.</a>
               </h1>
               <p class="hero-subtitle">{slogan}</p>
@@ -231,10 +241,26 @@ const {
         /* the theme is a comfort setting, not a requirement */
       }
     };
+    // Under the word on a wide screen; on a phone the stylesheet makes it a bottom sheet, where position does not matter.
+    const place = () => {
+      if (window.matchMedia('(max-width: 1023px)').matches) {
+        return;
+      }
+      const rect = trigger.getBoundingClientRect();
+      const sheet = list.getBoundingClientRect();
+      const left = Math.min(rect.left, window.innerWidth - sheet.width - 16);
+      list.style.left = `${Math.max(16, left)}px`;
+      list.style.top = `${rect.bottom + 8}px`;
+    };
     const open = expanded => {
       trigger.setAttribute('aria-expanded', String(expanded));
-      list.hidden = !expanded;
-      if (expanded) options.find(option => option.getAttribute('aria-selected') === 'true')?.focus();
+      if (expanded) {
+        if (!list.open) list.showModal();
+        place();
+        options.find(option => option.getAttribute('aria-selected') === 'true')?.focus();
+      } else if (list.open) {
+        list.close();
+      }
     };
     const select = (id, { moveFocus = true } = {}) => {
       document.documentElement.dataset.demoTheme = id;
@@ -250,7 +276,7 @@ const {
     const stored = read();
     select(options.some(option => option.dataset.themeId === stored) ? stored : 'lion', { moveFocus: false });
 
-    trigger.addEventListener('click', () => open(list.hidden));
+    trigger.addEventListener('click', () => open(!list.open));
     options.forEach((option, index) => {
       option.tabIndex = -1;
       option.addEventListener('click', () => select(option.dataset.themeId));
@@ -275,11 +301,17 @@ const {
         open(false);
       }
     });
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && !list.hidden) open(false);
+    // A modal dialog closes itself on Escape; these two keep the trigger's state honest for any other dismissal.
+    list.addEventListener('close', () => {
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.focus();
     });
-    document.addEventListener('click', event => {
-      if (!list.hidden && !event.target.closest('.theme-picker')) open(false);
+    list.addEventListener('click', event => {
+      // The dialog element itself is the area outside the listbox: a tap there is a dismissal.
+      if (event.target === list) open(false);
+    });
+    window.addEventListener('resize', () => {
+      if (list.open) place();
     });
   }
 </script>
