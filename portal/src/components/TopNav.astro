@@ -269,10 +269,12 @@ const menuTree = (items, level = 0) =>
        * a child from its parent, not shout.
        */
       if (hasChildren && level >= 1) {
-        const head = item.url
-          ? `<a class="mobile-menu__section-link" href="${esc(item.url)}">${label}</a>`
-          : `<span>${label}</span>`;
-        return `<li><details class="mobile-menu__group"><summary class="mobile-menu__link mobile-menu__summary" data-level="${level}"${indent}>${head}</summary>${menuTree(item.children, level + 1)}</details></li>`;
+        /*
+         * A parent is the disclosure and nothing else: clicking it unfolds its children rather than navigating,
+         * so there is no anchor here even when the section has a landing page of its own. The indent is the
+         * only thing separating it from what it holds.
+         */
+        return `<li><details class="mobile-menu__group"><summary class="mobile-menu__link mobile-menu__summary" data-level="${level}"${indent}><span>${label}</span></summary>${menuTree(item.children, level + 1)}</details></li>`;
       }
 
       const children = hasChildren ? menuTree(item.children, level + 1) : '';

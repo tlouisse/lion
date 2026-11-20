@@ -1585,6 +1585,7 @@ html {
     .mobile-menu__group > summary {
         list-style: none;
         justify-content: space-between;
+        cursor: pointer;
     }
 
     .mobile-menu__group > summary::-webkit-details-marker {
