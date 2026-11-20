@@ -1,14 +1,16 @@
 const e=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
-import { MinDate, MinMaxDate, MaxDate } from '@lion/ui/form-core.js';
 import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
-import { formatDate } from '@lion/ui/localize.js';
-import '@lion/ui/define/lion-input-date.js';
+import '@lion/ui/define/lion-input-stepper.js';
+loadDefaultFeedbackMessages();
 /** stories code **/
-export const HtmlStory14 = () => html\`<lion-input-date label="Date" name="date"></lion-input-date>\`;
+export const HtmlStory21 = () => html\`<lion-input-stepper max="5" min="0" name="count">
+  <label slot="label">RSVP</label>
+  <div slot="help-text">Max. 5 guests</div>
+</lion-input-stepper>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory14', story: HtmlStory14 }];
+const stories = [{ key: 'HtmlStory21', story: HtmlStory21 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
