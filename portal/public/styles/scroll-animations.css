@@ -522,3 +522,25 @@
         display: none;
     }
 }
+
+
+/*
+ * The four term sections on the home page reveal the way the sections they replaced did: the same slide-up keyframes on
+ * the same scroll-driven timeline, so arriving at a chapter looks the same as it always has. The stagger is by element
+ * order — eyebrow, heading, lede, then the list — rather than by delay, because on a view() timeline each element
+ * animates as it enters rather than after a fixed wait.
+ */
+@supports (animation-timeline: view()) {
+    .term__eyebrow,
+    .term h2,
+    .term__lede,
+    .term .term__points,
+    .term__link {
+        animation: slide-up linear both;
+        animation-timeline: view();
+    }
+
+    .term h2 {
+        animation-name: blur-in;
+    }
+}
