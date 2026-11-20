@@ -550,7 +550,8 @@ main {
     background-color: color-mix(in srgb, var(--text-primary) 8%, transparent);
     border: none;
     border-radius: 0.28em;
-    padding: 0.04em 0.22em 0.06em;
+    /* 8px / 24px at the 80px headline: the trigger reads as a control rather than as a tight word. */
+    padding: 0.10em 0.30em;
     box-shadow: 0 0.04em 0.18em rgb(0 0 0 / 0.10);
     display: inline-flex;
     align-items: center;
@@ -566,11 +567,6 @@ main {
     text-decoration: none;
 }
 
-/* Everywhere. sits a step down from the rest of the headline: the sentence ends there, so the last word lands a little
- * quieter. One number, so another step is a one-line change. */
-.hero-pill--smaller {
-    font-size: 64px;
-}
 
 
 .hero-pill:hover,
@@ -596,8 +592,9 @@ main {
 }
 
 .theme-picker__caret {
-    width: 0.16em;
-    height: 0.10em;
+    /* 19.2 x 12px at 80px (was 12.8 x 8): the chevron is what says this opens, so it gets read. */
+    width: 0.24em;
+    height: 0.15em;
     flex: 0 0 auto;
     transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
