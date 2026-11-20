@@ -89,13 +89,13 @@ const {
   <section class="term term--robust" id="robust">
       <div class="container">
           <p class="term__eyebrow scroll-animate">Robust.</p>
-          <h2 class="scroll-animate-blur">Timeless by design, not tied to this year&#39;s framework.</h2>
+          <h2 class="scroll-animate-blur">Tested against the platform, not this year&#39;s framework.</h2>
           <ul class="term__points scroll-animate">
-              <li><strong>No vendor lock-in.</strong> Primitives and components built on the platform itself, so they outlive whichever framework is fashionable at the moment. Nothing here is generated to match a trend.</li>
-              <li><strong>Built to grow with the platform.</strong> Made to adopt what browsers ship as they ship it, with fallbacks for every browser we support, and accessible best practices built in from the start rather than bolted on afterwards.</li>
-              <li><strong>And as performant as that allows.</strong> Growing with the platform is what keeps them small and quick: there is no wrapper runtime between your application and the browser.</li>
-              <li><strong>Accessibility as a contract.</strong> Every component carries screen-reader tests, not a promise in a README.</li>
-              <li><strong>Written by UI and accessibility specialists with more than ten years in the field.</strong> People who follow the specifications closely, and who build for the best experience a UI library can offer. Thousands of projects already build on them, so regressions surface early and loudly.</li>
+              <li><strong>No framework lock-in.</strong> Primitives and components built on the platform itself, so they outlive whichever framework is fashionable at the moment.</li>
+              <li><strong>Built to grow with the platform.</strong> Made to adopt what browsers ship as they ship it, with fallbacks for every browser we support.</li>
+              <li><strong>Small by default.</strong> Built on Lit and the platform, with nothing heavier between your application and the browser.</li>
+              <li><strong>Accessibility as a contract.</strong> 26 of the 42 components carry an automated accessibility check today, and the behaviour is verified in three browser engines.</li>
+              <li><strong>Proven in production.</strong> Built by UI and accessibility specialists and used across ING&#39;s applications, so regressions surface early and loudly.</li>
           </ul>
           <a class="term__link scroll-animate" href={`${base}/fundamentals/rationales/`}>How we engineer it →</a>
       </div>
@@ -104,13 +104,13 @@ const {
   <section class="term term--flexible" id="flexible">
       <div class="container">
           <p class="term__eyebrow scroll-animate">Flexible.</p>
-          <h2 class="scroll-animate-blur">Headless before the term was even invented.</h2>
-          <p class="term__lede scroll-animate">Seven years of hardening, giving you the hardened, accessible abstractions you need.</p>
+          <h2 class="scroll-animate-blur">White-label from the first commit.</h2>
+          <p class="term__lede scroll-animate">Seven years of hardening behind accessible abstractions you style yourself.</p>
           <ul class="term__points scroll-animate">
-              <li><strong>More than theming.</strong> Not a palette swap: the components carry a full visual identity, and you can replace every part of it.</li>
-              <li><strong>It fits what you already have.</strong> Whatever stack pre-existed — other CSS libraries, your own design system, a legacy application — it slots in beside it.</li>
+              <li><strong>More than theming.</strong> Not a palette swap: the components ship without a visual identity, so yours is the only one they carry.</li>
+              <li><strong>It fits what you already have.</strong> Other CSS libraries, your own design system, a legacy application: Lion slots in beside them.</li>
           </ul>
-          <a class="term__link scroll-animate" href={`${base}/fundamentals/systems/`}>What you can build with →</a>
+          <a class="term__link scroll-animate" href={`${base}/fundamentals/systems/`}>The systems underneath →</a>
       </div>
   </section>
 
@@ -118,13 +118,27 @@ const {
       <div class="container">
           <p class="term__eyebrow scroll-animate">User Interfaces.</p>
           <h2 class="scroll-animate-blur">Systems, primitives and components.</h2>
-          <p class="term__lede scroll-animate">Three levels, one direction: start from a primitive when you need control, from a component when you need to ship.</p>
+          <p class="term__lede scroll-animate">Three levels: start from a system for behaviour, a primitive for control, a component to ship.</p>
           <ul class="term__points scroll-animate">
               <li><strong>Systems.</strong> The behaviour that is hard to get right — forms, overlays, localisation, validation.</li>
-              <li><strong>Primitives.</strong> The small pieces those systems are built from, usable on their own.</li>
+              <li><strong>Primitives.</strong> Mixins and base classes those systems are built from, usable on their own.</li>
               <li><strong>Components.</strong> The finished controls, accessible and styled, ready to drop in.</li>
           </ul>
-          <a class="term__link scroll-animate" href={`${base}/components/`}>Browse the components →</a>
+          <a class="term__link scroll-animate" href={`${base}/components/`}>Browse components →</a>
+      </div>
+  </section>
+
+  <!--
+    The page used to end on the last section and then the footer, so a reader who had come all the way down had
+    nothing to click. This is the closing step, and it repeats the one action the page is asking for.
+  -->
+  <section class="term term--cta" id="start">
+      <div class="container">
+          <h2 class="scroll-animate-blur">Start with a component, or read how the systems fit together.</h2>
+          <p class="term__points scroll-animate">
+              <a class="hero-pill" href={`${base}/components/`}>Get started →</a>
+              <a class="hero-pill" href={`${base}/fundamentals/systems/`}>The systems underneath</a>
+          </p>
       </div>
   </section>
 

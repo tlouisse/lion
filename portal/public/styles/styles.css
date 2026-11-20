@@ -1549,7 +1549,10 @@ html {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 10px var(--page-gutter, 24px) 4px;
+        /* The right inset puts the close on the same centre as the bar's toggle (measured: 338px), so the two
+         * controls sit in one column when the sheet opens. The left inset is the bar's own gutter, so the logo
+         * starts where the bar's logo starts. */
+        padding: 10px 30px 4px var(--page-gutter, 24px);
     }
 
     /* No ring: the cross is the control, and it carries its own hit area so a thumb still finds it. */

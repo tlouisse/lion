@@ -390,6 +390,16 @@ const { variant } = Astro.props;
     height: 27.08px;
   }
 
+  /*
+   * The same mark, at the same size, in the phone menu's head: the sheet opens with the logo the bar carries, so
+   * the two read as one header rather than two different marks. Scoped to the logo's own wrapper — an unscoped
+   * svg rule in the head also caught the close control's cross and squashed it.
+   */
+  .mobile-menu__logo :global(svg) {
+    width: 65px;
+    height: 27.08px;
+  }
+
   :global(.site-header ui-portal-main-nav) {
     flex: 1;
     height: auto;
@@ -441,7 +451,7 @@ const { variant } = Astro.props;
         <dialog class="mobile-menu" id="mobile-menu" aria-label="Menu">
           <!-- Our own mark at the head of our own menu, and the close control beside the tree. -->
           <div class="mobile-menu__head">
-            <LionWordmark />
+            <span class="mobile-menu__logo"><LionWordmark /></span>
             <button type="button" class="mobile-menu__close" aria-label="Close the menu">
               <svg viewBox="0 0 28 28" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">
                 <path d="M8 8l12 12M20 8L8 20" />
