@@ -384,12 +384,13 @@ const { variant } = Astro.props;
 
   .site-header :global(.logo svg) {
     /*
-     * The mark at the playground page's size, so the two headers are the same mark: 65x27.08 in a 48px bar (56%),
-     * against 72x30 before. Applied to the SVG rather than as a font-size, which would shrink only the glyphs and leave
-     * the second half at its authored x, opening the gap between the halves.
+     * The mark at 86x36 — lion.js.org's own size, measured there as viewBox "0 0 86 36" rendered at 86x36 with the
+     * bar at its initial 85px. It was 84x35, which is the same mark a hair smaller, and 65x27.08 before that.
+     * Applied to the SVG rather than as a font-size, which would shrink only the glyphs and leave the second half
+     * at its authored x, opening the gap between the halves.
      */
-    width: 65px;
-    height: 27.08px;
+    width: 86px;
+    height: 36px;
   }
 
   /*
@@ -398,8 +399,8 @@ const { variant } = Astro.props;
    * svg rule in the head also caught the close control's cross and squashed it.
    */
   .mobile-menu__logo :global(svg) {
-    width: 65px;
-    height: 27.08px;
+    width: 86px;
+    height: 36px;
   }
 
   :global(.site-header ui-portal-main-nav) {
@@ -436,10 +437,15 @@ const { variant } = Astro.props;
         -->
         <button type="button" class="mobile-menu-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open the menu">
           <span class="mobile-menu-toggle__icon mobile-menu-toggle__icon--menu" aria-hidden="true">
+            <!--
+              Lion's own invoker mark from UIMainNav.js, mirrored: the same three bars at the same weight, with the
+              notch on the other side. The bars are filled rectangles, so "thickness" is their two-unit height, and
+              mirroring is x -> 28 - x in the 28-unit viewBox.
+            -->
             <svg viewBox="0 0 28 28" width="20" height="20" fill="currentColor">
-              <path d="M4 7C4 6.44771 4.44772 6 5 6H24C24.5523 6 25 6.44771 25 7C25 7.55229 24.5523 8 24 8H5C4.44772 8 4 7.55229 4 7Z" />
-              <path d="M4 13.9998C4 13.4475 4.44772 12.9997 5 12.9997L16 13C16.5523 13 17 13.4477 17 14C17 14.5523 16.5523 15 16 15L5 14.9998C4.44772 14.9998 4 14.552 4 13.9998Z" />
-              <path d="M5 19.9998C4.44772 19.9998 4 20.4475 4 20.9998C4 21.552 4.44772 21.9997 5 21.9997H22C22.5523 21.9997 23 21.552 23 20.9998C23 20.4475 22.5523 19.9998 22 19.9998H5Z" />
+              <path d="M24 7C24 6.44771 23.5523 6 23 6H4C3.44772 6 3 6.44771 3 7C3 7.55229 3.44772 8 4 8H23C23.5523 8 24 7.55229 24 7Z" />
+              <path d="M24 13.9998C24 13.4475 23.5523 12.9997 23 12.9997L12 13C11.4477 13 11 13.4477 11 14C11 14.5523 11.4477 15 12 15L23 14.9998C23.5523 14.9998 24 14.552 24 13.9998Z" />
+              <path d="M23 19.9998C23.5523 19.9998 24 20.4475 24 20.9998C24 21.552 23.5523 21.9997 23 21.9997H6C5.44772 21.9997 5 21.552 5 20.9998C5 20.4475 5.44772 19.9998 6 19.9998H23Z" />
             </svg>
           </span>
           <!-- The close sits in the same place, and the pair is the one thing the view transition morphs. -->
