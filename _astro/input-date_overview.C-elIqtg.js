@@ -5,10 +5,10 @@ import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
 import { formatDate } from '@lion/ui/localize.js';
 import '@lion/ui/define/lion-input-date.js';
 /** stories code **/
-export const HtmlStory13 = () => html\`<lion-input-date label="Date" name="date"></lion-input-date>\`;
+export const HtmlStory14 = () => html\`<lion-input-date label="Date" name="date"></lion-input-date>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory13', story: HtmlStory13 }];
+const stories = [{ key: 'HtmlStory14', story: HtmlStory14 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
