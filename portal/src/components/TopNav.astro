@@ -357,6 +357,59 @@ const { variant } = Astro.props;
 
 <header class="site-header">
     <div class="container">
+        <!--
+          The phone's menu: our own, modelled on the shape shadcn uses for a small screen — a panel that
+          covers the area under the bar, full width, over a dimmed page, with the choices as rows that take a
+          fill on hover and a bound radius. It is not their markup: this is a <dialog>, which the platform
+          promotes to the top layer, so it escapes the containing blocks that the hero's scroll animation and
+          transform create (measured on the theme picker: a fixed panel anchored to the headline instead).
+          It also brings ::backdrop, Escape and focus handling with it, and the switch at its foot.
+
+          The links come from the same navData array the desktop nav is built from, so the two cannot drift.
+        -->
+        <button type="button" class="mobile-menu-toggle" aria-haspopup="dialog" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open the menu">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></g></svg>
+        </button>
+
+        <dialog class="mobile-menu" id="mobile-menu" aria-label="Menu">
+          <nav aria-label="Main navigation">
+            <ul class="mobile-menu__list">
+              {navData.map(item => (
+                <li>
+                  {item.command ? (
+                    <button type="button" class="mobile-menu__link mobile-menu__link--command" data-command={item.command}>{item.name}</button>
+                  ) : (
+                    <a class="mobile-menu__link" href={item.url} target={item.target} rel={item.rel}>{item.name}</a>
+                  )}
+                  {item.children && item.children.length > 0 && (
+                    <ul class="mobile-menu__sublist">
+                      {item.children.slice(0, 12).map(child => (
+                        <li><a class="mobile-menu__sublink" href={child.url || '#'}>{child.name || child.title}</a></li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <div class="mobile-menu__foot">
+            <span class="mobile-menu__foot-label">Theme</span>
+            <!--
+              The same radio group and the same storage key as the bar's switch, so the mechanism is
+              ThemeInit's and not a second one. The ids are prefixed because the bar's copy carries
+              theme-*; theme.css and ThemeInit know both spellings.
+            -->
+            <form class="theme-switch" aria-label="Colour theme">
+              <input type="radio" name="theme" id="menu-theme-light" value="light" />
+              <label for="menu-theme-light" title="Light theme"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.4v2.6M12 19v2.6M2.4 12h2.6M19 12h2.6M5.2 5.2l1.9 1.9M16.9 16.9l1.9 1.9M18.8 5.2l-1.9 1.9M7.1 16.9l-1.9 1.9"/></g></svg></label>
+              <input type="radio" name="theme" id="menu-theme-dark" value="dark" />
+              <label for="menu-theme-dark" title="Dark theme"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 1 1 9.4 3.5a7 7 0 0 0 11.1 11.1Z" fill="currentColor"/></svg></label>
+              <input type="radio" name="theme" id="menu-theme-auto" value="auto" />
+              <label for="menu-theme-auto" title="Follow the system theme">Auto</label>
+            </form>
+          </div>
+        </dialog>
+
         <a href=`${base}/` class="logo" aria-label="Lion">
             <LionWordmark />
         </a>
@@ -406,6 +459,40 @@ const { variant } = Astro.props;
 </header>
 
 <script>
+  // The phone's menu: a modal dialog, so the platform owns Escape, the backdrop and the focus trap. This only
+  // has to open and close it, keep aria-expanded honest, and shut it when a link is followed.
+  {
+    const dialog = document.getElementById('mobile-menu');
+    const toggle = document.querySelector('.mobile-menu-toggle');
+    if (dialog && toggle) {
+      const setOpen = open => {
+        if (open) {
+          dialog.showModal();
+        } else {
+          dialog.close();
+        }
+        toggle.setAttribute('aria-expanded', String(open));
+      };
+      toggle.addEventListener('click', () => setOpen(true));
+      dialog.addEventListener('close', () => toggle.setAttribute('aria-expanded', 'false'));
+      // A tap on the dimmed page closes it: the backdrop is part of the dialog's box, so a click that lands
+      // outside the panel's own rect is a click on the backdrop.
+      dialog.addEventListener('click', event => {
+        const box = dialog.getBoundingClientRect();
+        const outside = event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+        if (outside) setOpen(false);
+      });
+      dialog.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setOpen(false)));
+      // The search entry is a command rather than a link, and it dispatches what the nav's own item does.
+      dialog.querySelectorAll('[data-command]').forEach(button => {
+        button.addEventListener('click', () => {
+          document.dispatchEvent(new CustomEvent('search-requested'));
+          setOpen(false);
+        });
+      });
+    }
+  }
+
   // Listen for 'open-search' command from UIPortalMainNav
   const setupSearchListener = () => {
     const navElement = document.querySelector('ui-main-nav');

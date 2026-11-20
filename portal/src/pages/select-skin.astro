@@ -50,22 +50,42 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       <div class="skin-grid">
         <section>
           <h2>Material</h2>
-          <material-select-rich id="skin-material" label="Design system"></material-select-rich>
+                    <material-select-rich id="skin-material" label="Design system">
+            <lion-option choice-value="lion" selected>Lion — the design system</lion-option>
+            <lion-option choice-value="material">Material Design 3</lion-option>
+            <lion-option choice-value="shoelace">Shoelace</lion-option>
+            <lion-option choice-value="baseui">Base UI</lion-option>
+          </material-select-rich>
           <p>A filled field: surface-container, 4px top corner, one hairline at the bottom.</p>
         </section>
         <section>
           <h2>Shoelace</h2>
-          <shoelace-select-rich id="skin-shoelace" label="Design system"></shoelace-select-rich>
+          <shoelace-select-rich id="skin-shoelace" label="Design system">
+            <lion-option choice-value="lion" selected>Lion — the design system</lion-option>
+            <lion-option choice-value="material">Material Design 3</lion-option>
+            <lion-option choice-value="shoelace">Shoelace</lion-option>
+            <lion-option choice-value="baseui">Base UI</lion-option>
+          </shoelace-select-rich>
           <p>A bordered input: 8px corner, hairline that darkens, no shadow.</p>
         </section>
         <section>
           <h2>Base UI</h2>
-          <baseui-select-rich id="skin-baseui" label="Design system"></baseui-select-rich>
+          <baseui-select-rich id="skin-baseui" label="Design system">
+            <lion-option choice-value="lion" selected>Lion — the design system</lion-option>
+            <lion-option choice-value="material">Material Design 3</lion-option>
+            <lion-option choice-value="shoelace">Shoelace</lion-option>
+            <lion-option choice-value="baseui">Base UI</lion-option>
+          </baseui-select-rich>
           <p>Unstyled on purpose: a hairline on hover is the only affordance.</p>
         </section>
         <section>
           <h2>Lion</h2>
-          <lion-plain-select-rich id="skin-lion" label="Design system"></lion-plain-select-rich>
+          <lion-plain-select-rich id="skin-lion" label="Design system">
+            <lion-option choice-value="lion" selected>Lion — the design system</lion-option>
+            <lion-option choice-value="material">Material Design 3</lion-option>
+            <lion-option choice-value="shoelace">Shoelace</lion-option>
+            <lion-option choice-value="baseui">Base UI</lion-option>
+          </lion-plain-select-rich>
           <p>Lion itself, untouched — the white-label default these skins extend.</p>
         </section>
       </div>
@@ -87,28 +107,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       customElements.define('shoelace-select-rich', ShoelaceSelectRich);
       customElements.define('baseui-select-rich', BaseUISelectRich);
 
-      const choices = [
-        { value: 'lion', label: 'Lion — the design system' },
-        { value: 'material', label: 'Material Design 3' },
-        { value: 'shoelace', label: 'Shoelace' },
-        { value: 'baseui', label: 'Base UI' },
-      ];
-
+      // The selected option is markup too; this only tells each host which one it is, since choiceValue
+      // has no attribute to reflect to.
       for (const id of ['skin-material', 'skin-shoelace', 'skin-baseui', 'skin-lion']) {
         const host = document.getElementById(id);
-        if (!host) continue;
-        for (const { value, label } of choices) {
-          const option = document.createElement('lion-option');
-          option.choiceValue = value;
-          option.textContent = label;
-          host.appendChild(option);
-        }
-        // After the options exist AND the element has upgraded: the invoker reads the selected option,
-        // and a custom element that upgrades late reads the property before its own options are known.
-        // `selected` on the option is what a listbox reads for its initial choice; `modelValue` alone
-        // arrived before the mixin had wrapped the options in `<lion-options>`.
-        const first = host.querySelector('lion-option');
-        if (first) first.selected = true;
+        if (host) host.modelValue = 'lion';
       }
     </script>
   </body>

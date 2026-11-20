@@ -3,9 +3,9 @@
  *
  * Model: three states, one source of truth.
  *
- *   auto  (default)  → :root:has(#theme-auto:checked)   follows the OS / browser preference
- *   dark             → :root:has(#theme-dark:checked)   explicit choice, pinned
- *   light            → :root:has(#theme-light:checked)  explicit choice, pinned
+ *   auto  (default)  → :root:has(#theme-auto:checked, #menu-theme-auto:checked)   follows the OS / browser preference
+ *   dark             → :root:has(#theme-dark:checked, #menu-theme-dark:checked)   explicit choice, pinned
+ *   light            → :root:has(#theme-light:checked, #menu-theme-light:checked)  explicit choice, pinned
  *
  * All three are radios in the same group, so exactly one is always selected and the control never
  * changes shape: "Auto" is an option you can see and return to, not a button that appears once you
@@ -59,7 +59,7 @@
  * choice is never touched by the OS preference.
  */
 @media (prefers-color-scheme: dark) {
-  :root:has(#theme-auto:checked),
+  :root:has(#theme-auto:checked, #menu-theme-auto:checked),
   :root[data-theme='auto'] {
     --heading-gradient-from: var(--_dark-heading-gradient-from);
     --heading-gradient-to: var(--_dark-heading-gradient-to);
@@ -73,12 +73,12 @@
  * Explicit choices. Same specificity as the system block above, declared after it, so an explicit
  * choice always wins regardless of what the OS says.
  */
-:root:has(#theme-auto:checked),
+:root:has(#theme-auto:checked, #menu-theme-auto:checked),
 :root[data-theme='auto'] {
   color-scheme: light dark;
 }
 
-:root:has(#theme-dark:checked),
+:root:has(#theme-dark:checked, #menu-theme-dark:checked),
 :root[data-theme='dark'] {
   color-scheme: dark;
 
@@ -89,7 +89,7 @@
   --grid-line-color: var(--_dark-grid-line-color);
 }
 
-:root:has(#theme-light:checked),
+:root:has(#theme-light:checked, #menu-theme-light:checked),
 :root[data-theme='light'] {
   color-scheme: light;
 }
@@ -134,7 +134,8 @@
 
 /* "Auto" is a word rather than an icon, so it gets a pill instead of a circle. The word is
  * smaller than the surrounding labels on purpose: it has to sit inside the same 32px row. */
-.theme-switch label[for='theme-auto'] {
+.theme-switch label[for='theme-auto'],
+.theme-switch label[for='menu-theme-auto'] {
   width: auto;
   padding: 0 8px;
   border-radius: 999px;
