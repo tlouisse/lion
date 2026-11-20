@@ -562,6 +562,12 @@ main {
     text-decoration: none;
 }
 
+/* Everywhere. is in the same cursive hand as Flexible.: the two words that talk about reach and fit, rather than the two
+ * that name a discipline. It keeps everything else — the size, the weight, the gradient. */
+.hero-pill--cursive {
+    font-family: Caveat, cursive;
+}
+
 .hero-pill:hover,
 .hero-pill:focus-visible {
     text-decoration: underline;
