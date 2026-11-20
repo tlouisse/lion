@@ -2,7 +2,7 @@ const n=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
 import '@lion/ui/define/lion-input-range.js';
 /** stories code **/
-export const HtmlStory16 = () => html\`<style>
+export const HtmlStory17 = () => html\`<style>
   lion-input-range {
     max-width: 400px;
   }
@@ -14,7 +14,7 @@ export const HtmlStory16 = () => html\`<style>
   unit="%"
   label="Percentage"
 ></lion-input-range>\`;
-export const HtmlStory17 = () => html\`<lion-input-range
+export const HtmlStory18 = () => html\`<lion-input-range
   style="max-width: 400px;"
   min="200"
   max="500"
@@ -23,14 +23,14 @@ export const HtmlStory17 = () => html\`<lion-input-range
   label="Input range"
   help-text="This slider uses increments of 50"
 ></lion-input-range>\`;
-export const HtmlStory18 = () => html\`<lion-input-range
+export const HtmlStory19 = () => html\`<lion-input-range
   style="max-width: 400px;"
   no-min-max-labels
   min="0"
   max="100"
   label="Input range"
 ></lion-input-range>\`;
-export const HtmlStory19 = () => html\`<lion-input-range
+export const HtmlStory20 = () => html\`<lion-input-range
   min="0"
   max="11"
   min-label="less than 1 item"
@@ -39,7 +39,7 @@ export const HtmlStory19 = () => html\`<lion-input-range
   unit="Items"
   label="Items"
 ></lion-input-range>\`;
-export const HtmlStory20 = () => html\`<lion-input-range
+export const HtmlStory21 = () => html\`<lion-input-range
   style="max-width: 400px;"
   disabled
   min="200"
@@ -49,7 +49,7 @@ export const HtmlStory20 = () => html\`<lion-input-range
 ></lion-input-range>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory16', story: HtmlStory16 }, { key: 'HtmlStory17', story: HtmlStory17 }, { key: 'HtmlStory18', story: HtmlStory18 }, { key: 'HtmlStory19', story: HtmlStory19 }, { key: 'HtmlStory20', story: HtmlStory20 }];
+const stories = [{ key: 'HtmlStory17', story: HtmlStory17 }, { key: 'HtmlStory18', story: HtmlStory18 }, { key: 'HtmlStory19', story: HtmlStory19 }, { key: 'HtmlStory20', story: HtmlStory20 }, { key: 'HtmlStory21', story: HtmlStory21 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
