@@ -10,7 +10,7 @@ import '@lion/ui/define/lion-input-amount.js';
 export const negativeNumber = () => html\`
   <lion-input-amount label="Amount" .modelValue="\${-123456.78}"></lion-input-amount>
 \`;
-export const HtmlStory14 = () => html\`<lion-input-amount label="Price" currency="USD" .modelValue="\${123456.78}"></lion-input-amount>\`;
+export const HtmlStory13 = () => html\`<lion-input-amount label="Price" currency="USD" .modelValue="\${123456.78}"></lion-input-amount>\`;
 export const currencySymbol = () => html\`
   <lion-input-amount
     label="Price"
@@ -55,7 +55,7 @@ export const noDecimals = () => html\`
 \`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'negativeNumber', story: negativeNumber }, { key: 'HtmlStory14', story: HtmlStory14 }, { key: 'currencySymbol', story: currencySymbol }, { key: 'forceLocale', story: forceLocale }, { key: 'forceDigits', story: forceDigits }, { key: 'faultyPrefilled', story: faultyPrefilled }, { key: 'noDecimals', story: noDecimals }];
+const stories = [{ key: 'negativeNumber', story: negativeNumber }, { key: 'HtmlStory13', story: HtmlStory13 }, { key: 'currencySymbol', story: currencySymbol }, { key: 'forceLocale', story: forceLocale }, { key: 'forceDigits', story: forceDigits }, { key: 'faultyPrefilled', story: faultyPrefilled }, { key: 'noDecimals', story: noDecimals }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
