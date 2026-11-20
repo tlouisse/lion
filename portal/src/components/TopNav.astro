@@ -248,20 +248,34 @@ const esc = value => String(value ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;'
  * An item that is both a link and a parent (a section that has a landing page and pages beneath it) renders as a
  * link with its children following, which is how the desktop nav treats the same data.
  */
-const INDENT_STEP = 14;
+const INDENT_STEP = 6;
 
 const menuTree = (items, level = 0) =>
   items
     .map(item => {
       const label = esc(item.name);
       const indent = level > 0 ? ` style="--menu-indent:${level * INDENT_STEP}px"` : '';
+      const hasChildren = Boolean(item.children && item.children.length);
       const row = item.url
         ? `<a class="mobile-menu__link" href="${esc(item.url)}" data-level="${level}"${indent}>${label}</a>`
         : item.command
           ? `<button type="button" class="mobile-menu__link" data-command="${esc(item.command)}" data-level="${level}"${indent}>${label}</button>`
           : `<span class="mobile-menu__link" data-level="${level}"${indent}>${label}</span>`;
-      const children =
-        item.children && item.children.length > 0 ? menuTree(item.children, level + 1) : '';
+
+      /*
+       * A section at the top level is a link, always open. Below it a parent becomes a closed accordion, so the
+       * tree stays scannable however long it is, and only the levels the reader is working in are unfolded. The
+       * indent stays subtle: the disclosure already says "there is more here", so the indent only has to separate
+       * a child from its parent, not shout.
+       */
+      if (hasChildren && level >= 1) {
+        const head = item.url
+          ? `<a class="mobile-menu__section-link" href="${esc(item.url)}">${label}</a>`
+          : `<span>${label}</span>`;
+        return `<li><details class="mobile-menu__group"><summary class="mobile-menu__link mobile-menu__summary" data-level="${level}"${indent}>${head}</summary>${menuTree(item.children, level + 1)}</details></li>`;
+      }
+
+      const children = hasChildren ? menuTree(item.children, level + 1) : '';
       return `<li>${row}${children}</li>`;
     })
     .join('');
@@ -527,7 +541,16 @@ const { variant } = Astro.props;
        */
       const setOpen = open => {
         if (typeof document.startViewTransition === 'function') {
-          document.startViewTransition(() => swap(open));
+          const transition = document.startViewTransition(() => swap(open));
+          /*
+           * Chrome refuses to snapshot a modal dialog in the top layer, so BOTH of the transition's promises can
+           * reject with "Snapshot capture failed" — and it is the ready promise, not the finished one, that
+           * reports it. That is a browser limitation, not a failure of the swap: the swap has already happened,
+           * and the icons still cross-fade through their own CSS transition. Catching both keeps the console
+           * clean and leaves the effect intact wherever the browser can do it.
+           */
+          transition.ready?.catch(() => {});
+          transition.finished?.catch(() => {});
         } else {
           swap(open);
         }

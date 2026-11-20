@@ -1353,23 +1353,25 @@ html {
    one navigation is present at each width.
    ============================================================================ */
 .mobile-menu-toggle {
+    /* Lion's own control, as it was before this menu existed: 2rem square, a transparent border, a 50% radius and
+     * the secondary ink, with a 1.25rem icon. No visible ring — the mark is the control. */
     display: none;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    box-sizing: border-box;
+    width: 2rem;
+    height: 2rem;
     padding: 0;
-    border: 1px solid var(--border-color);
-    /* The logo keeps the left edge and this takes the free space, so the bar reads logo | ... | menu, which is
-     * the order it had before this menu existed. `order` rather than a move: the markup's order does not matter
-     * to a flex row, and this way no other rule has to change. */
+    border: 1px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    /* The logo keeps the left edge and this takes the free space, so the bar reads logo | ... | menu. `order`
+     * rather than a move: the markup's order does not matter to a flex row. */
     order: 1;
     margin-left: auto;
-    border-radius: 8px;
-    background: transparent;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mobile-menu-toggle__icon {
@@ -1550,23 +1552,64 @@ html {
         padding: 10px var(--page-gutter, 24px) 4px;
     }
 
+    /* No ring: the cross is the control, and it carries its own hit area so a thumb still finds it. */
     .mobile-menu__close {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         padding: 0;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background: transparent;
+        border: none;
+        background: none;
         color: var(--text-primary);
         cursor: pointer;
-        transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu__close svg {
+        width: 26px;
+        height: 26px;
     }
 
     .mobile-menu__close:hover {
-        background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+        color: var(--text-secondary);
+    }
+
+    /*
+     * The accordion, from level 1 down: a section is a link, its children are folded behind this. The chevron is a
+     * rotated border rather than an asset, so it follows currentColor.
+     */
+    .mobile-menu__group > summary {
+        list-style: none;
+        justify-content: space-between;
+    }
+
+    .mobile-menu__group > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .mobile-menu__section-link {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .mobile-menu__group[open] > summary .mobile-menu__section-link {
+        color: var(--text-primary);
+    }
+
+    .mobile-menu__summary::after {
+        content: '';
+        width: 0.42rem;
+        height: 0.42rem;
+        margin-left: 8px;
+        border-right: 1.4px solid currentColor;
+        border-bottom: 1.4px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .mobile-menu__group[open] > summary::after {
+        transform: rotate(-135deg);
     }
 }
 
