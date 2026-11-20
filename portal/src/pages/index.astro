@@ -107,14 +107,14 @@ const {
                     heading's contents, so without this a screen reader would announce the whole option list as part of the
                     heading. The label is the sentence as it is meant to be read.
                 -->
-              <h1 class="hero-headline" aria-label="Robust. Flexible. UI. Everywhere.">
-                  </li>
-                          <li role="option" class="theme-picker__option" id="theme-option-material" data-theme-id="material" aria-selected="false">Material <span class="theme-picker__hint">Material Design 3</span></li>
-                          <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
-                          <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
-                      </ul>
-                  </span>
-                  <br><a class="hero-pill" href={`${base}/fundamentals/rationales/`}>Robust.</a><br><span class="theme-picker">
+              <h1 class="hero-headline" aria-label="Robust. Flexible. User Interfaces. Everywhere.">
+                  <!--
+                    Every word is a door. The three plain words are anchors to the sections below, so the headline scrolls the
+                    page to what it promises; Flexible. is the theme picker instead, because it opens rather than navigates. The
+                    aria-label is explicit: an accessible name comes from a heading's contents, and the picker's listbox lives
+                    inside this one, so without it a screen reader would read the whole option list as part of the heading.
+                  -->
+                  <a class="hero-pill" href="#robust">Robust.</a><br><span class="theme-picker">
                       <button type="button" id="theme-picker-trigger" class="theme-picker__trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="theme-picker-label">
                           <span id="theme-picker-label" class="theme-picker__value">Flexible.</span>
                           <svg class="theme-picker__caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -125,7 +125,7 @@ const {
                           <li role="option" class="theme-picker__option" id="theme-option-shoelace" data-theme-id="shoelace" aria-selected="false">Shoelace <span class="theme-picker__hint">web components</span></li>
                           <li role="option" class="theme-picker__option" id="theme-option-baseui" data-theme-id="baseui" aria-selected="false">Base UI <span class="theme-picker__hint">unstyled primitives</span></li>
                       </ul>
-                  </span><br><a class="hero-pill" href={`${base}/fundamentals/systems/`}>UI.</a><br><br><a class="hero-pill" href={`${base}/guides/principles/`}>Everywhere.</a>
+                  </span><br><a class="hero-pill" href="#user-interfaces">User Interfaces.</a><br><br><a class="hero-pill" href="#everywhere">Everywhere.</a>
               </h1>
               <p class="hero-subtitle">{slogan}</p>
               <div class="cta-group">
@@ -146,7 +146,7 @@ const {
     consuming projects and performance for Robust; systems, primitives and components for User Interfaces; web components
     and framework-agnostic controllers for Everywhere.
   -->
-  <section class="term term--robust">
+  <section class="term term--robust" id="robust">
       <div class="container">
           <p class="term__eyebrow">Robust.</p>
           <h2>Quality you can inspect, not quality you are asked to trust.</h2>
@@ -159,7 +159,7 @@ const {
       </div>
   </section>
 
-  <section class="term term--flexible">
+  <section class="term term--flexible" id="flexible">
       <div class="container">
           <p class="term__eyebrow">Flexible.</p>
           <h2>Headless before the term was even invented.</h2>
@@ -172,9 +172,9 @@ const {
       </div>
   </section>
 
-  <section class="term term--interfaces">
+  <section class="term term--interfaces" id="user-interfaces">
       <div class="container">
-          <p class="term__eyebrow">UI.</p>
+          <p class="term__eyebrow">User Interfaces.</p>
           <h2>Systems, primitives and components.</h2>
           <p class="term__lede">Three levels, one direction: start from a primitive when you need control, from a component when you need to ship.</p>
           <ul class="term__points">
@@ -186,7 +186,7 @@ const {
       </div>
   </section>
 
-  <section class="term term--everywhere">
+  <section class="term term--everywhere" id="everywhere">
       <div class="container">
           <p class="term__eyebrow">Everywhere.</p>
           <h2>Framework agnostic, by construction.</h2>

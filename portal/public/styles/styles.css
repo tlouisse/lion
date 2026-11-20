@@ -110,9 +110,7 @@
     -webkit-font-smoothing: antialiased;
 }
 
-html {
-    scroll-behavior: smooth;
-}
+
 
 button, input, select, textarea {
     font-family: inherit;
@@ -537,7 +535,9 @@ main {
  */
 .theme-picker__trigger {
     -webkit-text-fill-color: currentColor;
-    font-family: inherit;
+    /* The one word in a different hand: cursive, so the door that opens reads as a different kind of thing than the
+     * three that navigate. Everything else about the trigger stays the headline's own type. */
+    font-family: Caveat, cursive;
     font-size: inherit;
     font-weight: inherit;
     letter-spacing: inherit;
@@ -1226,3 +1226,23 @@ main {
     color: var(--code-number) !important;
 }
 
+
+
+/*
+ * The headline's words scroll to the sections they promise. The 48px sticky bar would otherwise cover the top of the
+ * section it lands on, so every anchor target carries that offset, and readers who ask for less motion get a jump
+ * instead of a scroll.
+ */
+html {
+    scroll-behavior: smooth;
+}
+
+.term[id] {
+    scroll-margin-top: 56px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+}
