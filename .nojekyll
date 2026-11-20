@@ -1,5 +1,0 @@
-# Astro extracts a page's script and style blocks into _astro/, and GitHub Pages runs Jekyll by
-# default — which silently drops every directory whose name starts with an underscore. The result is
-# a site whose markup is there and whose module scripts all 404, so nothing that needs JavaScript
-# ever upgrades (a page whose only styling lives in public/styles/ looks fine, which is what made
-# this hard to see). This file turns that off. Keep it: without it the deploy is a static facade.
