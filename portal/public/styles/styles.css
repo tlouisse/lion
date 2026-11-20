@@ -508,6 +508,8 @@ main {
     -webkit-text-fill-color: transparent;
     background-clip: text;
     color: var(--text-primary);
+    /* A large space under the headline's last line: Everywhere. is where the sentence ends and the page needs air there. */
+    margin-bottom: 96px;
 }
 
 /*
