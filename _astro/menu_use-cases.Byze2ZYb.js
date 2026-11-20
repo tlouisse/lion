@@ -6,7 +6,7 @@ import { applyMenuDemoStyles } from '/node_modules/_lion_docs/components/menu/ap
 
 applyMenuDemoStyles();
 /** stories code **/
-export const HtmlStory34 = () => html\`<nav>
+export const HtmlStory22 = () => html\`<nav>
   <button data-invoker>Open menu</button>
   <lion-menu>
     <div role="menuitem">Go to Definition</div>
@@ -23,7 +23,7 @@ export const HtmlStory34 = () => html\`<nav>
     <div role="menuitem">Find all References</div>
   </lion-menu>
 </nav>\`;
-export const HtmlStory35 = () => html\`<nav>
+export const HtmlStory23 = () => html\`<nav>
   <lion-menu bar>
     <div>
       <a role="menuitem" data-invoker href="#home">home</a>
@@ -44,7 +44,7 @@ export const HtmlStory35 = () => html\`<nav>
 </nav>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory34', story: HtmlStory34 }, { key: 'HtmlStory35', story: HtmlStory35 }];
+const stories = [{ key: 'HtmlStory22', story: HtmlStory22 }, { key: 'HtmlStory23', story: HtmlStory23 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
