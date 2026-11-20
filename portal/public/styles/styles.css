@@ -211,9 +211,10 @@ body {
     border-bottom: 1px solid var(--header-border);
     display: flex;
     align-items: center;
-    height: 48px;
-    min-height: 48px;
-    max-height: 48px;
+    /* 85px again, as it was before this bar was pinned to 48: the logo and the nav need the room, and the
+     * content below already clears it (the hero's first block lands at y 152). No max-height, so a page
+     * with a taller logo can still grow the bar. */
+    min-height: 85px;
 }
 
 main {
@@ -362,7 +363,12 @@ main {
 }
 
 .hero-content {
-    text-align: left;
+    /* Centred on every width, not just on a phone: the headline is a sentence of doors. It spans both
+     * columns of the hero's grid — the second one is empty, the blueprint behind is absolutely
+     * positioned — so the text centres in the page rather than inside the left column. */
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-inline: auto;
     position: relative;
     z-index: 2;
 }
@@ -813,7 +819,7 @@ main {
     color: var(--text-secondary);
     max-width: 540px;
     /* A little air between the 80px headline and this line: it sat directly against the last headline line. */
-    margin: 16px 0 40px 0;
+    margin: 16px auto 40px;
     font-weight: 300;
 }
 
