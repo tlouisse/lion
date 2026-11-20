@@ -565,11 +565,12 @@ main {
     text-decoration: none;
 }
 
-/* Everywhere. is italic, like Flexible.: the two words that talk about reach and fit lean, while the two that name a
- * discipline stand upright. Same font as the rest — no other family is involved, only the style. */
-.hero-pill--italic {
-    font-style: italic;
+/* Everywhere. sits a step down from the rest of the headline: the sentence ends there, so the last word lands a little
+ * quieter. One number, so another step is a one-line change. */
+.hero-pill--smaller {
+    font-size: 72px;
 }
+
 
 .hero-pill:hover,
 .hero-pill:focus-visible {
