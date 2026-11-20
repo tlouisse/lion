@@ -796,6 +796,10 @@ export default {
     "./lib/popper-lite.js": "node_modules/@popperjs/core/lib/popper-lite.js",
     "./lib/popper.js": "node_modules/@popperjs/core/lib/popper.js",
     "./lib/types.js": "node_modules/@popperjs/core/lib/types.js",
+    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
+    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
+    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
+    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/esm/createPopper.js": "node_modules/@popperjs/core/dist/esm/createPopper.js",
     "./dist/esm/enums.js": "node_modules/@popperjs/core/dist/esm/enums.js",
     "./dist/esm/index.js": "node_modules/@popperjs/core/dist/esm/index.js",
@@ -803,10 +807,6 @@ export default {
     "./dist/esm/popper-lite.js": "node_modules/@popperjs/core/dist/esm/popper-lite.js",
     "./dist/esm/popper.js": "node_modules/@popperjs/core/dist/esm/popper.js",
     "./dist/esm/types.js": "node_modules/@popperjs/core/dist/esm/types.js",
-    "./dist/cjs/enums.js": "node_modules/@popperjs/core/dist/cjs/enums.js",
-    "./dist/cjs/popper-base.js": "node_modules/@popperjs/core/dist/cjs/popper-base.js",
-    "./dist/cjs/popper-lite.js": "node_modules/@popperjs/core/dist/cjs/popper-lite.js",
-    "./dist/cjs/popper.js": "node_modules/@popperjs/core/dist/cjs/popper.js",
     "./dist/umd/enums.js": "node_modules/@popperjs/core/dist/umd/enums.js",
     "./dist/umd/enums.min.js": "node_modules/@popperjs/core/dist/umd/enums.min.js",
     "./dist/umd/popper-base.js": "node_modules/@popperjs/core/dist/umd/popper-base.js",
@@ -1001,8 +1001,8 @@ export default {
     "./lib/node/parentheses.js": "node_modules/@babel/generator/lib/node/parentheses.js"
   },
   "@babel/parser": {
-    "./lib/index.js": "node_modules/@babel/parser/lib/index.js",
-    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js"
+    "./bin/babel-parser.js": "node_modules/@babel/parser/bin/babel-parser.js",
+    "./lib/index.js": "node_modules/@babel/parser/lib/index.js"
   },
   "@babel/traverse": {
     "./lib/cache.js": "node_modules/@babel/traverse/lib/cache.js",
@@ -1107,8 +1107,8 @@ export default {
     "./lib/validators/isVar.js": "node_modules/@babel/types/lib/validators/isVar.js",
     "./lib/validators/matchesPattern.js": "node_modules/@babel/types/lib/validators/matchesPattern.js",
     "./lib/validators/validate.js": "node_modules/@babel/types/lib/validators/validate.js",
-    "./lib/asserts/generated/index.js": "node_modules/@babel/types/lib/asserts/generated/index.js",
     "./lib/ast-types/generated/index.js": "node_modules/@babel/types/lib/ast-types/generated/index.js",
+    "./lib/asserts/generated/index.js": "node_modules/@babel/types/lib/asserts/generated/index.js",
     "./lib/builders/flow/createFlowUnionType.js": "node_modules/@babel/types/lib/builders/flow/createFlowUnionType.js",
     "./lib/builders/flow/createTypeAnnotationBasedOnTypeof.js": "node_modules/@babel/types/lib/builders/flow/createTypeAnnotationBasedOnTypeof.js",
     "./lib/builders/generated/index.js": "node_modules/@babel/types/lib/builders/generated/index.js",
