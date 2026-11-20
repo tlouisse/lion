@@ -116,9 +116,6 @@
    =========================================== */
 
 /* Initial entrance animations */
-.hero .pill {
-    animation: slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-}
 
 .title-line-1 {
     animation: blur-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;

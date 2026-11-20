@@ -1,11 +1,14 @@
 const e=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
-import '@lion/ui/define/lion-input-range.js';
+import { MinDate, MinMaxDate, MaxDate } from '@lion/ui/form-core.js';
+import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
+import { formatDate } from '@lion/ui/localize.js';
+import '@lion/ui/define/lion-input-date.js';
 /** stories code **/
-export const HtmlStory16 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
+export const HtmlStory13 = () => html\`<lion-input-date label="Date" name="date"></lion-input-date>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory16', story: HtmlStory16 }];
+const stories = [{ key: 'HtmlStory13', story: HtmlStory13 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
