@@ -3,14 +3,14 @@ import { LitElement, html } from '@mdjs/mdjs-preview';
 import '@lion/ui/define/lion-select-rich.js';
 import '@lion/ui/define/lion-option.js';
 /** stories code **/
-export const HtmlStory39 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color">
+export const HtmlStory40 = () => html\`<lion-select-rich name="favoriteColor" label="Favorite color">
   <lion-option .choiceValue="\${'red'}">Red</lion-option>
   <lion-option .choiceValue="\${'hotpink'}">Hotpink</lion-option>
   <lion-option .choiceValue="\${'blue'}">Blue</lion-option>
 </lion-select-rich>\`;
 /** stories setup code **/
 const rootNode = document;
-const stories = [{ key: 'HtmlStory39', story: HtmlStory39 }];
+const stories = [{ key: 'HtmlStory40', story: HtmlStory40 }];
 let needsMdjsElements = false;
 for (const story of stories) {
   const storyEl = rootNode.querySelector(\`[mdjs-story-name="\${story.key}"]\`);
