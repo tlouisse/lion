@@ -350,6 +350,21 @@ main {
     min-height: 80vh;
     display: flex;
     align-items: center;
+    /* Dark grey in both light and dark mode, deliberately: the hero is the one section that doesn't
+     * follow the page theme, so it always forces the dark-mode ink tokens below for contrast. */
+    background: #1f1f23;
+}
+
+.hero .hero-pill {
+    color: #ffffff;
+}
+
+.hero .hero-subtitle {
+    color: color-mix(in srgb, #ffffff 72%, transparent);
+}
+
+.hero .blueprint-bg {
+    color: color-mix(in srgb, #ffffff 22%, transparent);
 }
 
 .hero .container {
@@ -374,9 +389,8 @@ main {
 }
 
 .blueprint-bg {
-    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
-     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
-     * paper. It never takes a pointer, so the pills above it stay clickable. */
+    /* The hero's drawing covers the section rather than sitting in a rotated panel. It never
+     * takes a pointer, so the pills above it stay clickable. */
     position: absolute;
     inset: 0;
     width: 100%;
@@ -384,7 +398,7 @@ main {
     color: color-mix(in srgb, var(--text-primary) 22%, transparent);
     z-index: 1;
     pointer-events: none;
-    opacity: 1;
+    opacity: 0.5;
 }
 
 .blueprint-svg {
@@ -504,11 +518,11 @@ main {
     font-weight: 600;
     letter-spacing: -0.04em;
     margin-bottom: 24px;
-    background: linear-gradient(180deg, var(--hero-gradient-from) 0%, var(--hero-gradient-to) 100%);
+    background: linear-gradient(180deg, var(--_dark-hero-gradient-from) 0%, var(--_dark-hero-gradient-to) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    color: var(--text-primary);
+    color: var(--_dark-hero-gradient-from);
     /* A large space under the headline's last line: Everywhere. is where the sentence ends and the page needs air there. */
     margin-bottom: 96px;
 }
@@ -758,11 +772,13 @@ main {
 }
 
 .term__eyebrow {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
+    font-family: Manrope, Inter, sans-serif;
+    font-size: clamp(1.75rem, 3.4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-transform: none;
+    line-height: 1.1;
+    color: var(--text-primary);
     margin: 0 0 12px;
 }
 
@@ -770,13 +786,13 @@ main {
     /* Balanced line breaks in a heading: without this a two-line heading can leave one word alone on the second line. */
     text-wrap: balance;
     font-family: Manrope, Inter, sans-serif;
-    font-size: clamp(1.75rem, 3.4vw, 3rem);
-    font-weight: 600;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-secondary);
+    line-height: 1.4;
     max-width: 20ch;
     margin: 0 0 20px;
-    color: inherit;
 }
 
 .term__lede {
@@ -1012,9 +1028,8 @@ main {
     }
     
 .blueprint-bg {
-    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
-     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
-     * paper. It never takes a pointer, so the pills above it stay clickable. */
+    /* The hero's drawing covers the section rather than sitting in a rotated panel. It never
+     * takes a pointer, so the pills above it stay clickable. */
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1022,7 +1037,7 @@ main {
     color: color-mix(in srgb, var(--text-primary) 22%, transparent);
     z-index: 1;
     pointer-events: none;
-    opacity: 1;
+    opacity: 0.5;
 }
     
     .features-grid {
@@ -1042,9 +1057,8 @@ main {
 
 /* Interactive Blueprint Styles */
 .blueprint-bg {
-    /* The hero's drawing covers the section rather than sitting in a rotated panel, at full strength: the
-     * strokes are opaque, and the tone comes from colour rather than opacity so the blueprint reads as ink on
-     * paper. It never takes a pointer, so the pills above it stay clickable. */
+    /* The hero's drawing covers the section rather than sitting in a rotated panel. It never
+     * takes a pointer, so the pills above it stay clickable. */
     position: absolute;
     inset: 0;
     width: 100%;
@@ -1052,7 +1066,7 @@ main {
     color: color-mix(in srgb, var(--text-primary) 22%, transparent);
     z-index: 1;
     pointer-events: none;
-    opacity: 1;
+    opacity: 0.5;
 }
 
 .blueprint-bg > svg,

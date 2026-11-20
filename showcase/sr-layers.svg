@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" font-family="Inter, Arial, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">Why test-runner-sr wins over axe-core and Playwright AOM snapshots</title>
+  <desc id="d">Four layers between markup and user. axe-core checks the DOM, Playwright AOM snapshots check the accessibility tree, test-runner-sr checks what NVDA and VoiceOver actually say.</desc>
+  <rect width="960" height="470" rx="16" fill="#1f1f23"/>
+  <text x="40" y="52" fill="#ffffff" font-size="24" font-weight="700">What does each check actually prove?</text>
+  <text x="40" y="80" fill="#a1a1aa" font-size="15">Four layers sit between the markup and the user. Only the last one answers "does this work?"</text>
+
+  <!-- layers -->
+  <g font-size="16">
+    <rect x="40" y="110" width="200" height="120" rx="10" fill="#2b2b31" stroke="#52525b"/>
+    <text x="60" y="142" fill="#ffffff" font-weight="700">1. DOM</text>
+    <text x="60" y="168" fill="#a1a1aa" font-size="14">what we write</text>
+    <text x="60" y="194" fill="#a1a1aa" font-size="14">name / role / state</text>
+    <text x="60" y="214" fill="#a1a1aa" font-size="14">is exposed</text>
+
+    <rect x="260" y="110" width="200" height="120" rx="10" fill="#2b2b31" stroke="#52525b"/>
+    <text x="280" y="142" fill="#ffffff" font-weight="700">2. ARIA / APG</text>
+    <text x="280" y="168" fill="#a1a1aa" font-size="14">the ideal: what a</text>
+    <text x="280" y="188" fill="#a1a1aa" font-size="14">perfect reader would</text>
+    <text x="280" y="208" fill="#a1a1aa" font-size="14">announce</text>
+
+    <rect x="480" y="110" width="200" height="120" rx="10" fill="#2b2b31" stroke="#52525b"/>
+    <text x="500" y="142" fill="#ffffff" font-weight="700">3. AOM snapshot</text>
+    <text x="500" y="168" fill="#a1a1aa" font-size="14">accessibility tree,</text>
+    <text x="500" y="188" fill="#a1a1aa" font-size="14">one browser engine</text>
+    <text x="500" y="208" fill="#a1a1aa" font-size="14">only</text>
+
+    <rect x="700" y="110" width="220" height="120" rx="10" fill="#3a3210" stroke="#ffc107" stroke-width="2"/>
+    <text x="720" y="142" fill="#ffc107" font-weight="700">4. Screen reader</text>
+    <text x="720" y="168" fill="#f4f4f5" font-size="14">what NVDA and</text>
+    <text x="720" y="188" fill="#f4f4f5" font-size="14">VoiceOver actually</text>
+    <text x="720" y="208" fill="#f4f4f5" font-size="14">say — the truth</text>
+  </g>
+
+  <!-- arrows between layers -->
+  <g stroke="#71717a" stroke-width="2" fill="none">
+    <path d="M240 170 h20"/><path d="M460 170 h20"/><path d="M680 170 h20"/>
+  </g>
+
+  <!-- coverage bars -->
+  <g font-size="15">
+    <text x="40" y="282" fill="#ffffff" font-weight="600">axe-core</text>
+    <rect x="200" y="266" width="240" height="22" rx="11" fill="#52525b"/>
+    <text x="456" y="282" fill="#a1a1aa">stops at layer 1: exposed, never heard</text>
+
+    <text x="40" y="326" fill="#ffffff" font-weight="600">Playwright AOM</text>
+    <rect x="200" y="310" width="480" height="22" rx="11" fill="#71717a"/>
+    <text x="696" y="326" fill="#a1a1aa">stops at layer 3</text>
+
+    <text x="40" y="370" fill="#ffc107" font-weight="700">test-runner-sr</text>
+    <rect x="200" y="354" width="720" height="22" rx="11" fill="#ffc107"/>
+    <text x="214" y="370" fill="#1f1f23" font-weight="700">asserts layer 4 — real NVDA + VoiceOver output, blocking in CI</text>
+  </g>
+
+  <g font-size="14" fill="#d4d4d8">
+    <text x="40" y="420">✓ duplicate and missed announcements are measured   ✓ one test file per component, all readers</text>
+    <text x="40" y="444">✓ low-barrier regression testing: refactor without fear, no manual screen-reader pass per change</text>
+  </g>
+</svg>
