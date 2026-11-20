@@ -1,13 +1,8 @@
 const e=`/** script code **/
 import { html } from '@mdjs/mdjs-preview';
-import { loadDefaultFeedbackMessages } from '@lion/ui/validate-messages.js';
-import '@lion/ui/define/lion-input-stepper.js';
-loadDefaultFeedbackMessages();
+import '@lion/ui/define/lion-input-range.js';
 /** stories code **/
-export const HtmlStory15 = () => html\`<lion-input-stepper max="5" min="0" name="count">
-  <label slot="label">RSVP</label>
-  <div slot="help-text">Max. 5 guests</div>
-</lion-input-stepper>\`;
+export const HtmlStory15 = () => html\`<lion-input-range min="200" max="500" .modelValue="\${300}" label="Input range"></lion-input-range>\`;
 /** stories setup code **/
 const rootNode = document;
 const stories = [{ key: 'HtmlStory15', story: HtmlStory15 }];
