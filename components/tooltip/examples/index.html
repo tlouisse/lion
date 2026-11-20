@@ -76,6 +76,15 @@
       if (!(input instanceof HTMLInputElement) || input.name !== 'theme') return;
       if (!CHOICES.includes(input.value)) return;
       root.dataset.theme = input.value;
+      /*
+       * color-scheme has to move with it. Every token is a light-dark() pair, so they follow color-scheme rather
+       * than data-theme, and the inline value written before the first paint therefore kept winning: the page
+       * never repainted. Measured on the live site, after clicking light — data-theme light, localStorage light,
+       * and the body still rgb(0, 0, 0) with a rgb(255, 255, 255) heading. The background goes with it for the
+       * same reason it is set at load: the canvas before the sheets arrive.
+       */
+      root.style.colorScheme = input.value === 'auto' ? '' : input.value;
+      root.style.backgroundColor = input.value === 'dark' ? '#0b0b0d' : input.value === 'light' ? '#fafafa' : '';
       write(input.value);
     });
   })();
@@ -3247,7 +3256,7 @@ if (!polyfillCheckEl?.shadowRoot) {
 
 
 
-</mdjs-preview> <load-demo data-import-path="tooltip_examples"></load-demo> </div> <script type="module" src="/lion/assets/_...path_.astro_astro_type_script_index_0_lang.B6NkiqOg.js"></script>   </div> <aside class="docs-toc" data-astro-cid-jzvr7uam> <astro-island uid="tpr9g" component-url="/lion/assets/ui-portal-inpage-nav.CjtzUs2H.js" component-export="UIPortalInpageNav" renderer-url="/lion/assets/client.D1_zeoXu.js" props="{&quot;navData&quot;:[1,[[0,{&quot;name&quot;:[0,&quot;Examples&quot;],&quot;url&quot;:[0,&quot;examples&quot;]}]]],&quot;data-astro-cid-jzvr7uam&quot;:[0,true]}" ssr client="load" before-hydration-url="/lion/assets/astro_scripts/before-hydration.js.e8yZTJri.js" opts="{&quot;name&quot;:&quot;UIPortalInpageNav&quot;,&quot;value&quot;:true}" await-children><ui-portal-inpage-nav defer-hydration data-astro-cid-jzvr7uam="true"><template shadowroot="open" shadowrootmode="open"><style>
+</mdjs-preview> <load-demo data-import-path="tooltip_examples"></load-demo> </div> <script type="module" src="/lion/assets/_...path_.astro_astro_type_script_index_0_lang.DzdD6Ab5.js"></script>   </div> <aside class="docs-toc" data-astro-cid-jzvr7uam> <astro-island uid="tpr9g" component-url="/lion/assets/ui-portal-inpage-nav.CjtzUs2H.js" component-export="UIPortalInpageNav" renderer-url="/lion/assets/client.D1_zeoXu.js" props="{&quot;navData&quot;:[1,[[0,{&quot;name&quot;:[0,&quot;Examples&quot;],&quot;url&quot;:[0,&quot;examples&quot;]}]]],&quot;data-astro-cid-jzvr7uam&quot;:[0,true]}" ssr client="load" before-hydration-url="/lion/assets/astro_scripts/before-hydration.js.e8yZTJri.js" opts="{&quot;name&quot;:&quot;UIPortalInpageNav&quot;,&quot;value&quot;:true}" await-children><ui-portal-inpage-nav defer-hydration data-astro-cid-jzvr7uam="true"><template shadowroot="open" shadowrootmode="open"><style>
   * {
     box-sizing: border-box;
   }
