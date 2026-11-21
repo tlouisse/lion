@@ -825,7 +825,24 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
             load(`${assetsBase}host.js`),
             load(`${assetsBase}checkDemoContent.js`).then(module => (assets = { ...assets, ...module })).catch(() => {}),
           ]);
-          assets = { ...assets, importMapPerPackage, packageMains, host };
+          /*
+           * The map's values are site-root paths (/node_modules/@lion/ui/...), so under a prefix deploy every one of
+           * them 404s and the playground cannot load a component at all. Measured on the fork: four failed requests
+           * on /node-demo/ before this. The keys are bare specifiers and stay untouched.
+           */
+          const withBase = map =>
+            map && map.imports
+              ? {
+                  ...map,
+                  imports: Object.fromEntries(
+                    Object.entries(map.imports).map(([key, value]) => [
+                      key,
+                      typeof value === 'string' && value[0] === '/' && value[1] !== '/' ? `${base}${value}` : value,
+                    ]),
+                  ),
+                }
+              : map;
+          assets = { ...assets, importMapPerPackage: withBase(importMapPerPackage), packageMains, host };
         }
         return assets;
       };
@@ -988,7 +1005,9 @@ console.log('hydrated: the button in the page is a', document.querySelector('lio
 
         const fullImportMap = host.buildFenceImportMap(
           { importMapPerPackage, packageMains },
-          location.origin,
+          // The base, not the origin: on a prefix deploy the origin alone dropped the path and every vendored url
+          // came out as https://tlouisse.github.io/deps/... instead of .../lion/deps/... - all of them 404.
+          new URL(base, location.href).href.replace(/\/$/, ''),
           new URL('./shims', engineUrl).href,
         );
         const importMap = config.run ? fullImportMap : withoutBuiltins(fullImportMap);

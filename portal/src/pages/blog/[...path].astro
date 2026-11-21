@@ -2,6 +2,9 @@
 import { getCollection, getEntry, render } from "astro:content";
 import BlogDetailLayout from "../../layouts/BlogDetailLayout.astro";
 
+// The site is published under a prefix; cover images are written from the site root.
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 export async function getStaticPaths() {
     const entries = await getCollection("lionBlog", entry => entry.data?.published);
 
@@ -24,6 +27,14 @@ const tagsArr = Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim
 const site  = Astro.locals;
 const { headings = [] } = entry.rendered?.metadata;
 
+/*
+ * Cover images are written as site-root paths — /blog/images/x.png — which work from the site root and 404 under a
+ * prefix, as the fork's Pages deploy does. The guard lives here rather than in the template: a // inside a one-line
+ * JSX attribute is read as a comment by the compiler.
+ */
+const isRootRelative = (url) => Boolean(url) && url[0] === '/' && url[1] !== '/';
+const coverImage = isRootRelative(cover_image) ? `${base}${cover_image}` : cover_image;
+
 const { Content } = await render(entry);
 ---
 
@@ -42,7 +53,7 @@ const { Content } = await render(entry);
     </div>
   </div>
 
-  {cover_image && <img src={cover_image} alt={title} class="blog-cover-image" />}
+  {coverImage && <img src={coverImage} alt={title} class="blog-cover-image" />}
 
   <div class="blog-article-content">
     <Content />

@@ -19,22 +19,22 @@ describe('host: vendored urls', () => {
   it('rewrites the package root to the name-keyed layout the vendoring writes', () => {
     assert.equal(
       toVendoredUrl('packages-node/nodejs-helpers/src/index.js', '@lion/nodejs-helpers', assetsOrigin),
-      'https://lion.js.org/node_modules/@lion/nodejs-helpers/src/index.js',
+      'https://lion.js.org/deps/@lion/nodejs-helpers/src/index.js',
     );
     assert.equal(
       toVendoredUrl('packages/ui/exports/button.js', '@lion/ui', assetsOrigin),
-      'https://lion.js.org/node_modules/@lion/ui/exports/button.js',
+      'https://lion.js.org/deps/@lion/ui/exports/button.js',
     );
     assert.equal(
       toVendoredUrl('node_modules/prettier/standalone.js', 'prettier', assetsOrigin),
-      'https://lion.js.org/node_modules/prettier/standalone.js',
+      'https://lion.js.org/deps/prettier/standalone.js',
     );
   });
 
   it('takes the shortest prefix as the package root, so a nested folder of the same name is not it', () => {
     assert.equal(
       toVendoredUrl('packages/ui/src/ui/utils.js', '@lion/ui', assetsOrigin),
-      'https://lion.js.org/node_modules/@lion/ui/src/ui/utils.js',
+      'https://lion.js.org/deps/@lion/ui/src/ui/utils.js',
     );
   });
 });
@@ -59,9 +59,9 @@ describe('host: import map for the fence', () => {
     const { imports } = buildFenceImportMap(packageMap, assetsOrigin);
     assert.equal(
       imports['@lion/nodejs-helpers'],
-      'https://lion.js.org/node_modules/@lion/nodejs-helpers/src/index.js',
+      'https://lion.js.org/deps/@lion/nodejs-helpers/src/index.js',
     );
-    assert.equal(imports['prettier/standalone.js'], 'https://lion.js.org/node_modules/prettier/standalone.js');
+    assert.equal(imports['prettier/standalone.js'], 'https://lion.js.org/deps/prettier/standalone.js');
   });
 
   it('adds a shim for every builtin, in both specifier forms', () => {
@@ -84,7 +84,7 @@ describe('host: import map for the fence', () => {
     );
     assert.equal(
       imports['@babel/parser'],
-      'https://lion.js.org/node_modules/@babel/parser/lib/index.js',
+      'https://lion.js.org/deps/@babel/parser/lib/index.js',
     );
   });
 
@@ -96,7 +96,7 @@ describe('host: import map for the fence', () => {
       },
       assetsOrigin,
     );
-    assert.equal(imports.unified, 'https://lion.js.org/node_modules/unified/index.js');
+    assert.equal(imports.unified, 'https://lion.js.org/deps/unified/index.js');
   });
 
   it('lets the shims win over a package that claims a builtin name', () => {
@@ -126,7 +126,7 @@ describe('host: fence document', () => {
   it('imports the scoped custom element registry before the engine, for Lion in an opaque origin', () => {
     assert.match(
       document,
-      /import 'https:\/\/lion\.js\.org\/node_modules\/@webcomponents\/scoped-custom-element-registry\/scoped-custom-element-registry\.min\.js';/,
+      /import 'https:\/\/lion\.js\.org\/deps\/@webcomponents\/scoped-custom-element-registry\/scoped-custom-element-registry\.min\.js';/,
     );
     assert.ok(document.indexOf('scoped-custom-element-registry') < document.indexOf('engine.js'));
   });

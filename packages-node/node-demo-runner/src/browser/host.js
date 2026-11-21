@@ -65,7 +65,7 @@ export function toVendoredUrl(repoRelativePath, packageName, assetsOrigin) {
   const segments = repoRelativePath.split('/');
   const rootIndex = segments.indexOf(directoryName);
   const insidePackage = rootIndex === -1 ? repoRelativePath : segments.slice(rootIndex + 1).join('/');
-  return `${assetsOrigin}/node_modules/${packageName}${insidePackage ? `/${insidePackage}` : ''}`;
+  return `${assetsOrigin}/deps/${packageName}${insidePackage ? `/${insidePackage}` : ''}`;
 }
 
 /**
@@ -126,7 +126,7 @@ export function buildFenceDocument({ importMap, engineUrl, payload, assetsOrigin
 <script type="module">
 // Lion needs the scoped custom element registry when it runs in an opaque origin: the native one is not
 // available there, and without the polyfill a component never upgrades.
-import '${assetsOrigin}/node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js';
+import '${assetsOrigin}/deps/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js';
 import ${JSON.stringify(engineUrl)};
 </script>
 </body>

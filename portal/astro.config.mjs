@@ -56,7 +56,8 @@ export default defineConfig({
       [mdjsSetupCode, mdjsSetupConfig],
       remarkProcessDemos,
       remarkModifiedTime,
-      remarkRewriteMdLinks,
+      // The base goes in so image paths written from the site root survive a prefix deploy; see the plugin.
+      [remarkRewriteMdLinks, { base: base.replace(/\/$/, '') }],
     ],
     shikiConfig: {
       themes: {

@@ -3,6 +3,13 @@ import { getCollection, getEntry, render } from "astro:content";
 import BlogOverviewLayout from "../../layouts/BlogOverviewLayout.astro";
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
+/*
+ * Cover images are written as site-root paths in the frontmatter — /blog/images/x.png — which work while the site
+ * is served from the root and 404 under a prefix, as the fork's Pages deploy does. Relative paths and anything
+ * already carrying the base are left alone.
+ */
+const coverUrl = (url) => (url && url.startsWith('/') && !url.startsWith('//') && !url.startsWith(`${base}/`) ? `${base}${url}` : url);
+
 const entries = await getCollection("lionBlog", entry => entry.data?.published);
 const entry = await getEntry('lionBlog', 'index');
 
@@ -23,7 +30,7 @@ const { Content } = await render(entry);
   {entries.map((post) => (
     <article class="post-card" data-url={getUrl(post)}>
       {post.data.cover_image && <div class="post-image"><div class="post-image__img" style={{
-        backgroundImage: `url('${post.data.cover_image}')`,
+        backgroundImage: `url('${coverUrl(post.data.cover_image)}')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
       }} aria-label={post.data.title} role="img"/></div>}

@@ -41,7 +41,7 @@ function getArg(name) {
  * @returns {string} the url path the host serves it under
  */
 function toUrlPath(repoRelativePath) {
-  return repoRelativePath.replace(/^packages\//, 'node_modules/@lion/');
+  return repoRelativePath.replace(/^packages\//, 'deps/@lion/');
 }
 
 /**
@@ -51,7 +51,7 @@ function toUrlPath(repoRelativePath) {
 function toPackageFolders(urlPath) {
   const parts = urlPath.split('/');
   if (parts[0] === 'packages') {
-    return { sourceDir: path.join('packages', parts[1]), urlDir: `node_modules/@lion/${parts[1]}` };
+    return { sourceDir: path.join('packages', parts[1]), urlDir: `deps/@lion/${parts[1]}` };
   }
   // A dependency can be nested — `node_modules/parse5/node_modules/entities` — when two versions of a name exist,
   // and the url is by package *name* either way. Reading only the first `node_modules` segment named the wrong
@@ -65,7 +65,7 @@ function toPackageFolders(urlPath) {
       ? `${parts[lastNodeModules + 1]}/${parts[lastNodeModules + 2]}`
       : parts[lastNodeModules + 1];
     const sourceDir = parts.slice(0, lastNodeModules + (scoped ? 3 : 2)).join('/');
-    return { sourceDir, urlDir: `node_modules/${name}` };
+    return { sourceDir, urlDir: `deps/${name}` };
   }
   return undefined;
 }
@@ -173,11 +173,10 @@ function resolveFromFilesystem(repoRelativePath) {
   const segments = repoRelativePath.split('/');
   for (let index = 1; index < segments.length; index += 1) {
     const candidate = segments.slice(0, index + 1).join('/');
-    if (candidate === 'packages') continue; // the primary rule owns that layout
     const pkgJsonPath = path.join(candidate, 'package.json');
     if (!fs.existsSync(pkgJsonPath)) continue;
     const name = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8')).name;
-    return name ? { urlDir: `node_modules/${name}`, sourceDir: candidate } : undefined;
+    return name ? { urlDir: `deps/${name}`, sourceDir: candidate } : undefined;
   }
   return undefined;
 }
@@ -199,7 +198,9 @@ async function vendorImportMapTargets() {
         // `packages-node/<x>`, which is what the node demo runner vendors — has no such mapping, so its
         // folder is derived from the filesystem instead: the first parent holding a package.json is the
         // package root, and its own `name` is what the url layout is keyed by.
-        resolved = resolveFromFilesystem(toUrlPath(repoRelativePath));
+        // The repo-relative path, not its url form: the url form only resolved because the repository's own
+        // node_modules carried a symlink to the package, and that symlink is exactly what this change removes.
+        resolved = resolveFromFilesystem(repoRelativePath);
       }
       if (!resolved) {
         throw new Error(`Cannot derive a package folder from import map value ${repoRelativePath}`);
@@ -207,7 +208,12 @@ async function vendorImportMapTargets() {
       if (!folders.has(resolved.urlDir)) folders.set(resolved.urlDir, resolved.sourceDir);
     }
   }
-  for (const urlDir of EXTRA_TARGETS) folders.set(urlDir, urlDir);
+  // The source, not the url: these are repo-relative folders, and the url layout is derived from them the same
+  // way it is for a mapped package.
+  for (const sourceDir of EXTRA_TARGETS) {
+    const resolved = resolveFromFilesystem(sourceDir);
+    if (resolved) folders.set(resolved.urlDir, resolved.sourceDir);
+  }
 
   for (const [urlDir, sourceDir] of folders) {
     const from = path.resolve(sourceDir);
@@ -218,11 +224,18 @@ async function vendorImportMapTargets() {
     // Start clean: cp rejects a destination that already exists, and a stale folder from an earlier
     // run must never be merged with the current one.
     await fs.promises.rm(to, { recursive: true, force: true });
-    await fs.promises.cp(from, to, { recursive: true, filter: makeFilter(from) });
+    /*
+     * dereference: a workspace package is a symlink inside node_modules, and copying it as one leaves a link whose
+     * target is an absolute path on the machine that built the site — measured: node_modules/@lion/ui pointed at
+     * /home/thijs/tmp/lion-pg/packages/ui. That is broken for every visitor, and GitHub Pages' Jekyll refuses to
+     * build the branch while it is there (exclude: [] errored, include: [node_modules] sat in building for fifteen
+     * minutes). Copying the files it points at is what the url scheme needs anyway.
+     */
+    await fs.promises.cp(from, to, { recursive: true, dereference: true, filter: makeFilter(from) });
   }
 
   const compiler = await vendorTypescriptCompiler(destination);
-  const { files, bytes } = await measure(path.join(destination, 'node_modules'));
+  const { files, bytes } = await measure(path.join(destination, 'deps'));
   // eslint-disable-next-line no-console
   console.log(
     `Vendored ${entryCount} import map entries from ${folders.size} package folders into ` +
