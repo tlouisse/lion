@@ -178,7 +178,7 @@ function toEmbeddedJson(value) {
  * @returns {string}
  */
 export function buildFencedDocument(demo, { importMap, assetsOrigin }) {
-  const registryUrl = `${assetsOrigin}/node_modules/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js`;
+  const registryUrl = `${assetsOrigin}/deps/@webcomponents/scoped-custom-element-registry/scoped-custom-element-registry.min.js`;
   const htmlFile = demo.htmlFile && demo.files[demo.htmlFile];
   const bodyMarkup = htmlFile ? extractBodyMarkup(htmlFile.content) : '';
   const files = Object.fromEntries(
