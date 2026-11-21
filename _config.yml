@@ -1,0 +1,9 @@
+# GitHub Pages runs Jekyll over this branch, and Jekyll's default exclude list contains node_modules - which is
+# exactly where the playground's vendored packages live.
+#
+# Measured: node_modules/@lion/ui/exports/define/lion-button.js was present in the branch and 404 on the site, so
+# the node demo's service worker had nothing to serve and no component could load. Clearing the list publishes them.
+#
+# The portal's own assets live under assets/ (build.assets in astro.config.mjs), so Jekyll has nothing else to
+# swallow, and the underscore rule that ate _astro/ is not in play either.
+exclude: []
