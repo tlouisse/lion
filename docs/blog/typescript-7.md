@@ -1,9 +1,11 @@
 ---
 title: Migrating Lion to TypeScript 7
-published: false
+published: true
 description: TypeScript 7 type-checks Lion's ~1,000 declaration files about six times faster. Consumers of @lion/ui notice almost nothing, and libraries built on top of it notice nothing at all.
 date: 2026-09-26
 tags: [javascript, typescript, performance]
+cover_image: /blog/images/typescript-7.png
+cover_credits: "subject - Biomedical Technicians Test Hospital Equipment (8587864).jpg by U.S. Navy photo by Petty Officer 2nd Class (Public domain, match 0.664); plate, scene and mark - Lion"
 eleventyNavigation:
   key: Migrating Lion to TypeScript 7
   title: Migrating Lion to TypeScript 7
